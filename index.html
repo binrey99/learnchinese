@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mandarinly - Learning Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .brand-image { width: 34px !important; height: 34px !important; max-width: 34px !important; object-fit: cover !important; border-radius: 50% !important; border: 2px solid #d8eee1; }
+    .mascot-note img { width: 48px !important; height: 48px !important; max-width: 48px !important; object-fit: cover !important; border-radius: 50% !important; }
+    body { background: linear-gradient(135deg, #e0f2fe 0%, #ccfbf1 100%) fixed !important; }
+    .main-content { background: transparent !important; }
+    .primary-button { background: #28543b !important; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#top" aria-label="Mandarinly home">
+        <img class="brand-image" src="picture/main_picture.png" alt="Linh vật Mandarinly đang học tiếng Trung">
+        <span>mandarinly</span>
+      </a>
+
+      <nav class="main-nav" aria-label="Điều hướng chính">
+        <p class="nav-label">Workspace</p>
+        <a class="nav-item active" data-route="dashboard" href="#dashboard"><span class="nav-icon">⌂</span> Tổng quan</a>
+        <a class="nav-item" data-route="practice" href="#practice"><span class="nav-icon">◈</span> Luyện tập <span class="nav-count">3</span></a>
+        <a class="nav-item" data-route="vocabulary" href="#vocabulary"><span class="nav-icon">Aa</span> Từ vựng</a>
+        <a class="nav-item" data-route="hsk" href="#hsk"><span class="nav-icon">✓</span> HSK</a>
+        <a class="nav-item" data-route="mock-exam" href="#mock-exam"><span class="nav-icon">✎</span> Thi thử</a>
+        <a class="nav-item" data-route="materials" href="#materials"><span class="nav-icon">▤</span> Tài liệu</a>
+        <a class="nav-item" href="#calendar"><span class="nav-icon">▣</span> Lịch học</a>
+        <p class="nav-label spaced">Your space</p>
+        <a class="nav-item" href="#progress"><span class="nav-icon">↗</span> Tiến độ</a>
+        <a class="nav-item" href="#community"><span class="nav-icon">◎</span> Cộng đồng</a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="streak-card">
+          <div class="streak-top"><span class="flame">✦</span><span>Chuỗi học tập</span></div>
+          <strong>12 ngày</strong>
+          <div class="mini-week" aria-label="Tiến độ trong tuần"><i></i><i></i><i></i><i></i><i></i><i class="muted"></i><i class="muted"></i></div>
+          <small>Thật tuyệt, hãy duy trì nhé!</small>
+        </div>
+        <a class="nav-item settings" href="#settings"><span class="nav-icon">⚙</span> Cài đặt</a>
+        <div class="profile-mini"><div class="avatar avatar-lime">HN</div><div><strong>Hà Nguyễn</strong><small>HSK 3 • 68%</small></div><span class="dots">•••</span></div>
+      </div>
+    </aside>
+
+    <main class="main-content" id="dashboard">
+      <header class="topbar">
+        <a class="topbar-brand" href="#dashboard" aria-label="Chinesewithcaba trang chủ"><img src="picture/main_picture.png" alt="Linh vật Chinesewithcaba"><strong>chinesewithcaba</strong></a>
+        <div class="top-actions"><label class="pinyin-toggle" title="Hiển thị pinyin phía trên chữ Hán"><input id="pinyinToggle" type="checkbox"><span>Hiện Pinyin</span></label><button class="login-trigger login-avatar" id="loginTrigger" aria-label="Đăng nhập"><svg class="login-avatar-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.7-3.5 2.9-5.3 6.5-5.3s5.8 1.8 6.5 5.3"></path></svg></button><div class="account-menu" id="accountMenu" hidden><strong id="accountEmail">Tài khoản</strong><a class="profile-link" id="profileLink" href="#profile">Xem hồ sơ</a><button type="button" id="logoutButton">Đăng xuất</button></div></div>
+      </header>
+
+      <div class="content-wrap">
+        <section class="quick-access" aria-labelledby="quickAccessTitle">
+          <div class="quick-heading"><div><h2 id="quickAccessTitle">Khám phá bài học</h2><p>Chọn nội dung bạn muốn học hôm nay</p></div><span class="quick-hint">5 chủ đề</span></div>
+          <div class="quick-grid">
+            <a class="quick-card" href="#vocabulary"><img src="picture/vocabulary.png" alt="Linh vật học từ vựng"><span><strong>Từ vựng</strong><small>Học từ mới</small></span><b>→</b></a>
+            <a class="quick-card" href="#hsk"><img src="picture/HSK.png" alt="Linh vật học HSK"><span><strong>HSK</strong><small>Lộ trình cấp độ</small></span><b>→</b></a>
+            <a class="quick-card" href="#practice"><img src="picture/practice.png" alt="Linh vật luyện tập"><span><strong>Luyện tập</strong><small>Rèn kỹ năng</small></span><b>→</b></a>
+            <a class="quick-card" href="#mock-exam"><img src="picture/mock-exam.png" alt="Linh vật thi thử"><span><strong>Thi thử</strong><small>Kiểm tra năng lực</small></span><b>→</b></a>
+            <a class="quick-card" href="#materials"><img src="picture/main_picture.png" alt="Linh vật học cùng tài liệu"><span><strong>Tài liệu</strong><small>Kho học tập</small></span><b>→</b></a>
+            <a class="quick-card leaderboard-card" href="#leaderboard"><span class="leaderboard-cup" aria-hidden="true">🏆</span><span><strong>Leaderboard</strong><small>Từ đã chinh phục</small></span><b>→</b></a>
+          </div>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel chart-panel" id="progress">
+            <div class="panel-heading"><div><h2>Hoạt động học tập</h2><p>Thời gian học của bạn trong tuần này</p></div><button class="select-button">Tuần này <span>⌄</span></button></div>
+            <div class="chart-wrap"><div class="y-axis"><span>60m</span><span>45m</span><span>30m</span><span>15m</span><span>0m</span></div><div class="chart"><div class="grid-lines"><i></i><i></i><i></i><i></i><i></i></div><div class="bars"><div class="bar-col"><b style="height:52%"></b><span>T2</span></div><div class="bar-col"><b style="height:80%"></b><span>T3</span></div><div class="bar-col"><b style="height:41%"></b><span>T4</span></div><div class="bar-col current"><b style="height:91%"></b><span>T5</span></div><div class="bar-col"><b style="height:63%"></b><span>T6</span></div><div class="bar-col"><b style="height:28%"></b><span>T7</span></div><div class="bar-col"><b style="height:11%"></b><span>CN</span></div></div></div></div>
+          </article>
+
+          <article class="panel lessons-panel" id="practice">
+            <div class="panel-heading"><div><h2>Bài học hôm nay</h2><p>3 bài học đang chờ bạn</p></div><a class="text-link" href="#practice">Xem tất cả</a></div>
+            <div class="lesson-list"><div class="lesson-row"><div class="lesson-symbol peach">文</div><div class="lesson-copy"><strong>Từ vựng HSK 3</strong><span>20 từ • 15 phút</span></div><button class="round-arrow" aria-label="Bắt đầu từ vựng">→</button></div><div class="lesson-row"><div class="lesson-symbol lavender">听</div><div class="lesson-copy"><strong>Luyện nghe: Ở nhà hàng</strong><span>8 câu hỏi • 12 phút</span></div><button class="round-arrow" aria-label="Bắt đầu luyện nghe">→</button></div><div class="lesson-row"><div class="lesson-symbol mint">说</div><div class="lesson-copy"><strong>Hội thoại hàng ngày</strong><span>Phát âm • 10 phút</span></div><button class="round-arrow" aria-label="Bắt đầu hội thoại">→</button></div></div>
+          </article>
+        </section>
+
+        <section class="bottom-grid">
+          <article class="panel calendar-panel" id="calendar"><div class="panel-heading"><div><h2>Lịch học</h2><p>Tháng 8, 2024</p></div><div class="calendar-arrows"><button aria-label="Tháng trước">‹</button><button aria-label="Tháng sau">›</button></div></div><div class="calendar"><div class="calendar-week"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div><div class="calendar-days" id="calendarDays"></div></div></article>
+          <article class="panel activity-panel"><div class="panel-heading"><div><h2>Hoạt động gần đây</h2><p>Những cột mốc mới nhất của bạn</p></div><a class="text-link" href="#activity">Xem tất cả</a></div><div class="activity-list"><div class="activity-row"><div class="activity-icon green">✓</div><div><strong>Hoàn thành bài học</strong><span>Từ vựng HSK 3</span></div><time>2 giờ trước</time></div><div class="activity-row"><div class="activity-icon yellow">★</div><div><strong>Đạt thành tích mới</strong><span>Học liên tục 12 ngày</span></div><time>Hôm qua</time></div><div class="activity-row"><div class="activity-icon blue">↗</div><div><strong>Tiến bộ vượt bậc</strong><span>+8% tiến độ HSK 3</span></div><time>Hôm qua</time></div></div></article>
+        </section>
+      </div>
+      <div class="page-view" id="pageView" hidden></div>
+    </main>
+  </div>
+  <div class="login-modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <div class="login-card">
+      <button class="login-close" type="button" data-close-login aria-label="Đóng đăng nhập">×</button>
+      <img class="login-mascot" src="picture/main_picture.png" alt="Linh vật học tiếng Trung">
+      <h2 id="loginTitle">Chào mừng trở lại</h2>
+      <p>Đăng nhập để tiếp tục hành trình học tiếng Trung.</p>
+      <form id="loginForm">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" placeholder="ban@example.com" autocomplete="email" required>
+        <label for="loginPassword">Mật khẩu</label>
+        <input id="loginPassword" type="password" placeholder="Tối thiểu 6 ký tự" autocomplete="current-password" minlength="6" required>
+        <label class="remember-account"><input id="rememberAccount" type="checkbox"> <span>Ghi nhớ tài khoản</span></label>
+        <div class="confirm-password-field" hidden>
+          <label for="confirmPassword">Xác nhận mật khẩu</label>
+          <input id="confirmPassword" type="password" placeholder="Nhập lại mật khẩu" autocomplete="new-password" minlength="6">
+        </div>
+        <p class="login-error" id="loginError" role="alert"></p>
+        <button class="primary-button login-submit" type="submit">Đăng nhập</button>
+      </form>
+      <p class="auth-switch"><span id="authSwitchText">Chưa có tài khoản?</span> <button type="button" id="authSwitch">Đăng ký ngay</button></p>
+    </div>
+  </div>
+  <div class="toast" id="toast">Bài học đã sẵn sàng ✦</div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
