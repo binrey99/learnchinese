@@ -7,6 +7,7 @@ import { initMaterials } from './materials.js';
 import { renderProfile } from './profile.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initSentenceOrder } from './sentence-order.js';
+import { initGame } from './game.js';
 
 const pages = {
   vocabulary: {
@@ -53,6 +54,11 @@ const pages = {
     title: 'Leaderboard',
     description: 'Các từ bạn đã trả lời đúng ít nhất 5 lần.',
     template: '<div data-leaderboard></div>'
+  },
+  game: {
+    title: 'Trò chơi tiếng Trung',
+    description: 'Vừa chơi vừa học, ghi nhớ từ vựng tiếng Trung dễ dàng và hào hứng.',
+    template: '<div data-game></div>'
   }
 };
 
@@ -92,6 +98,7 @@ export function initRouter({ toast } = {}) {
     if (route === 'materials') initMaterials({ onOpen: () => toast?.('Tài liệu đã được mở') });
     if (route === 'profile') renderProfile();
     if (route === 'leaderboard') initLeaderboard(options);
+    if (route === 'game') initGame(options);
   };
 
   window.addEventListener('hashchange', render);
