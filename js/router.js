@@ -51,8 +51,8 @@ const pages = {
     template: '<div id="profileContent"></div>'
   },
   leaderboard: {
-    title: 'Leaderboard',
-    description: 'Các từ bạn đã trả lời đúng ít nhất 5 lần.',
+    title: 'Bảng xếp hạng thành tích',
+    description: 'Bảng vinh danh đua top học tập theo Tuần, Ngày và Toàn thời gian từ tất cả hoạt động.',
     template: '<div data-leaderboard></div>'
   },
   game: {

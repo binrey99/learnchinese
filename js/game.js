@@ -1,4 +1,14 @@
 import { supabase } from './supabase.js';
+import { recordScore, SCORE_RULES } from './score-service.js';
+import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
+
+function toPinyin(hanzi) {
+  try {
+    return pinyin(hanzi, { toneType: 'symbol' });
+  } catch (_) {
+    return '';
+  }
+}
 
 const DEFAULT_VOCABULARY = [
   // HSK 1
@@ -177,20 +187,33 @@ const escapeHtml = (value = '') =>
 
 const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
 
-// Fetch words from Supabase or fallback
+// Thứ tự cố định của các cấp độ
+const LEVEL_ORDER = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6', 'Công xưởng'];
+
+// Fetch words from Supabase or fallback (toàn bộ, có phân trang)
 async function loadGameVocabulary() {
   try {
-    const { data, error } = await supabase
-      .from('vocabulary')
-      .select('vocab, vietnamese_meaning, book_level')
-      .limit(600);
+    const pageSize = 1000;
+    const rows = [];
 
-    if (!error && data && data.length > 0) {
-      const valid = data
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await supabase
+        .from('vocabulary')
+        .select('vocab, vietnamese_meaning, book_level')
+        .order('id', { ascending: true })
+        .range(from, from + pageSize - 1);
+
+      if (error) throw error;
+      rows.push(...data);
+      if (data.length < pageSize) break;
+    }
+
+    if (rows.length > 0) {
+      const valid = rows
         .filter((w) => w.vocab && w.vietnamese_meaning)
         .map((w) => ({
           hanzi: w.vocab.trim(),
-          pinyin: '',
+          pinyin: toPinyin(w.vocab.trim()),
           meaning: w.vietnamese_meaning.trim(),
           level: (w.book_level || 'HSK 1').trim()
         }));
@@ -225,8 +248,12 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
   const allWords = await loadGameVocabulary();
 
-  // Distinct levels
-  const availableLevels = ['Tất cả', ...new Set(allWords.map((w) => w.level).filter(Boolean))];
+  // Distinct levels - sắp xếp theo thứ tự cố định
+  const levelsInData = new Set(allWords.map((w) => w.level).filter(Boolean));
+  const orderedLevels = LEVEL_ORDER.filter((lvl) => levelsInData.has(lvl));
+  // Thêm bất kỳ level nào không có trong LEVEL_ORDER (nếu có)
+  levelsInData.forEach((lvl) => { if (!LEVEL_ORDER.includes(lvl)) orderedLevels.push(lvl); });
+  const availableLevels = ['Tất cả', ...orderedLevels];
   let currentLevel = 'Tất cả';
   let currentGameMode = 'memory'; // 'memory' | 'speed' | 'match'
 
@@ -362,7 +389,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         pairId: index,
         type: 'hanzi',
         text: word.hanzi,
-        sub: word.pinyin || '',
+        pinyin: word.pinyin || toPinyin(word.hanzi),
+        sub: word.pinyin || toPinyin(word.hanzi),
         speakText: word.hanzi
       });
       cards.push({
@@ -401,8 +429,9 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                   <span class="card-pattern">🀄</span>
                 </div>
                 <div class="card-back ${card.type}">
+                  ${card.type === 'hanzi' ? `<span class="game-pinyin">${escapeHtml(card.pinyin || toPinyin(card.text))}</span>` : ''}
                   <strong class="card-main-text">${escapeHtml(card.text)}</strong>
-                  ${card.sub ? `<small class="card-sub-text">${escapeHtml(card.sub)}</small>` : ''}
+                  ${card.type === 'meaning' ? `<small class="card-sub-text">Nghĩa</small>` : ''}
                 </div>
               </div>
             </div>
@@ -463,6 +492,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             if (matchedPairs === pairCount) {
               clearActiveInterval();
               sounds.playVictory();
+              recordScore({ category: 'game', points: SCORE_RULES.GAME_MEMORY_FINISH, description: 'Hoàn thành Lật thẻ trí nhớ' });
               const finalScore = Math.max(100, 1000 - moves * 18 - seconds * 8);
               const bestScore = Number(localStorage.getItem('mandarinly_game_best_memory') || 0);
               if (finalScore > bestScore) {
@@ -553,12 +583,63 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const speakBtn = arena.querySelector('#speedSpeakBtn');
     const optionsContainer = arena.querySelector('#speedOptions');
 
+    function updateTimerUI() {
+      if (secondsEl) secondsEl.textContent = `${timeLeft}s`;
+      if (progressEl) {
+        const pct = Math.min(100, Math.max(0, (timeLeft / 60) * 100));
+        progressEl.style.width = `${pct}%`;
+        progressEl.style.background = timeLeft <= 10 ? '#e88468' : '#4f9d72';
+      }
+    }
+
+    function showTimeDelta(delta) {
+      const isPositive = delta > 0;
+      const deltaEl = document.createElement('span');
+      deltaEl.className = `time-delta ${isPositive ? 'plus' : 'minus'}`;
+      deltaEl.textContent = isPositive ? `+${delta}s` : `${delta}s`;
+      const timerWrap = arena.querySelector('.speed-timer-wrap');
+      if (timerWrap) {
+        timerWrap.appendChild(deltaEl);
+        setTimeout(() => deltaEl.remove(), 750);
+      }
+    }
+
+    function triggerGameOver() {
+      if (isGameOver) return;
+      clearActiveInterval();
+      isGameOver = true;
+      sounds.playVictory();
+
+      const earnedPoints = Math.min(100, Math.max(15, Math.round(score * 0.1)));
+      recordScore({ category: 'game', points: earnedPoints, description: `Đua tốc độ 60s (${score}đ)` });
+
+      const bestScore = Number(localStorage.getItem('mandarinly_game_best_speed') || 0);
+      if (score > bestScore) {
+        localStorage.setItem('mandarinly_game_best_speed', String(score));
+      }
+
+      showVictoryModal(arena, {
+        title: 'Hết giờ! Tốc độ đỉnh cao ⚡',
+        score: score,
+        stats: [
+          { label: 'Số câu làm được', value: answeredCount },
+          { label: 'Trả lời đúng', value: `${correctCount} câu` },
+          { label: 'Combo dài nhất', value: `${maxStreak}x 🔥` },
+          {
+            label: 'Độ chính xác',
+            value: answeredCount ? `${Math.round((correctCount / answeredCount) * 100)}%` : '0%'
+          }
+        ],
+        onReplay: () => startSpeedGame(arena)
+      });
+    }
+
     function nextQuestion() {
       if (isGameOver) return;
       const targetWord = wordsPool[Math.floor(Math.random() * wordsPool.length)];
 
       hanziEl.textContent = targetWord.hanzi;
-      pinyinEl.textContent = targetWord.pinyin || '';
+      pinyinEl.textContent = targetWord.pinyin || toPinyin(targetWord.hanzi);
       speakChinese(targetWord.hanzi);
 
       speakBtn.onclick = () => speakChinese(targetWord.hanzi);
@@ -595,6 +676,11 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             if (streak > maxStreak) maxStreak = streak;
             sounds.playCorrect();
 
+            // Thưởng thêm +3 giây khi trả lời đúng
+            timeLeft += 3;
+            updateTimerUI();
+            showTimeDelta(3);
+
             const multiplier = Math.min(4, 1 + Math.floor(streak / 3));
             score += 100 * multiplier;
 
@@ -613,12 +699,22 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             btn.classList.add('opt-wrong');
             streakEl.textContent = '0x';
 
+            // Phạt trừ -3 giây khi trả lời sai
+            timeLeft = Math.max(0, timeLeft - 3);
+            updateTimerUI();
+            showTimeDelta(-3);
+
             optionsContainer.querySelectorAll('.speed-opt-btn').forEach((b) => {
               b.disabled = true;
               if (b.dataset.meaning === targetWord.meaning) {
                 b.classList.add('opt-correct');
               }
             });
+
+            if (timeLeft <= 0) {
+              triggerGameOver();
+              return;
+            }
 
             setTimeout(nextQuestion, 600);
           }
@@ -630,39 +726,10 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
     activeInterval = setInterval(() => {
       timeLeft--;
-      if (secondsEl) secondsEl.textContent = `${timeLeft}s`;
-      if (progressEl) {
-        const pct = (timeLeft / 60) * 100;
-        progressEl.style.width = `${pct}%`;
-        if (timeLeft <= 10) {
-          progressEl.style.background = '#e88468';
-        }
-      }
+      updateTimerUI();
 
       if (timeLeft <= 0) {
-        clearActiveInterval();
-        isGameOver = true;
-        sounds.playVictory();
-
-        const bestScore = Number(localStorage.getItem('mandarinly_game_best_speed') || 0);
-        if (score > bestScore) {
-          localStorage.setItem('mandarinly_game_best_speed', String(score));
-        }
-
-        showVictoryModal(arena, {
-          title: 'Hết giờ! Tốc độ đỉnh cao ⚡',
-          score: score,
-          stats: [
-            { label: 'Số câu làm được', value: answeredCount },
-            { label: 'Trả lời đúng', value: `${correctCount} câu` },
-            { label: 'Combo dài nhất', value: `${maxStreak}x 🔥` },
-            {
-              label: 'Độ chính xác',
-              value: answeredCount ? `${Math.round((correctCount / answeredCount) * 100)}%` : '0%'
-            }
-          ],
-          onReplay: () => startSpeedGame(arena)
-        });
+        triggerGameOver();
       }
     }, 1000);
   }
@@ -684,7 +751,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     function renderRound() {
       const selectedWords = shuffle(wordsPool).slice(0, batchSize);
       const hanziList = shuffle(
-        selectedWords.map((w, idx) => ({ id: idx, text: w.hanzi, pinyin: w.pinyin || '' }))
+        selectedWords.map((w, idx) => ({ id: idx, text: w.hanzi, pinyin: w.pinyin || toPinyin(w.hanzi) }))
       );
       const meaningList = shuffle(
         selectedWords.map((w, idx) => ({ id: idx, text: w.meaning }))
@@ -710,8 +777,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                 .map(
                   (item) => `
                 <button type="button" class="match-card match-hanzi" data-id="${item.id}" data-text="${escapeHtml(item.text)}">
+                  <small class="game-pinyin">${escapeHtml(item.pinyin || toPinyin(item.text))}</small>
                   <strong>${escapeHtml(item.text)}</strong>
-                  ${item.pinyin ? `<small>${escapeHtml(item.pinyin)}</small>` : ''}
                 </button>
               `
                 )
@@ -770,6 +837,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
           if (matchedCount === batchSize) {
             sounds.playVictory();
+            recordScore({ category: 'game', points: SCORE_RULES.GAME_MATCH_ROUND, description: `Nối từ vựng Vòng ${round}` });
             const bestScore = Number(localStorage.getItem('mandarinly_game_best_match') || 0);
             if (score > bestScore) {
               localStorage.setItem('mandarinly_game_best_match', String(score));

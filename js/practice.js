@@ -81,10 +81,7 @@ async function renderMasteredVocabularyQuiz(container, onStart) {
     const word = quiz.words[index];
     const distractors = shuffle(quiz.candidates.filter((item) => String(item.id) !== String(word.id))).slice(0, 3);
     const options = shuffle([word, ...distractors]);
-    const showPinyin = document.querySelector('#pinyinToggle')?.checked || false;
-    container.innerHTML = `<section class="mastered-quiz"><button type="button" class="quiz-back" data-back-practice>← Quay lại</button><p class="quiz-progress">Câu ${index + 1}/${quiz.words.length} · Đúng: ${score}</p><h2>Nghĩa tiếng Việt</h2><p class="quiz-prompt">${escapeHtml(word.vietnamese_meaning)}</p><p class="quiz-instruction">Chọn từ tiếng Trung đúng · ${word.correctAnswers}/5 lần</p><div class="quiz-options">${options.map((option) => `<button type="button" data-option-id="${option.id}">${showPinyin ? `<span class="quiz-option-pinyin">${escapeHtml(pinyin(option.vocab, { toneType: 'symbol' }))}</span>` : ''}<strong>${escapeHtml(option.vocab)}</strong></button>`).join('')}</div><p class="quiz-feedback" aria-live="polite"></p></section>`;
-    const pinyinToggle = document.querySelector('#pinyinToggle');
-    if (pinyinToggle) pinyinToggle.onchange = () => { localStorage.setItem('showPinyin', String(pinyinToggle.checked)); renderQuestion(); };
+    container.innerHTML = `<section class="mastered-quiz"><button type="button" class="quiz-back" data-back-practice>← Quay lại</button><p class="quiz-progress">Câu ${index + 1}/${quiz.words.length} · Đúng: ${score}</p><h2>Nghĩa tiếng Việt</h2><p class="quiz-prompt">${escapeHtml(word.vietnamese_meaning)}</p><p class="quiz-instruction">Chọn từ tiếng Trung đúng · ${word.correctAnswers}/5 lần</p><div class="quiz-options">${options.map((option) => `<button type="button" data-option-id="${option.id}"><span class="quiz-option-pinyin">${escapeHtml(pinyin(option.vocab, { toneType: 'symbol' }))}</span><strong>${escapeHtml(option.vocab)}</strong></button>`).join('')}</div><p class="quiz-feedback" aria-live="polite"></p></section>`;
     container.querySelector('[data-back-practice]').addEventListener('click', () => renderPracticeList(container, onStart));
     container.querySelectorAll('[data-option-id]').forEach((button) => button.addEventListener('click', () => {
       const correct = String(button.dataset.optionId) === String(word.id);

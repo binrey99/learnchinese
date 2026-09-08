@@ -11,9 +11,26 @@ import { initMaterials } from './materials.js';
 import { initRouter } from './router.js';
 import { renderDashboardProgress } from './dashboard-progress.js';
 
+function initPinyinToggle() {
+  const toggle = document.querySelector('#pinyinToggle');
+  if (!toggle) return;
+
+  const isShow = localStorage.getItem('showPinyin') === 'true';
+  toggle.checked = isShow;
+  document.body.classList.toggle('show-pinyin', isShow);
+
+  toggle.addEventListener('change', () => {
+    const checked = toggle.checked;
+    localStorage.setItem('showPinyin', String(checked));
+    document.body.classList.toggle('show-pinyin', checked);
+    window.dispatchEvent(new CustomEvent('pinyin-toggle-change', { detail: { showPinyin: checked } }));
+  });
+}
+
 function initDashboard() {
   renderCalendar();
   initNavigation();
+  initPinyinToggle();
 
   const showToast = createToast();
   initLessonActions(showToast);

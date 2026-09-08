@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
+import { recordScore, SCORE_RULES } from './score-service.js';
 
 export const vocabulary = [
   { hanzi: '你好', pinyin: 'ni3 hao3', meaning: 'xin chào', level: 'HSK 1' },
@@ -37,6 +38,7 @@ async function trackVocabularyView(vocabularyId) {
     user_id: user.id, activity_type: 'vocabulary_view', vocabulary_id: vocabularyId
   });
   if (error) console.warn('Unable to record vocabulary view:', error.message);
+  recordScore({ category: 'vocabulary', points: SCORE_RULES.VOCABULARY_VIEW, description: 'Xem từ vựng' });
 }
 
 async function loadMasteredVocabulary(userId) {
@@ -58,6 +60,7 @@ async function saveMasteredVocabulary(userId, vocabularyId, isMastered) {
       mastered_at: new Date().toISOString()
     }, { onConflict: 'user_id,vocabulary_id' });
     if (error) throw error;
+    recordScore({ category: 'vocabulary', points: SCORE_RULES.VOCABULARY_PRACTICE, description: 'Đánh dấu thuộc từ vựng' });
     return;
   }
   const { error } = await supabase
@@ -133,14 +136,11 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
   container.innerHTML = `<div class="vocabulary-tabs" role="tablist">${availableCategories.map((category, index) => `<button type="button" class="vocabulary-tab${index === 0 ? ' active' : ''}" data-vocabulary-category="${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('')}</div><div class="vocabulary-list" data-vocabulary-list></div><div class="vocabulary-detail" data-vocabulary-detail hidden></div>`;
 
   const list = container.querySelector('[data-vocabulary-list]');
-  const pinyinToggle = document.querySelector('#pinyinToggle');
-  let showPinyin = localStorage.getItem('showPinyin') === 'true';
-  if (pinyinToggle) pinyinToggle.checked = showPinyin;
   const renderCategory = (category) => {
     const categoryWords = words.filter((word) => word.level.trim() === category);
     list.innerHTML = categoryWords.map((word) => `
       <article class="vocabulary-item" role="button" tabindex="0" data-vocabulary-index="${words.indexOf(word)}">
-        <div class="vocabulary-hanzi">${showPinyin ? `<span class="vocabulary-pinyin">${escapeHtml(word.pinyin || toPinyin(word.hanzi))}</span>` : ''}<strong>${escapeHtml(word.hanzi)}</strong></div>
+        <div class="vocabulary-hanzi"><span class="vocabulary-pinyin">${escapeHtml(word.pinyin || toPinyin(word.hanzi))}</span><strong>${escapeHtml(word.hanzi)}</strong></div>
         <span>${escapeHtml(word.english || '')}</span>
         <button class="vocabulary-row-speak" type="button" aria-label="Phát âm ${escapeHtml(word.hanzi)}" data-speak-row>🔊</button>
         <button class="vocabulary-row-mastered${masteredVocabularyIds.has(String(word.id)) ? ' is-mastered' : ''}" type="button" aria-label="${masteredVocabularyIds.has(String(word.id)) ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc'}" aria-pressed="${masteredVocabularyIds.has(String(word.id))}" data-mastered-row>${masteredVocabularyIds.has(String(word.id)) ? '★' : '☆'}</button>
@@ -156,14 +156,6 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
       renderCategory(tab.dataset.vocabularyCategory);
     });
   });
-
-  if (pinyinToggle) {
-    pinyinToggle.onclick = () => {
-      showPinyin = pinyinToggle.checked;
-      localStorage.setItem('showPinyin', String(showPinyin));
-      renderCategory(container.querySelector('.vocabulary-tab.active')?.dataset.vocabularyCategory || availableCategories[0]);
-    };
-  }
 
   const detail = container.querySelector('[data-vocabulary-detail]');
   let pronunciationAudio = null;
@@ -193,7 +185,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
       <section class="vocabulary-detail-card" role="dialog" aria-modal="true" aria-labelledby="vocabulary-detail-title">
         <button class="vocabulary-detail-close" type="button" aria-label="Đóng" data-close-vocabulary-detail>×</button>
         <div class="vocabulary-detail-header">
-          <div class="vocabulary-detail-word">${showPinyin ? `<span class="vocabulary-detail-pinyin">${escapeHtml(word.pinyin || toPinyin(word.hanzi))}</span>` : ''}<h2 id="vocabulary-detail-title">${escapeHtml(word.hanzi)}</h2></div>
+          <div class="vocabulary-detail-word"><span class="vocabulary-detail-pinyin">${escapeHtml(word.pinyin || toPinyin(word.hanzi))}</span><h2 id="vocabulary-detail-title">${escapeHtml(word.hanzi)}</h2></div>
           <button class="vocabulary-speak" type="button" aria-label="Phát âm ${escapeHtml(word.hanzi)}" data-speak-vocabulary>🔊</button>
         </div>
         <p>${escapeHtml(word.english || word.pinyin || '')}</p>

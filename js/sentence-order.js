@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { recordScore, SCORE_RULES } from './score-service.js';
 
 const levels = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'];
 const lessonCount = 10;
@@ -26,6 +27,9 @@ async function saveProgress(userId, level, lesson, questionIndex, isCorrect) {
   if (!userId) return;
   const { error } = await supabase.from('sentence_order_progress').upsert({ user_id: userId, level, lesson, question_index: questionIndex, is_correct: isCorrect }, { onConflict: 'user_id,level,lesson,question_index' });
   if (error) throw error;
+  if (isCorrect) {
+    recordScore({ category: 'sentence_order', points: SCORE_RULES.SENTENCE_ORDER_CORRECT, description: `Sắp xếp đúng ${level} - Bài ${lesson}` });
+  }
 }
 
 function parseWords(words) {

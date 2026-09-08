@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { recordScore, SCORE_RULES } from './score-service.js';
 
 const levels = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'];
 const lessonCount = 10;
@@ -39,6 +40,9 @@ async function saveAnswer(userId, level, lesson, questionIndex, isCorrect) {
     user_id: userId, activity_type: 'translation_answer', level, lesson, question_index: questionIndex, is_correct: isCorrect
   });
   if (activityError) console.warn('Unable to record learning activity:', activityError.message);
+  if (isCorrect) {
+    recordScore({ category: 'translation', points: SCORE_RULES.TRANSLATION_CORRECT, description: `Dịch đúng ${level} - Bài ${lesson}` });
+  }
 }
 
 export async function initTranslation({ selector = '[data-translation]', toast } = {}) {
