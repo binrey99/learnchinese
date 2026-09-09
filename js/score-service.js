@@ -118,7 +118,7 @@ export async function recordScore({ category, points, description = '' }) {
     } catch (_) {}
 
     try {
-      await supabase.from('leaderboard_scores').insert({
+      const { error } = await supabase.from('leaderboard_scores').insert({
         user_id: user.id,
         display_name: name,
         avatar_url: avatar,
@@ -127,9 +127,16 @@ export async function recordScore({ category, points, description = '' }) {
         description,
         created_at: now
       });
+      if (error) {
+        console.error('❌ Lỗi khi gửi điểm lên Supabase leaderboard_scores:', error.message, error);
+      } else {
+        console.log('✅ Đã cập nhật điểm lên Supabase leaderboard_scores:', { category, points, description });
+      }
     } catch (err) {
-      console.warn('Unable to sync score to Supabase:', err.message);
+      console.error('❌ Ngoại lệ khi sync điểm lên Supabase:', err.message);
     }
+  } else {
+    console.log('ℹ️ Người dùng chưa đăng nhập, điểm được lưu tạm tại localStorage.');
   }
 }
 
