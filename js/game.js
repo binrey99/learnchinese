@@ -225,20 +225,32 @@ async function loadGameVocabulary() {
   return DEFAULT_VOCABULARY;
 }
 
-// Active game timer tracker for cleanup
+// Active game timer and animation tracker for cleanup
 let activeInterval = null;
-function clearActiveInterval() {
+let activeAnimFrame = null;
+let activeCleanups = [];
+
+function clearActiveGame() {
   if (activeInterval) {
     clearInterval(activeInterval);
     activeInterval = null;
   }
+  if (activeAnimFrame) {
+    cancelAnimationFrame(activeAnimFrame);
+    activeAnimFrame = null;
+  }
+  activeCleanups.forEach((fn) => {
+    try { fn(); } catch (_) {}
+  });
+  activeCleanups = [];
 }
+const clearActiveInterval = clearActiveGame;
 
 export async function initGame({ selector = '[data-game]', toast } = {}) {
   const container = document.querySelector(selector);
   if (!container) return;
 
-  clearActiveInterval();
+  clearActiveGame();
   container.innerHTML = `
     <div class="game-loading-state">
       <div class="game-spinner"></div>
@@ -255,7 +267,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   levelsInData.forEach((lvl) => { if (!LEVEL_ORDER.includes(lvl)) orderedLevels.push(lvl); });
   const availableLevels = ['Tất cả', ...orderedLevels];
   let currentLevel = 'Tất cả';
-  let currentGameMode = 'memory'; // 'memory' | 'speed' | 'match'
+  let currentGameMode = 'memory'; // 'memory' | 'speed' | 'match' | 'catch'
 
   function getFilteredWords() {
     if (currentLevel === 'Tất cả') return allWords;
@@ -263,12 +275,13 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   }
 
   function renderLayout() {
-    clearActiveInterval();
+    clearActiveGame();
 
     const highScores = {
       memory: localStorage.getItem('mandarinly_game_best_memory') || '0',
       speed: localStorage.getItem('mandarinly_game_best_speed') || '0',
-      match: localStorage.getItem('mandarinly_game_best_match') || '0'
+      match: localStorage.getItem('mandarinly_game_best_match') || '0',
+      catch: localStorage.getItem('mandarinly_game_best_catch') || '0'
     };
 
     container.innerHTML = `
@@ -287,6 +300,10 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             <button type="button" class="game-mode-tab ${currentGameMode === 'match' ? 'active' : ''}" data-mode="match">
               <span class="mode-icon">🔗</span>
               <span class="mode-text">Nối cặp từ vựng</span>
+            </button>
+            <button type="button" class="game-mode-tab ${currentGameMode === 'catch' ? 'active' : ''}" data-mode="catch">
+              <span class="mode-icon">🧺</span>
+              <span class="mode-text">Hứng từ</span>
             </button>
           </div>
 
@@ -314,7 +331,9 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                 ? 'Tìm các cặp Chữ Hán và Nghĩa tương ứng.'
                 : currentGameMode === 'speed'
                 ? 'Chọn đúng nghĩa trong 60 giây. Chuỗi đúng càng dài điểm càng cao!'
-                : 'Nối từng cặp chữ Hán và tiếng Việt để ghi điểm.'
+                : currentGameMode === 'match'
+                ? 'Nối từng cặp chữ Hán và tiếng Việt để ghi điểm.'
+                : 'Di chuyển giỏ hứng để bắt đúng chữ Hán khớp với nghĩa mục tiêu!'
             }
           </div>
         </div>
@@ -355,7 +374,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   }
 
   function startActiveGame() {
-    clearActiveInterval();
+    clearActiveGame();
     const arena = container.querySelector('#gameArena');
     if (!arena) return;
 
@@ -365,6 +384,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       startSpeedGame(arena);
     } else if (currentGameMode === 'match') {
       startMatchGame(arena);
+    } else if (currentGameMode === 'catch') {
+      startCatchGame(arena);
     }
   }
 
@@ -896,6 +917,344 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     }
 
     renderRound();
+  }
+
+  // ==========================================
+  // GAME 4: HỨNG TỪ (WORD CATCHER)
+  // ==========================================
+  function startCatchGame(arena) {
+    const wordsPool = getFilteredWords();
+    if (wordsPool.length < 4) {
+      arena.innerHTML = `<div class="game-empty">Cần ít nhất 4 từ vựng để bắt đầu trò chơi hứng từ. Hãy chọn cấp độ khác.</div>`;
+      return;
+    }
+
+    let score = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let caughtCount = 0;
+    let attemptsCount = 0;
+    let timeLeft = 60;
+    let lives = 3;
+    let isGameOver = false;
+    let currentTarget = null;
+    let fallingWords = [];
+    let basketX = 200;
+    const basketWidth = 130;
+    const keys = { left: false, right: false };
+
+    arena.innerHTML = `
+      <div class="catch-game-panel">
+        <div class="catch-hud">
+          <div class="hud-item">
+            <span>⏳ Thời gian:</span>
+            <strong id="catchSeconds">60s</strong>
+          </div>
+          <div class="hud-item">
+            <span>❤️ Mạng:</span>
+            <strong id="catchLives">❤️❤️❤️</strong>
+          </div>
+          <div class="hud-item">
+            <span>🏆 Điểm số:</span>
+            <strong id="catchScore">0</strong>
+          </div>
+          <div class="hud-item">
+            <span>🔥 Combo:</span>
+            <strong id="catchStreak">0x</strong>
+          </div>
+          <button type="button" class="game-btn-secondary" id="catchRestart">Chơi lại ↺</button>
+        </div>
+
+        <div class="catch-prompt-box" id="catchPromptBox">
+          <span>Tìm chữ Hán có nghĩa:</span>
+          <strong id="catchTargetText">...</strong>
+          <button type="button" class="speed-speak-btn" id="catchSpeakBtn" title="Phát âm" style="position:static;transform:none;width:32px;height:32px;font-size:14px;">🔊</button>
+        </div>
+
+        <div class="catch-board" id="catchBoard">
+          <div class="falling-items-wrap" id="fallingContainer"></div>
+          <div class="catcher-basket" id="catcherBasket" style="left: ${basketX}px;">
+            <span class="catcher-icon">🧺</span>
+            <span class="catcher-text">HỨNG TỪ</span>
+          </div>
+        </div>
+
+        <div class="catch-touch-controls">
+          <button type="button" class="catch-move-btn" id="btnMoveLeft">◀ Di chuyển Trái</button>
+          <button type="button" class="catch-move-btn" id="btnMoveRight">Di chuyển Phải ▶</button>
+        </div>
+      </div>
+    `;
+
+    const catchBoard = arena.querySelector('#catchBoard');
+    const fallingContainer = arena.querySelector('#fallingContainer');
+    const basketEl = arena.querySelector('#catcherBasket');
+    const targetTextEl = arena.querySelector('#catchTargetText');
+    const speakBtn = arena.querySelector('#catchSpeakBtn');
+    const secondsEl = arena.querySelector('#catchSeconds');
+    const livesEl = arena.querySelector('#catchLives');
+    const scoreEl = arena.querySelector('#catchScore');
+    const streakEl = arena.querySelector('#catchStreak');
+    const restartBtn = arena.querySelector('#catchRestart');
+    const btnMoveLeft = arena.querySelector('#btnMoveLeft');
+    const btnMoveRight = arena.querySelector('#btnMoveRight');
+
+    restartBtn.addEventListener('click', () => startCatchGame(arena));
+
+    // Center basket initially
+    const boardWidth = catchBoard.clientWidth || 600;
+    basketX = (boardWidth - basketWidth) / 2;
+    basketEl.style.left = `${basketX}px`;
+
+    // Mouse Controls
+    const onMouseMove = (e) => {
+      if (isGameOver) return;
+      const rect = catchBoard.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      basketX = Math.max(0, Math.min(rect.width - basketWidth, x - basketWidth / 2));
+      basketEl.style.left = `${basketX}px`;
+    };
+
+    // Touch Controls
+    const onTouchMove = (e) => {
+      if (isGameOver || !e.touches.length) return;
+      const rect = catchBoard.getBoundingClientRect();
+      const x = e.touches[0].clientX - rect.left;
+      basketX = Math.max(0, Math.min(rect.width - basketWidth, x - basketWidth / 2));
+      basketEl.style.left = `${basketX}px`;
+    };
+
+    catchBoard.addEventListener('mousemove', onMouseMove);
+    catchBoard.addEventListener('touchmove', onTouchMove, { passive: true });
+
+    // Keyboard Controls
+    const onKeyDown = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = true;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = true;
+    };
+    const onKeyUp = (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    activeCleanups.push(() => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    });
+
+    // Touch button handlers
+    const bindHoldBtn = (btn, dir) => {
+      if (!btn) return;
+      const start = (e) => { e.preventDefault(); keys[dir] = true; };
+      const stop = (e) => { e.preventDefault(); keys[dir] = false; };
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('mouseup', stop);
+      btn.addEventListener('mouseleave', stop);
+      btn.addEventListener('touchstart', start, { passive: false });
+      btn.addEventListener('touchend', stop);
+    };
+    bindHoldBtn(btnMoveLeft, 'left');
+    bindHoldBtn(btnMoveRight, 'right');
+
+    function showPopupText(text, isPositive, x, y) {
+      const popup = document.createElement('span');
+      popup.className = `catch-popup ${isPositive ? 'plus' : 'minus'}`;
+      popup.textContent = text;
+      popup.style.left = `${x}px`;
+      popup.style.top = `${y}px`;
+      catchBoard.appendChild(popup);
+      setTimeout(() => popup.remove(), 750);
+    }
+
+    function triggerGameOver() {
+      if (isGameOver) return;
+      isGameOver = true;
+      clearActiveGame();
+      sounds.playVictory();
+
+      const earnedPoints = Math.min(100, Math.max(15, Math.round(score * 0.1)));
+      recordScore({ category: 'game', points: earnedPoints, description: `Hứng từ vựng (${score}đ)` });
+
+      const bestScore = Number(localStorage.getItem('mandarinly_game_best_catch') || 0);
+      if (score > bestScore) {
+        localStorage.setItem('mandarinly_game_best_catch', String(score));
+      }
+
+      showVictoryModal(arena, {
+        title: lives <= 0 ? 'Hết mạng! Cố gắng lần sau nhé 🧺' : 'Hoàn thành lượt chơi! Xuất sắc 🌟',
+        score: score,
+        stats: [
+          { label: 'Số từ hứng đúng', value: `${caughtCount} từ` },
+          { label: 'Combo lớn nhất', value: `${maxStreak}x 🔥` },
+          { label: 'Độ chính xác', value: attemptsCount ? `${Math.round((caughtCount / attemptsCount) * 100)}%` : '0%' }
+        ],
+        onReplay: () => startCatchGame(arena)
+      });
+    }
+
+    function spawnNextWave() {
+      if (isGameOver) return;
+
+      // Remove existing falling items
+      fallingWords.forEach((item) => item.el.remove());
+      fallingWords = [];
+
+      // Pick target word
+      currentTarget = wordsPool[Math.floor(Math.random() * wordsPool.length)];
+      targetTextEl.textContent = `"${currentTarget.meaning}"`;
+      speakBtn.onclick = () => speakChinese(currentTarget.hanzi);
+
+      // Pick 2 distractor words
+      const distractors = shuffle(wordsPool.filter((w) => w.meaning !== currentTarget.meaning)).slice(0, 2);
+      const waveWords = shuffle([
+        { word: currentTarget, isCorrect: true },
+        ...distractors.map((w) => ({ word: w, isCorrect: false }))
+      ]);
+
+      const currentWidth = catchBoard.clientWidth || 600;
+      const colWidth = currentWidth / waveWords.length;
+
+      waveWords.forEach((entry, idx) => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'falling-item';
+        itemEl.innerHTML = `
+          <span class="game-pinyin">${escapeHtml(entry.word.pinyin || toPinyin(entry.word.hanzi))}</span>
+          <strong class="drop-hanzi">${escapeHtml(entry.word.hanzi)}</strong>
+        `;
+
+        const colCenter = idx * colWidth + colWidth / 2;
+        const xPos = Math.max(50, Math.min(currentWidth - 50, colCenter + (Math.random() - 0.5) * (colWidth * 0.3)));
+        const yPos = -40 - Math.random() * 40;
+
+        itemEl.style.left = `${xPos}px`;
+        itemEl.style.top = `${yPos}px`;
+        fallingContainer.appendChild(itemEl);
+
+        const baseSpeed = 1.5 + Math.min(2.0, score * 0.0006);
+
+        fallingWords.push({
+          el: itemEl,
+          hanzi: entry.word.hanzi,
+          pinyin: entry.word.pinyin,
+          isCorrect: entry.isCorrect,
+          x: xPos,
+          y: yPos,
+          speed: baseSpeed + (Math.random() * 0.3 - 0.15)
+        });
+      });
+    }
+
+    // Animation Loop
+    function gameLoop() {
+      if (isGameOver) return;
+
+      const currentWidth = catchBoard.clientWidth || 600;
+      const currentHeight = catchBoard.clientHeight || 440;
+
+      // Keyboard movement
+      if (keys.left) {
+        basketX = Math.max(0, basketX - 7);
+        basketEl.style.left = `${basketX}px`;
+      }
+      if (keys.right) {
+        basketX = Math.min(currentWidth - basketWidth, basketX + 7);
+        basketEl.style.left = `${basketX}px`;
+      }
+
+      const basketLeft = basketX;
+      const basketRight = basketX + basketWidth;
+      const basketTop = currentHeight - 60;
+      const basketBottom = currentHeight - 10;
+
+      let waveNeedsRespawn = false;
+
+      for (let i = fallingWords.length - 1; i >= 0; i--) {
+        const item = fallingWords[i];
+        item.y += item.speed;
+        item.el.style.top = `${item.y}px`;
+
+        const itemBottom = item.y + 38;
+        const itemCenterX = item.x;
+
+        // Check collision with basket
+        if (itemBottom >= basketTop && item.y <= basketBottom && itemCenterX >= basketLeft - 10 && itemCenterX <= basketRight + 10) {
+          attemptsCount++;
+          if (item.isCorrect) {
+            // Correct catch!
+            caughtCount++;
+            streak++;
+            if (streak > maxStreak) maxStreak = streak;
+            sounds.playCorrect();
+            speakChinese(item.hanzi);
+
+            const multiplier = Math.min(4, 1 + Math.floor(streak / 3));
+            const addedScore = 100 * multiplier;
+            score += addedScore;
+
+            scoreEl.textContent = score;
+            streakEl.textContent = `${streak}x 🔥`;
+            showPopupText(`+${addedScore} ${multiplier > 1 ? `(${multiplier}x)` : ''}`, true, basketX + 30, basketTop - 20);
+
+            item.el.classList.add('caught');
+            waveNeedsRespawn = true;
+            break;
+          } else {
+            // Wrong catch!
+            streak = 0;
+            streakEl.textContent = '0x';
+            sounds.playWrong();
+            lives--;
+            livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+
+            basketEl.classList.add('shake');
+            setTimeout(() => basketEl.classList.remove('shake'), 300);
+
+            showPopupText('-1 ❤️ Sai từ!', false, basketX + 20, basketTop - 20);
+
+            item.el.remove();
+            fallingWords.splice(i, 1);
+
+            if (lives <= 0) {
+              triggerGameOver();
+              return;
+            }
+          }
+        } else if (item.y > currentHeight + 10) {
+          // Fallen off screen
+          if (item.isCorrect) {
+            // Missed target word
+            streak = 0;
+            streakEl.textContent = '0x';
+            showPopupText('Bỏ lỡ! 💨', false, Math.max(30, Math.min(currentWidth - 80, item.x - 20)), currentHeight - 30);
+            waveNeedsRespawn = true;
+            break;
+          } else {
+            item.el.remove();
+            fallingWords.splice(i, 1);
+          }
+        }
+      }
+
+      if (waveNeedsRespawn) {
+        setTimeout(spawnNextWave, 250);
+      }
+
+      activeAnimFrame = requestAnimationFrame(gameLoop);
+    }
+
+    // Timer countdown
+    activeInterval = setInterval(() => {
+      timeLeft--;
+      if (secondsEl) secondsEl.textContent = `${timeLeft}s`;
+      if (timeLeft <= 0) {
+        triggerGameOver();
+      }
+    }, 1000);
+
+    spawnNextWave();
+    activeAnimFrame = requestAnimationFrame(gameLoop);
   }
 
   // Victory Dialog Overlay

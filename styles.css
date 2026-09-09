@@ -163,6 +163,35 @@ body.show-pinyin .speed-pinyin{display:block!important}
 .match-card.is-wrong{border-color:#e46a6a!important;background:#ffebeb!important;color:#cc3e3e!important;animation:shake .3s}
 
 /* ==========================================
+   GAME 4: HỨNG TỪ (WORD CATCHER)
+   ========================================== */
+.catch-game-panel{max-width:680px;margin:0 auto}
+.catch-hud{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#f7faf8;border:1px solid #e6eee8;border-radius:10px;padding:10px 16px;margin-bottom:12px}
+.catch-prompt-box{display:flex;align-items:center;justify-content:center;gap:10px;background:#eef7f1;border:1.5px dashed #4f9d72;border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:13px;color:#28543b;text-align:center}
+.catch-prompt-box strong{font-size:18px;color:#1e4630}
+.catch-board{position:relative;width:100%;height:440px;background:linear-gradient(180deg,#f3faf5 0%,#e4f5ea 100%);border:2px solid #bce1ca;border-radius:14px;overflow:hidden;cursor:none;user-select:none;touch-action:none}
+.falling-items-wrap{position:absolute;inset:0;pointer-events:none}
+.falling-item{position:absolute;transform:translateX(-50%);background:#fff;border:2px solid #6abf88;border-radius:12px;padding:6px 14px;box-shadow:0 4px 12px #28543b1a;text-align:center;white-space:nowrap;pointer-events:none}
+.falling-item strong{display:block;font-size:20px;color:#28543b;line-height:1.2}
+.falling-item .game-pinyin{margin-bottom:2px}
+.falling-item.caught{animation:catch-pop .25s ease-out forwards}
+@keyframes catch-pop{0%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.35)}100%{transform:translateX(-50%) scale(0);opacity:0}}
+.catcher-basket{position:absolute;bottom:12px;width:130px;height:52px;background:linear-gradient(180deg,#34b76a 0%,#248c4e 100%);border:2px solid #1a6b3b;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;color:#fff;font-weight:700;box-shadow:0 6px 18px #28543b35;pointer-events:none;transition:transform .1s}
+.catcher-icon{font-size:24px}
+.catcher-text{font-size:11px;letter-spacing:.5px;text-transform:uppercase}
+.catcher-basket.shake{animation:shake .3s}
+.catch-touch-controls{display:none;gap:12px;margin-top:12px}
+.catch-move-btn{flex:1;padding:12px;background:#fff;border:2px solid #dfeae3;border-radius:10px;font-size:14px;font-weight:700;color:#28543b;touch-action:manipulation;user-select:none}
+.catch-move-btn:active{background:#28543b;color:#fff}
+.catch-popup{position:absolute;font-size:15px;font-weight:800;pointer-events:none;animation:delta-float .75s cubic-bezier(.2,0,.2,1) forwards;z-index:5}
+.catch-popup.plus{color:#158047}
+.catch-popup.minus{color:#cc3e3e}
+@media(max-width:768px){
+  .catch-touch-controls{display:flex}
+  .catch-board{cursor:default;height:380px}
+}
+
+/* ==========================================
    VICTORY MODAL OVERLAY
    ========================================== */
 .game-victory-modal{position:absolute;inset:0;background:#202b3670;display:grid;place-items:center;padding:20px;border-radius:14px;z-index:10;animation:fadeIn .25s ease-out}
