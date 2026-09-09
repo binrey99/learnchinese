@@ -166,16 +166,78 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
     detail.hidden = true;
     detail.innerHTML = '';
   };
+  const playAudioFallback = (hanzi, status) => {
+    try {
+      pronunciationAudio?.pause();
+      pronunciationAudio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(hanzi)}&le=zh`);
+      if (status) {
+        pronunciationAudio.onplay = () => { status.textContent = 'Đang phát âm...'; };
+        pronunciationAudio.onended = () => { status.textContent = ''; };
+        pronunciationAudio.onerror = () => { status.textContent = 'Không thể tải audio phát âm.'; };
+      }
+      pronunciationAudio.play().catch(() => {
+        if (status) status.textContent = 'Không thể phát âm thanh.';
+      });
+    } catch (_) {
+      if (status) status.textContent = 'Không thể phát âm thanh.';
+    }
+  };
+
   const speak = (hanzi, status) => {
+    if (!hanzi) return;
+
     window.speechSynthesis?.cancel();
     pronunciationAudio?.pause();
-    pronunciationAudio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=zh-CN&q=${encodeURIComponent(hanzi)}`);
-    pronunciationAudio.onplay = () => { status.textContent = 'Đang phát âm bằng Google Translate.'; };
-    pronunciationAudio.onended = () => { status.textContent = ''; };
-    pronunciationAudio.onerror = () => { status.textContent = 'Không tải được audio từ Google Translate. Hãy kiểm tra kết nối Internet.'; };
-    pronunciationAudio.play().catch(() => {
-      status.textContent = 'Không thể phát audio từ Google Translate. Hãy kiểm tra kết nối Internet.';
-    });
+
+    // 1. Thử Web Speech API của trình duyệt (chuẩn, không phụ thuộc mạng, không bị chặn CORS)
+    if ('speechSynthesis' in window) {
+      try {
+        const utterance = new SpeechSynthesisUtterance(hanzi);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.85;
+
+        // Chọn giọng tiếng Trung chuẩn nếu trình duyệt đã nạp danh sách giọng
+        const voices = window.speechSynthesis.getVoices();
+        const zhVoice = voices.find(
+          (v) => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh') || v.name.includes('Chinese')
+        );
+        if (zhVoice) {
+          utterance.voice = zhVoice;
+        }
+
+        if (status) status.textContent = 'Đang phát âm...';
+
+        utterance.onend = () => {
+          if (status) status.textContent = '';
+        };
+
+        let started = false;
+        utterance.onstart = () => {
+          started = true;
+        };
+
+        utterance.onerror = (e) => {
+          console.warn('SpeechSynthesis utterance error, falling back:', e);
+          playAudioFallback(hanzi, status);
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+        // Nếu trình duyệt chưa tải xong voice hoặc không phát được, dự phòng fallback sau 400ms
+        setTimeout(() => {
+          if (!window.speechSynthesis.speaking && !started) {
+            playAudioFallback(hanzi, status);
+          }
+        }, 400);
+
+        return;
+      } catch (err) {
+        console.warn('SpeechSynthesis error, falling back to audio:', err);
+      }
+    }
+
+    // 2. Dự phòng bằng audio online
+    playAudioFallback(hanzi, status);
   };
   const showDetail = (word) => {
     trackVocabularyView(word.id);
@@ -219,8 +281,17 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
       });
       return;
     }
-    if (event.target.closest('[data-speak-row]')) {
-      speak(word.hanzi, { set textContent(message) { event.target.closest('[data-speak-row]')?.setAttribute('aria-label', message); } });
+    const speakBtn = event.target.closest('[data-speak-row]');
+    if (speakBtn) {
+      event.stopPropagation();
+      speakBtn.classList.add('is-speaking');
+      speak(word.hanzi, {
+        set textContent(message) {
+          speakBtn.setAttribute('aria-label', message);
+          if (!message) speakBtn.classList.remove('is-speaking');
+        }
+      });
+      setTimeout(() => speakBtn.classList.remove('is-speaking'), 700);
       return;
     }
     showDetail(word);
