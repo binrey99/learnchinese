@@ -1135,7 +1135,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         itemEl.style.top = `${yPos}px`;
         fallingContainer.appendChild(itemEl);
 
-        const baseSpeed = 0.8 + Math.min(0.7, score * 0.0003);
+        const baseSpeed = 0.3 + Math.min(0.7, score * 0.0003);
 
         fallingWords.push({
           el: itemEl,

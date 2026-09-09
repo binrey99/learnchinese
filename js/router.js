@@ -8,6 +8,7 @@ import { renderProfile } from './profile.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initSentenceOrder } from './sentence-order.js';
 import { initGame } from './game.js';
+import { initBattle } from './battle.js';
 
 const pages = {
   vocabulary: {
@@ -59,6 +60,11 @@ const pages = {
     title: 'Trò chơi tiếng Trung',
     description: 'Vừa chơi vừa học, ghi nhớ từ vựng tiếng Trung dễ dàng và hào hứng.',
     template: '<div data-game></div>'
+  },
+  battle: {
+    title: 'Đấu trường 1v1',
+    description: 'Thi đấu trực tiếp thời gian thực với đối thủ qua các dạng câu hỏi tiếng Trung.',
+    template: '<div data-battle></div>'
   }
 };
 
@@ -99,6 +105,7 @@ export function initRouter({ toast } = {}) {
     if (route === 'profile') renderProfile();
     if (route === 'leaderboard') initLeaderboard(options);
     if (route === 'game') initGame(options);
+    if (route === 'battle') initBattle(options);
   };
 
   window.addEventListener('hashchange', render);
