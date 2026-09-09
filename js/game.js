@@ -1132,7 +1132,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         itemEl.style.top = `${yPos}px`;
         fallingContainer.appendChild(itemEl);
 
-        const baseSpeed = 1.5 + Math.min(2.0, score * 0.0006);
+        const baseSpeed = 0.8 + Math.min(0.7, score * 0.0003);
 
         fallingWords.push({
           el: itemEl,
@@ -1141,7 +1141,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           isCorrect: entry.isCorrect,
           x: xPos,
           y: yPos,
-          speed: baseSpeed + (Math.random() * 0.3 - 0.15)
+          speed: baseSpeed + (Math.random() * 0.15 - 0.07)
         });
       });
     }
