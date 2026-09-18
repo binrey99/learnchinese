@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { recordScore } from './score-service.js';
+import { awardFoodReward } from './lulu.js';
 
 function toPinyin(hanzi) {
   try {
@@ -1238,6 +1239,12 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
         description: `Đấu trường 1v1 (${isWin ? 'Chiến thắng' : isTie ? 'Hòa' : 'Tham gia'})`
       });
 
+      let battleFood = null;
+      try {
+        const foodType = isWin ? (Math.random() < 0.6 ? 'baozi' : 'watermelon') : (Math.random() < 0.5 ? 'orange' : 'apple');
+        battleFood = await awardFoodReward({ foodId: foodType, source: 'Đấu trường 1v1' });
+      } catch (_) {}
+
       container.innerHTML = `
         <div class="battle-victory-screen">
           <div class="victory-duel-banner ${isWin ? 'win' : isTie ? 'tie' : 'lose'}">
@@ -1264,8 +1271,19 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
               <strong>+${rewardPoints} ĐIỂM</strong>
             </div>
 
+            ${battleFood ? `
+              <div class="duel-food-badge">
+                <span class="duel-food-icon">${battleFood.icon}</span>
+                <div class="duel-food-info">
+                  <strong>+${battleFood.count} ${battleFood.name} (${battleFood.zh})</strong>
+                  <small>Phần thưởng thi đấu gửi vào túi đồ ăn LuLu 🍊</small>
+                </div>
+              </div>
+            ` : ''}
+
             <div class="battle-actions-row">
               <button type="button" class="battle-btn-primary" id="btnBattleAgain">Tìm trận mới</button>
+              <a class="battle-btn-secondary" href="#lulu">Đến nuôi LuLu 🍊</a>
               <a class="battle-btn-secondary" href="#dashboard">Về Dashboard</a>
             </div>
           </div>

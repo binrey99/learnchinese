@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
+import { awardFoodReward } from './lulu.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 
 function toPinyin(hanzi) {
@@ -1274,7 +1275,12 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   }
 
   // Victory Dialog Overlay
-  function showVictoryModal(arena, { title, score, stats = [], onReplay }) {
+  async function showVictoryModal(arena, { title, score, stats = [], onReplay }) {
+    let foodDrop = null;
+    try {
+      foodDrop = await awardFoodReward({ source: title });
+    } catch (_) {}
+
     const modalEl = document.createElement('div');
     modalEl.className = 'game-victory-modal';
     modalEl.innerHTML = `
@@ -1285,6 +1291,18 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           <span>Tổng điểm</span>
           <strong>+${score}</strong>
         </div>
+        ${foodDrop ? `
+          <div class="victory-food-drop">
+            <span class="food-drop-tag">Rơi thức ăn nuôi LuLu 🍊</span>
+            <div class="food-drop-box">
+              <span class="food-drop-icon">${foodDrop.icon}</span>
+              <div class="food-drop-desc">
+                <strong>+${foodDrop.count} ${foodDrop.name} (${foodDrop.zh})</strong>
+                <small>Đã gửi vào túi đồ ăn LuLu</small>
+              </div>
+            </div>
+          </div>
+        ` : ''}
         <div class="victory-stats-grid">
           ${stats
             .map(
@@ -1299,6 +1317,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         </div>
         <div class="victory-actions">
           <button type="button" class="game-btn-primary" id="btnReplay">Chơi lại ván mới</button>
+          <a class="game-btn-secondary" href="#lulu">Đến nuôi LuLu 🍊</a>
           <a class="game-btn-secondary" href="#dashboard">Về trang chủ</a>
         </div>
       </div>

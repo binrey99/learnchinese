@@ -49,7 +49,7 @@ const MINI_VOCAB = [
 
 const STORAGE_KEY = 'mandarinly_lulu_pet';
 
-function loadPetData() {
+export function loadPetData() {
   const defaultData = {
     name: 'LuLu',
     level: 1,
@@ -69,7 +69,7 @@ function loadPetData() {
     if (!raw) return defaultData;
     const data = JSON.parse(raw);
 
-    // Tính độ giảm theo thời gian (cứ 1 tiếng đói 5%)
+    // Tính độ giảm theo thời gian (cứ 1 tiếng đói 4%)
     const now = Date.now();
     const hoursPassed = Math.floor((now - (data.lastFeedTime || now)) / (1000 * 60 * 60));
     if (hoursPassed > 0) {
@@ -83,10 +83,129 @@ function loadPetData() {
   }
 }
 
-function savePetData(data) {
+export async function savePetData(data, syncCloud = true) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (_) {}
+
+  if (!syncCloud) return;
+
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+    if (!user) return;
+
+    await supabase.from('lulu_pet').upsert({
+      user_id: user.id,
+      pet_name: data.name || 'LuLu',
+      level: data.level || 1,
+      exp: data.exp || 0,
+      max_exp: data.maxExp || 100,
+      fullness: data.fullness ?? 85,
+      happiness: data.happiness ?? 90,
+      energy: data.energy ?? 80,
+      inventory: data.inventory || {},
+      last_claim_date: data.lastClaimDate || '',
+      total_fed: data.totalFed || 0,
+      updated_at: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('Lưu lulu_pet lên Supabase:', err);
+  }
+}
+
+export async function syncPetWithSupabase() {
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    const user = authData?.user;
+    if (!user) return loadPetData();
+
+    const { data: row, error } = await supabase
+      .from('lulu_pet')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Lỗi đọc lulu_pet từ Supabase:', error.message);
+      return loadPetData();
+    }
+
+    if (row) {
+      const merged = {
+        name: row.pet_name || 'LuLu',
+        level: row.level || 1,
+        exp: row.exp || 0,
+        maxExp: row.max_exp || 100,
+        fullness: row.fullness ?? 85,
+        happiness: row.happiness ?? 90,
+        energy: row.energy ?? 80,
+        inventory: row.inventory || { baozi: 2, orange: 3, apple: 4, watermelon: 1 },
+        lastClaimDate: row.last_claim_date || '',
+        totalFed: row.total_fed || 0,
+        lastFeedTime: Date.now()
+      };
+      savePetData(merged, false);
+      return merged;
+    } else {
+      const local = loadPetData();
+      await supabase.from('lulu_pet').insert({
+        user_id: user.id,
+        pet_name: local.name,
+        level: local.level,
+        exp: local.exp,
+        max_exp: local.maxExp,
+        fullness: local.fullness,
+        happiness: local.happiness,
+        energy: local.energy,
+        inventory: local.inventory,
+        last_claim_date: local.lastClaimDate,
+        total_fed: local.totalFed
+      });
+      return local;
+    }
+  } catch (err) {
+    console.warn('Supabase sync error:', err);
+    return loadPetData();
+  }
+}
+
+/**
+ * Rơi thức ăn nuôi LuLu sau khi chơi game hoặc hoàn thành thử thách
+ */
+export async function awardFoodReward({ foodId = null, count = 1, source = 'Trò chơi' } = {}) {
+  let chosenFood = null;
+  if (foodId) {
+    chosenFood = FOODS.find(f => f.id === foodId) || FOODS[0];
+  } else {
+    // Tỉ lệ rơi: Táo đỏ: 35%, Quả cam: 35%, Bánh bao: 22%, Dưa hấu: 8%
+    const rand = Math.random() * 100;
+    if (rand < 35) chosenFood = FOODS.find(f => f.id === 'apple');
+    else if (rand < 70) chosenFood = FOODS.find(f => f.id === 'orange');
+    else if (rand < 92) chosenFood = FOODS.find(f => f.id === 'baozi');
+    else chosenFood = FOODS.find(f => f.id === 'watermelon');
+  }
+
+  const petData = loadPetData();
+  if (!petData.inventory) petData.inventory = {};
+  petData.inventory[chosenFood.id] = (petData.inventory[chosenFood.id] || 0) + count;
+
+  await savePetData(petData, true);
+
+  window.dispatchEvent(
+    new CustomEvent('lulu-inventory-updated', {
+      detail: { food: chosenFood, count, inventory: petData.inventory, source }
+    })
+  );
+
+  return {
+    id: chosenFood.id,
+    name: chosenFood.name,
+    icon: chosenFood.icon,
+    zh: chosenFood.zh,
+    py: chosenFood.py,
+    count
+  };
 }
 
 export function initLulu({ toast } = {}) {
@@ -96,6 +215,36 @@ export function initLulu({ toast } = {}) {
   let pet = loadPetData();
   let currentQuote = LULU_QUOTES[0];
   let currentQuiz = null;
+
+  // Khởi động đồng bộ Supabase nếu đã đăng nhập
+  syncPetWithSupabase().then((synced) => {
+    if (synced) {
+      pet = synced;
+      renderUI();
+    }
+  });
+
+  // Tự động đồng bộ lại khi người dùng đăng nhập
+  try {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        syncPetWithSupabase().then((synced) => {
+          if (synced) {
+            pet = synced;
+            renderUI();
+          }
+        });
+      }
+    });
+  } catch (_) {}
+
+  // Lắng nghe sự kiện rơi thức ăn khi chơi game
+  window.addEventListener('lulu-inventory-updated', (e) => {
+    if (e.detail?.inventory) {
+      pet.inventory = e.detail.inventory;
+      renderUI();
+    }
+  });
 
   function speakText(text) {
     if ('speechSynthesis' in window) {
