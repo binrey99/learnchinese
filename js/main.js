@@ -42,6 +42,12 @@ function initDashboard() {
   initMaterials({ onOpen: () => showToast('Tài liệu đã được mở') });
   renderDashboardProgress();
   initRouter({ toast: showToast });
+
+  const brandVideos = document.querySelectorAll('.topbar-brand-video, video');
+  brandVideos.forEach((v) => {
+    v.muted = true;
+    v.play().catch(() => {});
+  });
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
