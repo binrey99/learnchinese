@@ -441,3 +441,106 @@ body.show-pinyin .speed-pinyin{display:block!important}
   .duel-avatar{width:36px;height:36px}
   .duel-score{font-size:14px}
 }
+
+/* ==========================================
+   NUÔI LULU (PET LULU VIRTUAL COMPANION)
+   ========================================== */
+.quick-card.lulu-card{border-color:#fed7aa;background:linear-gradient(135deg,#fffaf5 0%,#fff3e6 100%)}
+.quick-card.lulu-card:hover{border-color:#f97316;background:#fff0db}
+.lulu-badge{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#ffedd5;flex:0 0 44px;overflow:hidden;border:1.5px solid #fed7aa}
+.lulu-card-thumb{width:100%;height:100%;object-fit:cover;display:block}
+
+.lulu-wrapper{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.lulu-hero-card{background:#fff;border:2px solid #fed7aa;border-radius:20px;padding:24px;box-shadow:0 8px 24px rgba(249,115,22,.08)}
+.lulu-meta-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;border-bottom:1.5px solid #fff2e0;padding-bottom:16px}
+.lulu-profile-head{display:flex;align-items:center;gap:12px}
+.lulu-level-tag{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-weight:800;font-size:12px;padding:6px 12px;border-radius:999px;box-shadow:0 2px 8px rgba(234,88,12,.25)}
+.lulu-name{margin:0;font-size:20px;color:#28543b;font-family:'DM Sans',sans-serif;font-weight:700}
+.lulu-title-badge{font-size:11px;color:#c2410c;font-weight:600;background:#ffedd5;padding:2px 8px;border-radius:6px;display:inline-block;margin-top:2px}
+.lulu-exp-box{min-width:200px}
+.lulu-exp-labels{display:flex;justify-content:space-between;font-size:11px;color:#71807b;margin-bottom:5px}
+.lulu-exp-labels strong{color:#ea580c}
+.lulu-progress-bar{height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden}
+.lulu-progress-bar i{display:block;height:100%;background:linear-gradient(90deg,#fb923c,#ea580c);border-radius:999px;transition:width .3s ease}
+
+.lulu-stage-container{display:flex;flex-direction:column;align-items:center;padding:24px 0 10px;position:relative}
+.lulu-speech-bubble{display:flex;align-items:center;gap:12px;background:#fff7ed;border:2px solid #fdba74;border-radius:16px;padding:12px 18px;max-width:480px;width:100%;box-shadow:0 4px 14px rgba(249,115,22,.1);position:relative;margin-bottom:20px;animation:float-speech 3s ease-in-out infinite}
+@keyframes float-speech{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.lulu-speech-bubble::after{content:'';position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);border-width:10px 10px 0;border-style:solid;border-color:#fdba74 transparent;display:block;width:0}
+.lulu-speech-content{flex:1}
+.lulu-speech-zh{display:block;font-size:17px;color:#9a3412;font-weight:700;margin-bottom:2px}
+.lulu-speech-py{display:block;font-size:11px;color:#ea580c;font-weight:600;margin-bottom:4px}
+.lulu-speech-vi{margin:0;font-size:12px;color:#4b5563}
+.lulu-speech-audio{background:#ffedd5;border:1px solid #fed7aa;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:grid;place-items:center;transition:.15s}
+.lulu-speech-audio:hover{background:#fed7aa;transform:scale(1.08)}
+
+.lulu-avatar-stage{position:relative;width:180px;height:180px;border-radius:50%;display:grid;place-items:center;cursor:pointer;margin-bottom:24px}
+.lulu-halo{position:absolute;inset:-8px;border-radius:50%;background:radial-gradient(circle,rgba(251,146,60,.25) 0%,rgba(251,146,60,0) 70%);animation:pulse-halo 2.5s infinite}
+@keyframes pulse-halo{0%,100%{transform:scale(.96);opacity:.7}50%{transform:scale(1.08);opacity:1}}
+.lulu-video-player{width:160px;height:160px;border-radius:50%;object-fit:cover;border:4px solid #fed7aa;box-shadow:0 10px 25px rgba(249,115,22,.2);background:#fff;transition:transform .2s cubic-bezier(.34,1.56,.64,1);position:relative;z-index:2}
+.lulu-eat-anim{animation:munch .5s ease-in-out infinite alternate}
+@keyframes munch{0%{transform:scale(1) rotate(0deg)}100%{transform:scale(1.08) rotate(3deg)}}
+.lulu-avatar-stage:hover .lulu-video-player{transform:scale(1.05)}
+.lulu-avatar-stage:active .lulu-video-player{transform:scale(.96)}
+.lulu-pet-hint{position:absolute;bottom:-18px;font-size:11px;color:#ea580c;font-weight:600;background:#fff7ed;padding:3px 10px;border-radius:999px;border:1px solid #fed7aa;white-space:nowrap}
+.lulu-float-heart{position:absolute;font-size:20px;pointer-events:none;animation:float-up 1s ease-out forwards;z-index:10}
+@keyframes float-up{0%{transform:translateY(0) scale(.7);opacity:1}100%{transform:translateY(-50px) scale(1.3);opacity:0}}
+
+.lulu-vitals-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;width:100%;max-width:540px;background:#fffaf5;border:1.5px solid #ffedd5;border-radius:14px;padding:12px 18px}
+.lulu-vital-item .vital-label{display:flex;justify-content:space-between;font-size:11px;color:#71807b;margin-bottom:4px}
+.lulu-vital-item .vital-label strong{color:#9a3412}
+.vital-track{height:7px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.vital-fill{display:block;height:100%;border-radius:999px;transition:width .3s}
+.vital-fill.fullness{background:linear-gradient(90deg,#f59e0b,#ea580c)}
+.vital-fill.happiness{background:linear-gradient(90deg,#ec4899,#f43f5e)}
+.vital-fill.energy{background:linear-gradient(90deg,#10b981,#059669)}
+
+.lulu-actions-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.lulu-action-card{background:#fff;border:1.5px solid #fed7aa;border-radius:16px;padding:18px;box-shadow:0 4px 16px rgba(249,115,22,.05)}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.card-head .card-icon{font-size:24px;width:40px;height:40px;background:#fff7ed;border-radius:10px;display:grid;place-items:center}
+.card-head h3{margin:0;font-size:15px;color:#1f2937}
+.card-head p{margin:2px 0 0;font-size:11px;color:#6b7280}
+.lulu-food-list{display:flex;flex-direction:column;gap:8px}
+.lulu-food-btn{display:flex;align-items:center;gap:10px;background:#fffaf5;border:1.5px solid #fed7aa;border-radius:12px;padding:10px 14px;cursor:pointer;transition:.15s;text-align:left}
+.lulu-food-btn:hover:not(:disabled){border-color:#ea580c;background:#fff2e0;transform:translateY(-2px)}
+.lulu-food-btn:disabled{opacity:.45;cursor:not-allowed}
+.food-emoji{font-size:24px}
+.food-info{flex:1}
+.food-info strong{display:block;font-size:13px;color:#1f2937}
+.food-info small{font-size:10px;color:#ea580c;font-weight:600}
+.food-count{background:#ea580c;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px}
+.card-desc{font-size:12px;color:#6b7280;line-height:1.45;margin:0 0 12px}
+.lulu-btn-primary{width:100%;background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);color:#fff;font-weight:700;font-size:12px;padding:11px 14px;border-radius:10px;border:none;cursor:pointer;transition:.15s}
+.lulu-btn-primary:hover{opacity:.92;transform:translateY(-1px)}
+.lulu-btn-secondary{width:100%;background:#fff7ed;color:#ea580c;font-weight:700;font-size:12px;padding:11px 14px;border-radius:10px;border:1.5px solid #fed7aa;cursor:pointer;transition:.15s}
+.lulu-btn-secondary:hover{background:#ffedd5;border-color:#ea580c}
+.lulu-divider{height:1px;background:#fed7aa;margin:14px 0 0}
+
+.lulu-study-panel{background:#fff;border:2px solid #bbf7d0;border-radius:18px;padding:22px;box-shadow:0 4px 18px rgba(16,185,129,.08)}
+.study-head{display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #dcfce7;padding-bottom:14px;margin-bottom:16px}
+.study-title{display:flex;align-items:center;gap:10px}
+.study-icon{font-size:22px;width:38px;height:38px;background:#f0fdf4;border-radius:10px;display:grid;place-items:center}
+.study-title h3{margin:0;font-size:16px;color:#15803d}
+.study-title p{margin:2px 0 0;font-size:11px;color:#6b7280}
+.lulu-btn-sm{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:8px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer}
+.lulu-btn-sm:hover{background:#dcfce7}
+.quiz-question-row{display:flex;align-items:center;justify-content:center;gap:12px;background:#f0fdf4;border:1.5px dashed #86efac;border-radius:14px;padding:18px;margin-bottom:14px}
+.quiz-prompt{text-align:center}
+.quiz-zh{display:block;font-size:32px;color:#15803d;font-family:'DM Sans',sans-serif;line-height:1.2}
+.quiz-py{display:block;font-size:13px;color:#059669;font-weight:700;margin-top:2px}
+.quiz-listen-btn{background:#fff;border:1px solid #86efac;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;display:grid;place-items:center}
+.quiz-listen-btn:hover{background:#dcfce7}
+.quiz-instruction{font-size:12px;color:#4b5563;text-align:center;margin:0 0 12px;font-weight:600}
+.quiz-options-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.quiz-opt-btn{background:#fff;border:2px solid #e5e7eb;border-radius:12px;padding:14px 10px;font-size:14px;font-weight:700;color:#1f2937;cursor:pointer;transition:.15s;text-align:center}
+.quiz-opt-btn:hover:not(:disabled){border-color:#10b981;background:#f0fdf4;transform:translateY(-2px)}
+.quiz-opt-btn.correct{background:#dcfce7!important;border-color:#22c55e!important;color:#15803d!important}
+.quiz-opt-btn.wrong{background:#fee2e2!important;border-color:#ef4444!important;color:#b91c1c!important}
+
+@media(max-width:700px){
+  .lulu-actions-grid{grid-template-columns:1fr}
+  .quiz-options-grid{grid-template-columns:1fr}
+  .lulu-vitals-grid{grid-template-columns:1fr}
+}
+

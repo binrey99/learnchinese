@@ -9,6 +9,7 @@ import { initLeaderboard } from './leaderboard.js';
 import { initSentenceOrder } from './sentence-order.js';
 import { initGame } from './game.js';
 import { initBattle } from './battle.js';
+import { initLulu } from './lulu.js';
 
 const pages = {
   vocabulary: {
@@ -65,6 +66,11 @@ const pages = {
     title: 'Đấu trường 1v1',
     description: 'Thi đấu trực tiếp thời gian thực với đối thủ qua các dạng câu hỏi tiếng Trung.',
     template: '<div data-battle></div>'
+  },
+  lulu: {
+    title: 'Nuôi LuLu',
+    description: 'Chăm sóc bé Capybara LuLu, cho ăn, tắm suối nước nóng và cùng nhau học tiếng Trung.',
+    template: '<div data-lulu></div>'
   }
 };
 
@@ -106,6 +112,7 @@ export function initRouter({ toast } = {}) {
     if (route === 'leaderboard') initLeaderboard(options);
     if (route === 'game') initGame(options);
     if (route === 'battle') initBattle(options);
+    if (route === 'lulu') initLulu(options);
   };
 
   window.addEventListener('hashchange', render);
