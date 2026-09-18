@@ -48,6 +48,7 @@ const MINI_VOCAB = [
 ];
 
 const STORAGE_KEY = 'mandarinly_lulu_pet';
+const DEVICE_PET_ID_KEY = 'mandarinly_device_pet_id';
 
 export function loadPetData() {
   const defaultData = {
@@ -93,10 +94,8 @@ export async function savePetData(data, syncCloud = true) {
   try {
     const { data: authData } = await supabase.auth.getUser();
     const user = authData?.user;
-    if (!user) return;
 
-    await supabase.from('lulu_pet').upsert({
-      user_id: user.id,
+    const payload = {
       pet_name: data.name || 'LuLu',
       level: data.level || 1,
       exp: data.exp || 0,
@@ -108,9 +107,33 @@ export async function savePetData(data, syncCloud = true) {
       last_claim_date: data.lastClaimDate || '',
       total_fed: data.totalFed || 0,
       updated_at: new Date().toISOString()
-    });
+    };
+
+    if (user) {
+      // Người dùng đã đăng nhập -> lưu theo user_id
+      payload.user_id = user.id;
+      const { error } = await supabase.from('lulu_pet').upsert(payload, { onConflict: 'user_id' });
+      if (error) console.warn('[LuLu Supabase User Save Error]:', error.message);
+      else console.log('[LuLu Supabase] Đã cập nhật cho user:', user.email || user.id);
+    } else {
+      // Người dùng khách -> lưu theo device_id
+      let devicePetId = localStorage.getItem(DEVICE_PET_ID_KEY);
+      if (devicePetId) {
+        const { error } = await supabase.from('lulu_pet').update(payload).eq('id', devicePetId);
+        if (error) console.warn('[LuLu Supabase Guest Update Error]:', error.message);
+        else console.log('[LuLu Supabase] Đã cập nhật cho khách:', devicePetId);
+      } else {
+        const { data: inserted, error } = await supabase.from('lulu_pet').insert(payload).select('id').maybeSingle();
+        if (inserted?.id) {
+          localStorage.setItem(DEVICE_PET_ID_KEY, inserted.id);
+          console.log('[LuLu Supabase] Đã tạo mới pet trên Supabase cho khách:', inserted.id);
+        } else if (error) {
+          console.warn('[LuLu Supabase Guest Insert Error]:', error.message);
+        }
+      }
+    }
   } catch (err) {
-    console.warn('Lưu lulu_pet lên Supabase:', err);
+    console.warn('[LuLu Supabase Save Exception]:', err);
   }
 }
 
@@ -118,39 +141,84 @@ export async function syncPetWithSupabase() {
   try {
     const { data: authData } = await supabase.auth.getUser();
     const user = authData?.user;
-    if (!user) return loadPetData();
 
-    const { data: row, error } = await supabase
-      .from('lulu_pet')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    if (user) {
+      // 1. Kiểm tra tài khoản đã đăng nhập
+      const { data: row, error } = await supabase
+        .from('lulu_pet')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (error) {
-      console.warn('Lỗi đọc lulu_pet từ Supabase:', error.message);
-      return loadPetData();
-    }
-
-    if (row) {
-      const merged = {
-        name: row.pet_name || 'LuLu',
-        level: row.level || 1,
-        exp: row.exp || 0,
-        maxExp: row.max_exp || 100,
-        fullness: row.fullness ?? 85,
-        happiness: row.happiness ?? 90,
-        energy: row.energy ?? 80,
-        inventory: row.inventory || { baozi: 2, orange: 3, apple: 4, watermelon: 1 },
-        lastClaimDate: row.last_claim_date || '',
-        totalFed: row.total_fed || 0,
-        lastFeedTime: Date.now()
-      };
-      savePetData(merged, false);
-      return merged;
+      if (row) {
+        const merged = {
+          name: row.pet_name || 'LuLu',
+          level: row.level || 1,
+          exp: row.exp || 0,
+          maxExp: row.max_exp || 100,
+          fullness: row.fullness ?? 85,
+          happiness: row.happiness ?? 90,
+          energy: row.energy ?? 80,
+          inventory: row.inventory || { baozi: 3, orange: 3, apple: 4, watermelon: 1 },
+          lastClaimDate: row.last_claim_date || '',
+          totalFed: row.total_fed || 0,
+          lastFeedTime: Date.now()
+        };
+        savePetData(merged, false);
+        console.log('[LuLu Supabase] Đã đồng bộ dữ liệu người dùng:', user.id);
+        return merged;
+      } else {
+        // Chưa có dữ liệu trên cloud -> Tạo bản ghi mới cho user
+        const local = loadPetData();
+        const { error: insErr } = await supabase.from('lulu_pet').insert({
+          user_id: user.id,
+          pet_name: local.name,
+          level: local.level,
+          exp: local.exp,
+          max_exp: local.maxExp,
+          fullness: local.fullness,
+          happiness: local.happiness,
+          energy: local.energy,
+          inventory: local.inventory,
+          last_claim_date: local.lastClaimDate,
+          total_fed: local.totalFed
+        });
+        if (insErr) console.warn('[LuLu Supabase Insert Error]:', insErr.message);
+        return local;
+      }
     } else {
+      // 2. Người dùng khách / chưa đăng nhập
+      let devicePetId = localStorage.getItem(DEVICE_PET_ID_KEY);
+      if (devicePetId) {
+        const { data: row } = await supabase
+          .from('lulu_pet')
+          .select('*')
+          .eq('id', devicePetId)
+          .maybeSingle();
+
+        if (row) {
+          const merged = {
+            name: row.pet_name || 'LuLu',
+            level: row.level || 1,
+            exp: row.exp || 0,
+            maxExp: row.max_exp || 100,
+            fullness: row.fullness ?? 85,
+            happiness: row.happiness ?? 90,
+            energy: row.energy ?? 80,
+            inventory: row.inventory || { baozi: 3, orange: 3, apple: 4, watermelon: 1 },
+            lastClaimDate: row.last_claim_date || '',
+            totalFed: row.total_fed || 0,
+            lastFeedTime: Date.now()
+          };
+          savePetData(merged, false);
+          console.log('[LuLu Supabase] Đã nạp dữ liệu khách từ Supabase:', devicePetId);
+          return merged;
+        }
+      }
+
+      // Tạo mới 1 bản ghi khách trên Supabase để luôn có dữ liệu
       const local = loadPetData();
-      await supabase.from('lulu_pet').insert({
-        user_id: user.id,
+      const { data: inserted, error: insErr } = await supabase.from('lulu_pet').insert({
         pet_name: local.name,
         level: local.level,
         exp: local.exp,
@@ -161,11 +229,19 @@ export async function syncPetWithSupabase() {
         inventory: local.inventory,
         last_claim_date: local.lastClaimDate,
         total_fed: local.totalFed
-      });
+      }).select('id').maybeSingle();
+
+      if (inserted?.id) {
+        localStorage.setItem(DEVICE_PET_ID_KEY, inserted.id);
+        console.log('[LuLu Supabase] Khởi tạo bản ghi thú cưng trên Supabase thành công:', inserted.id);
+      } else if (insErr) {
+        console.warn('[LuLu Supabase Init Error]:', insErr.message);
+      }
+
       return local;
     }
   } catch (err) {
-    console.warn('Supabase sync error:', err);
+    console.warn('[LuLu Supabase Sync Exception]:', err);
     return loadPetData();
   }
 }
