@@ -121,7 +121,7 @@ export function initRouter({ toast } = {}) {
       if (route === 'sentence-order') initSentenceOrder(options);
       if (route === 'mock-exam') initMockExam({ onStart: () => toast?.('Đề thi thử đã được mở') });
       if (route === 'materials') initMaterials({ onOpen: () => toast?.('Tài liệu đã được mở') });
-      if (route === 'profile') renderProfile();
+      if (route === 'profile') renderProfile(options);
       if (route === 'leaderboard') initLeaderboard(options);
       if (route === 'game') initGame(options);
       if (route === 'battle') initBattle(options);
