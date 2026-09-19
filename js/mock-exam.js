@@ -1,4 +1,6 @@
 import { recordScore, SCORE_RULES } from './score-service.js';
+import { awardLuluExp } from './lulu.js';
+
 
 export const mockExams = [
   { id: 'hsk-1', title: 'Đề thi thử HSK 1', sections: 2, questions: 40, duration: 40 },
@@ -22,6 +24,7 @@ export function initMockExam({ selector = '[data-mock-exam]', onStart } = {}) {
     button.addEventListener('click', () => {
       const exam = mockExams.find((e) => e.id === button.dataset.examId);
       recordScore({ category: 'mock_exam', points: SCORE_RULES.MOCK_EXAM_COMPLETED, description: `Bắt đầu ${exam?.title || 'Thi thử'}` });
+      awardLuluExp(40, { source: `Thi thử ${exam?.title || 'HSK'}`, foodDrop: true });
       onStart?.(button.dataset.examId);
     });
   });

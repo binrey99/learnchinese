@@ -284,6 +284,45 @@ export async function awardFoodReward({ foodId = null, count = 1, source = 'Trò
   };
 }
 
+/**
+ * Tặng EXP cho LuLu từ các hoạt động học tập bên ngoài (vocabulary, practice, exam, v.v.)
+ * Có thể được gọi từ bất kỳ module nào mà không cần phải trong ngữ cảnh initLulu().
+ * @param {number} amount - Lượng EXP tặng cho LuLu
+ * @param {{ source?: string, foodDrop?: boolean }} options
+ */
+export async function awardLuluExp(amount = 0, { source = 'Học tập', foodDrop = false } = {}) {
+  if (!amount || amount <= 0) return;
+
+  const pet = loadPetData();
+
+  pet.exp += amount;
+  let leveledUp = false;
+
+  while (pet.exp >= pet.maxExp) {
+    pet.exp -= pet.maxExp;
+    pet.level += 1;
+    pet.maxExp = Math.floor(pet.maxExp * 1.35);
+    leveledUp = true;
+  }
+
+  await savePetData(pet, true);
+
+  // Phát event để LuLu UI cập nhật nếu đang mở
+  window.dispatchEvent(new CustomEvent('lulu-exp-awarded', {
+    detail: { amount, source, leveledUp, pet: { ...pet } }
+  }));
+
+  // Có thể rơi thức ăn kèm theo
+  if (foodDrop && Math.random() < 0.35) {
+    try {
+      await awardFoodReward({ source });
+    } catch (_) {}
+  }
+
+  return { pet, leveledUp };
+}
+
+
 export function initLulu({ toast } = {}) {
   const container = document.querySelector('[data-lulu]');
   if (!container) return;
@@ -320,6 +359,22 @@ export function initLulu({ toast } = {}) {
       pet.inventory = e.detail.inventory;
       renderUI();
     }
+  });
+
+  // Lắng nghe EXP tặng từ hoạt động học tập bên ngoài (vocabulary, practice, exam...)
+  window.addEventListener('lulu-exp-awarded', (e) => {
+    if (!e.detail?.pet) return;
+    const updated = e.detail.pet;
+    // Đồng bộ dữ liệu mới từ localStorage vào pet hiện tại
+    pet.exp = updated.exp;
+    pet.level = updated.level;
+    pet.maxExp = updated.maxExp;
+    if (e.detail.leveledUp) {
+      const idx = Math.min(pet.level - 1, LEVEL_TITLES.length - 1);
+      toast?.(`🎉 LuLu đã lên cấp ${pet.level}! Danh hiệu mới: ${LEVEL_TITLES[idx]}`);
+      triggerConfetti();
+    }
+    renderUI();
   });
 
   function speakText(text) {

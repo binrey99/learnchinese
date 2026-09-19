@@ -1,5 +1,7 @@
 import { supabase } from './supabase.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
+import { awardLuluExp } from './lulu.js';
+
 
 const levels = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'];
 const lessonCount = 10;
@@ -42,6 +44,7 @@ async function saveAnswer(userId, level, lesson, questionIndex, isCorrect) {
   if (activityError) console.warn('Unable to record learning activity:', activityError.message);
   if (isCorrect) {
     recordScore({ category: 'translation', points: SCORE_RULES.TRANSLATION_CORRECT, description: `Dịch đúng ${level} - Bài ${lesson}` });
+    awardLuluExp(10, { source: 'Luyện dịch tiếng Trung' });
   }
 }
 

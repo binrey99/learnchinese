@@ -1,5 +1,7 @@
 import { supabase } from './supabase.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
+import { awardLuluExp } from './lulu.js';
+
 
 export const practiceTypes = [
   { id: 'mastered-vocabulary', title: 'Kiểm tra từ đã thuộc', description: 'Chọn chữ Hán đúng theo nghĩa tiếng Việt từ các từ bạn đã đánh dấu sao', duration: '5 phút' },
@@ -92,6 +94,7 @@ async function renderMasteredVocabularyQuiz(container, onStart) {
       if (!correct) button.classList.add('incorrect'); else score += 1;
       const feedback = container.querySelector('.quiz-feedback');
       if (correct && user) {
+        awardLuluExp(10, { source: 'Kiểm tra từ đã thuộc' });
         recordCorrectAnswer(user.id, word).then((count) => {
           feedback.firstChild.textContent = count === 5 ? 'Đã chinh phục từ này! 🏆 ' : `Chính xác! ${count}/5 ✓ `;
         }).catch((error) => console.warn('Unable to save correct answer:', error.message));

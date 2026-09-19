@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { recordScore, SCORE_RULES } from './score-service.js';
+import { awardLuluExp } from './lulu.js';
 
 export const vocabulary = [
   { hanzi: '你好', pinyin: 'ni3 hao3', meaning: 'xin chào', level: 'HSK 1' },
@@ -39,6 +40,7 @@ async function trackVocabularyView(vocabularyId) {
   });
   if (error) console.warn('Unable to record vocabulary view:', error.message);
   recordScore({ category: 'vocabulary', points: SCORE_RULES.VOCABULARY_VIEW, description: 'Xem từ vựng' });
+  awardLuluExp(2, { source: 'Xem từ vựng' });
 }
 
 async function loadMasteredVocabulary(userId) {
@@ -61,6 +63,7 @@ async function saveMasteredVocabulary(userId, vocabularyId, isMastered) {
     }, { onConflict: 'user_id,vocabulary_id' });
     if (error) throw error;
     recordScore({ category: 'vocabulary', points: SCORE_RULES.VOCABULARY_PRACTICE, description: 'Đánh dấu thuộc từ vựng' });
+    awardLuluExp(20, { source: 'Thuộc từ vựng', foodDrop: true });
     return;
   }
   const { error } = await supabase
