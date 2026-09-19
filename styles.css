@@ -463,6 +463,28 @@ body.show-pinyin .speed-pinyin{display:block!important}
 .lulu-progress-bar{height:8px;background:#f3f4f6;border-radius:999px;overflow:hidden}
 .lulu-progress-bar i{display:block;height:100%;background:linear-gradient(90deg,#fb923c,#ea580c);border-radius:999px;transition:width .3s ease}
 
+/* ── Pending EXP Box (EXP kho chờ giữa header) ── */
+.lulu-pending-exp-box{flex:1;min-width:160px;max-width:240px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;transition:.25s}
+.lulu-pending-exp-box.has-pending{background:#fffbeb;border-color:#fde68a;animation:pending-glow 2s ease-in-out infinite}
+@keyframes pending-glow{0%,100%{box-shadow:0 0 0 rgba(251,191,36,0)}50%{box-shadow:0 0 12px rgba(251,191,36,.45)}}
+.lulu-pending-icon{font-size:22px;line-height:1;flex-shrink:0;animation:spark-bounce .8s ease-in-out infinite alternate}
+@keyframes spark-bounce{from{transform:translateY(0)}to{transform:translateY(-4px)}}
+.lulu-pending-info{flex:1;min-width:0}
+.lulu-pending-labels{display:flex;justify-content:space-between;font-size:11px;color:#71807b;margin-bottom:5px}
+.lulu-pending-labels strong{color:#d97706;font-weight:700}
+.lulu-pending-bar{height:6px;background:#fef3c7;border-radius:999px;overflow:hidden;margin-bottom:4px}
+.lulu-pending-fill{display:block;height:100%;width:100%;background:linear-gradient(90deg,#fcd34d,#f59e0b);border-radius:999px;animation:pending-fill-pulse 1.5s ease-in-out infinite}
+@keyframes pending-fill-pulse{0%,100%{opacity:.7;transform:scaleX(.97)}50%{opacity:1;transform:scaleX(1)}}
+.lulu-pending-hint{margin:0;font-size:10px;color:#b45309;font-weight:600;text-align:center}
+.lulu-pending-empty{display:flex;align-items:center;gap:8px;opacity:.55;width:100%}
+.lulu-pending-empty span{font-size:18px}
+.lulu-pending-empty p{margin:0;font-size:11px;color:#6b7280;line-height:1.4}
+
+/* ── EXP spark bay lên khi chuyển EXP ── */
+.lulu-exp-spark{position:absolute;font-size:11px;font-weight:800;color:#f59e0b;pointer-events:none;z-index:20;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,.18);animation:exp-spark-float .9s ease-out forwards}
+@keyframes exp-spark-float{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-60px) scale(1.3)}}
+
+
 .lulu-stage-container{display:flex;flex-direction:column;align-items:center;padding:24px 0 10px;position:relative}
 .lulu-speech-bubble{display:flex;align-items:center;gap:12px;background:#fff7ed;border:2px solid #fdba74;border-radius:16px;padding:12px 18px;max-width:480px;width:100%;box-shadow:0 4px 14px rgba(249,115,22,.1);position:relative;margin-bottom:20px;animation:float-speech 3s ease-in-out infinite}
 @keyframes float-speech{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}

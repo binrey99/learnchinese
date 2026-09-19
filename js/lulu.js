@@ -56,6 +56,7 @@ export function loadPetData() {
     level: 1,
     exp: 20,
     maxExp: 100,
+    pendingExp: 0,
     fullness: 85,
     happiness: 90,
     energy: 80,
@@ -295,21 +296,13 @@ export async function awardLuluExp(amount = 0, { source = 'Học tập', foodDro
 
   const pet = loadPetData();
 
-  pet.exp += amount;
-  let leveledUp = false;
+  pet.pendingExp = (pet.pendingExp || 0) + amount;
 
-  while (pet.exp >= pet.maxExp) {
-    pet.exp -= pet.maxExp;
-    pet.level += 1;
-    pet.maxExp = Math.floor(pet.maxExp * 1.35);
-    leveledUp = true;
-  }
+  await savePetData(pet, false); // Không cần sync cloud mỗi lần, chỉ lưu local
 
-  await savePetData(pet, true);
-
-  // Phát event để LuLu UI cập nhật nếu đang mở
+  // Phát event để LuLu UI cập nhật thanh EXP kho chờ nếu đang mở
   window.dispatchEvent(new CustomEvent('lulu-exp-awarded', {
-    detail: { amount, source, leveledUp, pet: { ...pet } }
+    detail: { amount, source, pet: { ...pet } }
   }));
 
   // Có thể rơi thức ăn kèm theo
@@ -319,7 +312,7 @@ export async function awardLuluExp(amount = 0, { source = 'Học tập', foodDro
     } catch (_) {}
   }
 
-  return { pet, leveledUp };
+  return { pet };
 }
 
 
@@ -361,21 +354,59 @@ export function initLulu({ toast } = {}) {
     }
   });
 
-  // Lắng nghe EXP tặng từ hoạt động học tập bên ngoài (vocabulary, practice, exam...)
+  // Lắng nghe EXP tặng từ hoạt động học tập bên ngoài → chỉ cập nhật thanh kho chờ
   window.addEventListener('lulu-exp-awarded', (e) => {
     if (!e.detail?.pet) return;
-    const updated = e.detail.pet;
-    // Đồng bộ dữ liệu mới từ localStorage vào pet hiện tại
-    pet.exp = updated.exp;
-    pet.level = updated.level;
-    pet.maxExp = updated.maxExp;
-    if (e.detail.leveledUp) {
-      const idx = Math.min(pet.level - 1, LEVEL_TITLES.length - 1);
-      toast?.(`🎉 LuLu đã lên cấp ${pet.level}! Danh hiệu mới: ${LEVEL_TITLES[idx]}`);
-      triggerConfetti();
-    }
+    pet.pendingExp = e.detail.pet.pendingExp || 0;
     renderUI();
   });
+
+  // Chuyển EXP kho chờ → EXP tăng cấp thật của LuLu (khi ấn vào đầu LuLu)
+  async function transferPendingExp() {
+    const pending = pet.pendingExp || 0;
+    if (pending <= 0) return false;
+
+    // Animation số EXP bay lên
+    const stage = document.querySelector('.lulu-avatar-stage');
+    if (stage) {
+      for (let i = 0; i < Math.min(pending, 8); i++) {
+        setTimeout(() => {
+          const spark = document.createElement('span');
+          spark.className = 'lulu-exp-spark';
+          spark.textContent = `+${Math.ceil(pending / Math.min(pending, 8))} EXP`;
+          spark.style.left = `${30 + Math.random() * 40}%`;
+          spark.style.top = `${10 + Math.random() * 30}%`;
+          stage.appendChild(spark);
+          setTimeout(() => spark.remove(), 900);
+        }, i * 80);
+      }
+    }
+
+    pet.exp += pending;
+    pet.pendingExp = 0;
+
+    let leveledUp = false;
+    let levelsGained = 0;
+    while (pet.exp >= pet.maxExp) {
+      pet.exp -= pet.maxExp;
+      pet.level += 1;
+      pet.maxExp = Math.floor(pet.maxExp * 1.35);
+      leveledUp = true;
+      levelsGained += 1;
+    }
+
+    await savePetData(pet, true);
+
+    if (leveledUp) {
+      toast?.(`🎉 LuLu đã lên cấp ${pet.level}! Đạt danh hiệu: ${getLevelTitle(pet.level)}`);
+      triggerConfetti();
+    } else {
+      toast?.(`⚡ LuLu nhận được ${pending} EXP từ việc học!`);
+    }
+
+    renderUI();
+    return true;
+  }
 
   function speakText(text) {
     if ('speechSynthesis' in window) {
@@ -426,6 +457,7 @@ export function initLulu({ toast } = {}) {
   function renderUI() {
     const title = getLevelTitle(pet.level);
     const expPercent = Math.min(100, Math.round((pet.exp / pet.maxExp) * 100));
+    const pendingExp = pet.pendingExp || 0;
 
     container.innerHTML = `
       <div class="lulu-wrapper">
@@ -439,6 +471,29 @@ export function initLulu({ toast } = {}) {
                 <span class="lulu-title-badge">${title}</span>
               </div>
             </div>
+
+            <!-- Thanh EXP kho chờ (giữa) -->
+            <div class="lulu-pending-exp-box${pendingExp > 0 ? ' has-pending' : ''}">
+              ${pendingExp > 0 ? `
+                <div class="lulu-pending-icon">⚡</div>
+                <div class="lulu-pending-info">
+                  <div class="lulu-pending-labels">
+                    <span>EXP học được</span>
+                    <strong>+${pendingExp} EXP</strong>
+                  </div>
+                  <div class="lulu-pending-bar">
+                    <i class="lulu-pending-fill"></i>
+                  </div>
+                  <p class="lulu-pending-hint">👆 Ấn vào đầu LuLu để nhận!</p>
+                </div>
+              ` : `
+                <div class="lulu-pending-empty">
+                  <span>📚</span>
+                  <p>Học thêm để tích EXP<br><small>cho LuLu nhé!</small></p>
+                </div>
+              `}
+            </div>
+
             <div class="lulu-exp-box">
               <div class="lulu-exp-labels">
                 <span>Kinh nghiệm</span>
@@ -579,7 +634,12 @@ export function initLulu({ toast } = {}) {
     // Pet trigger
     const petTrigger = container.querySelector('#luluPetTrigger');
     if (petTrigger) {
-      petTrigger.addEventListener('click', () => {
+      petTrigger.addEventListener('click', async () => {
+        // Nếu có EXP kho chờ → ưu tiên chuyển EXP
+        const transferred = await transferPendingExp();
+        if (transferred) return;
+
+        // Không có EXP chờ → vuốt ve bình thường
         pet.happiness = Math.min(100, pet.happiness + 5);
         addExp(3);
         triggerConfetti();
