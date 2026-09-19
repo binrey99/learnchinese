@@ -568,8 +568,10 @@ export async function renderProfile(options = {}) {
           .eq('user_id', user.id);
       } catch (_) {}
 
-      // 4. Cập nhật giao diện lập tức
+      // 4. Cập nhật giao diện lập tức và lưu cache đồng bộ
       profileAvatarImg.src = selectedAvatarUrl;
+      localStorage.setItem('mandarinly_user_avatar', selectedAvatarUrl);
+      window.dispatchEvent(new CustomEvent('profile-avatar-updated', { detail: { avatarUrl: selectedAvatarUrl } }));
 
       // Cập nhật các vị trí avatar khác trên trang (như sidebar / topbar)
       const miniAvatar = document.querySelector('.profile-mini .avatar');

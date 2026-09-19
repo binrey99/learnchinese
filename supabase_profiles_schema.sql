@@ -34,3 +34,4 @@ create policy "Users can update their own profile"
   to authenticated
   using (auth.uid() = id)
   with check (auth.uid() = id);
+

@@ -35,3 +35,12 @@ create policy "Users can insert own score"
   on public.leaderboard_scores for insert
   to authenticated
   with check (auth.uid() = user_id);
+
+-- Cho phép người dùng cập nhật điểm số hoặc avatar của chính mình
+drop policy if exists "Users can update own score" on public.leaderboard_scores;
+create policy "Users can update own score"
+  on public.leaderboard_scores for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+

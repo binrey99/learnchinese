@@ -197,8 +197,40 @@ export async function getLeaderboardData(timeframe = 'week') {
     }
   });
 
-  // Nếu người dùng hiện tại có điểm trong local cache mà chưa có trên Supabase
+  // Đồng bộ ảnh đại diện và tên người dùng mới nhất từ bảng profiles
+  try {
+    const { data: allProfiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, avatar_url');
+
+    if (allProfiles && allProfiles.length > 0) {
+      allProfiles.forEach((p) => {
+        if (userMap.has(p.id)) {
+          const item = userMap.get(p.id);
+          if (p.avatar_url) item.avatarUrl = p.avatar_url;
+          if (p.full_name) {
+            item.displayName = item.isMe ? `${p.full_name} (Bạn)` : p.full_name;
+          }
+        }
+      });
+    }
+  } catch (_) {}
+
+  // Nếu người dùng hiện tại đang đăng nhập, ưu tiên đồng bộ avatar và tên mới nhất
   if (currentUser) {
+    let myAvatar = currentUser.user_metadata?.avatar_url || localStorage.getItem('mandarinly_user_avatar');
+    let myName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Bạn';
+
+    try {
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('full_name, avatar_url')
+        .eq('id', currentUser.id)
+        .maybeSingle();
+      if (myProfile?.avatar_url) myAvatar = myProfile.avatar_url;
+      if (myProfile?.full_name) myName = myProfile.full_name;
+    } catch (_) {}
+
     const localScores = JSON.parse(localStorage.getItem('mandarinly_local_scores') || '[]');
     const filteredLocal = localScores.filter((item) => {
       if (!startDate) return true;
@@ -208,11 +240,10 @@ export async function getLeaderboardData(timeframe = 'week') {
     const localSum = filteredLocal.reduce((acc, curr) => acc + curr.points, 0);
 
     if (!userMap.has(currentUser.id)) {
-      const myName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Bạn';
       userMap.set(currentUser.id, {
         userId: currentUser.id,
         displayName: `${myName} (Bạn)`,
-        avatarUrl: currentUser.user_metadata?.avatar_url || 'picture/main_picture.png',
+        avatarUrl: myAvatar || 'picture/main_picture.png',
         totalPoints: Math.max(localSum, 0),
         isMe: true,
         breakdown: { vocabulary: 0, translation: 0, sentence_order: 0, game: 0, mock_exam: 0, streak: 0 }
@@ -226,7 +257,10 @@ export async function getLeaderboardData(timeframe = 'week') {
     } else {
       const me = userMap.get(currentUser.id);
       me.isMe = true;
-      me.displayName += ' (Bạn)';
+      if (myAvatar) me.avatarUrl = myAvatar;
+      if (myName && !me.displayName.includes('(Bạn)')) {
+        me.displayName = `${myName} (Bạn)`;
+      }
     }
   }
 
