@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 
 // Danh sách các avatar có sẵn trong hệ thống
 const PRESET_AVATARS = [
@@ -19,6 +20,35 @@ function escapeHtml(value = '') {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function toPinyin(hanzi) {
+  try {
+    return pinyin(hanzi, { toneType: 'symbol' });
+  } catch (_) {
+    return '';
+  }
+}
+
+function speakWord(hanzi) {
+  if (!hanzi) return;
+  window.speechSynthesis?.cancel();
+  if ('speechSynthesis' in window) {
+    try {
+      const utterance = new SpeechSynthesisUtterance(hanzi);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.85;
+      const voices = window.speechSynthesis.getVoices();
+      const zhVoice = voices.find(
+        (v) => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang.startsWith('zh') || v.name.includes('Chinese')
+      );
+      if (zhVoice) utterance.voice = zhVoice;
+      window.speechSynthesis.speak(utterance);
+      return;
+    } catch (_) {}
+  }
+  const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(hanzi)}&le=zh`);
+  audio.play().catch(() => {});
 }
 
 function getLearnerTitle(points = 0) {
@@ -56,6 +86,65 @@ function compressAndCropImage(file) {
     reader.onerror = () => reject(new Error('Không thể tải file.'));
     reader.readAsDataURL(file);
   });
+}
+
+// Tải danh sách chi tiết các từ vựng đã thuộc từ Supabase
+async function loadMasteredVocabularies(userId) {
+  if (!userId) return [];
+
+  // 1. Lấy danh sách ID từ bảng vocabulary_mastery
+  const { data: masteryList, error: masteryErr } = await supabase
+    .from('vocabulary_mastery')
+    .select('vocabulary_id, mastered_at')
+    .eq('user_id', userId)
+    .order('mastered_at', { ascending: false });
+
+  if (masteryErr) {
+    console.error('Lỗi khi tải vocabulary_mastery:', masteryErr);
+    return [];
+  }
+
+  if (!masteryList || masteryList.length === 0) return [];
+
+  const vocabIds = masteryList.map((m) => m.vocabulary_id);
+  const masteryMap = new Map();
+  masteryList.forEach((m) => {
+    masteryMap.set(String(m.vocabulary_id), m.mastered_at);
+  });
+
+  // 2. Lấy thông tin từ vựng từ bảng vocabulary
+  let vocabRows = [];
+  try {
+    const { data, error } = await supabase
+      .from('vocabulary')
+      .select('id, book_level, vocab, english_meaning, vietnamese_meaning, word_type, component')
+      .in('id', vocabIds);
+
+    if (!error && data) vocabRows = data;
+  } catch (err) {
+    console.warn('Không thể truy vấn bảng vocabulary:', err);
+  }
+
+  const results = vocabRows.map((w) => ({
+    id: w.id,
+    hanzi: w.vocab,
+    pinyin: toPinyin(w.vocab),
+    meaning: w.vietnamese_meaning || w.english_meaning || '',
+    english: w.english_meaning || '',
+    level: w.book_level || 'HSK',
+    wordType: w.word_type || '',
+    component: w.component || '',
+    masteredAt: masteryMap.get(String(w.id))
+  }));
+
+  // Sắp xếp từ thuộc gần nhất lên trước
+  results.sort((a, b) => {
+    const timeA = a.masteredAt ? new Date(a.masteredAt).getTime() : 0;
+    const timeB = b.masteredAt ? new Date(b.masteredAt).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return results;
 }
 
 export async function renderProfile(options = {}) {
@@ -161,7 +250,7 @@ export async function renderProfile(options = {}) {
 
   const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Học viên';
   const email = profile?.email || user.email || '';
-  let avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || 'picture/main_picture.png';
+  let avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || localStorage.getItem('mandarinly_user_avatar') || 'picture/main_picture.png';
   const joinedDate = profile?.created_at || user.created_at;
   const joined = joinedDate ? new Date(joinedDate).toLocaleDateString('vi-VN') : 'Gần đây';
 
@@ -295,10 +384,13 @@ export async function renderProfile(options = {}) {
             </div>
           </div>
 
-          <div class="profile-stat-box stat-vocab">
+          <div class="profile-stat-box stat-vocab clickable" id="openMasteredVocabCard" role="button" tabindex="0" title="Bấm để xem danh sách từ vựng đã thuộc">
             <div class="stat-icon">📚</div>
             <div class="stat-info">
-              <span class="stat-num">${masteredCount}</span>
+              <div class="stat-num-row">
+                <span class="stat-num">${masteredCount}</span>
+                <span class="stat-click-badge">Xem từ ➜</span>
+              </div>
               <span class="stat-name">Từ vựng đã thuộc</span>
             </div>
           </div>
@@ -395,6 +487,49 @@ export async function renderProfile(options = {}) {
       </section>
     </div>
 
+    <!-- Modal Xem Danh Sách Từ Vựng Đã Thuộc -->
+    <div class="mastered-vocab-modal" id="masteredVocabModal" hidden>
+      <div class="mastered-vocab-backdrop" id="closeMasteredVocabBackdrop"></div>
+      <div class="mastered-vocab-card" role="dialog" aria-modal="true" aria-labelledby="masteredVocabTitle">
+        <div class="mastered-vocab-header">
+          <div class="mastered-vocab-title-box">
+            <div class="title-icon">📚</div>
+            <div>
+              <h3 id="masteredVocabTitle">Từ vựng đã thuộc</h3>
+              <p class="mastered-vocab-subtitle" id="masteredVocabSubtitle">Danh sách từ bạn đã đánh dấu hoàn thành</p>
+            </div>
+          </div>
+          <button class="mastered-vocab-close" id="closeMasteredVocabBtn" type="button" aria-label="Đóng">×</button>
+        </div>
+
+        <!-- Bộ lọc & Tìm kiếm -->
+        <div class="mastered-vocab-toolbar">
+          <div class="mastered-search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="masteredVocabSearchInput" placeholder="Tìm kiếm theo chữ Hán, Pinyin hoặc nghĩa...">
+          </div>
+          <div class="mastered-level-tabs" id="masteredLevelTabs">
+            <button type="button" class="level-tab active" data-level="all">Tất cả</button>
+          </div>
+        </div>
+
+        <div class="mastered-vocab-body" id="masteredVocabBody">
+          <div class="mastered-loading-state">
+            <div class="profile-spinner"></div>
+            <p>Đang tải danh sách từ vựng đã thuộc...</p>
+          </div>
+        </div>
+
+        <div class="mastered-vocab-footer">
+          <span class="mastered-footer-count" id="masteredFooterCount">Tổng số: ${masteredCount} từ</span>
+          <div class="mastered-footer-actions">
+            <button type="button" class="secondary-button" id="closeMasteredVocabFooterBtn">Đóng</button>
+            <a href="#vocabulary" class="primary-button" id="goToVocabBtn">Ôn tập từ vựng ➜</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Thay Đổi Ảnh Đại Diện -->
     <div class="avatar-modal" id="avatarModal" hidden>
       <div class="avatar-modal-backdrop" id="closeAvatarModalBackdrop"></div>
@@ -455,7 +590,181 @@ export async function renderProfile(options = {}) {
     </div>
   `;
 
-  // Thiết lập logic cho Modal Đổi Ảnh Đại Diện
+  // =========================================================================
+  // XỬ LÝ SỰ KIỆN CHO MODAL TỪ VỰNG ĐÃ THUỘC
+  // =========================================================================
+  const openVocabCard = container.querySelector('#openMasteredVocabCard');
+  const vocabModal = container.querySelector('#masteredVocabModal');
+  const closeVocabBtn = container.querySelector('#closeMasteredVocabBtn');
+  const closeVocabFooterBtn = container.querySelector('#closeMasteredVocabFooterBtn');
+  const closeVocabBackdrop = container.querySelector('#closeMasteredVocabBackdrop');
+  const vocabBody = container.querySelector('#masteredVocabBody');
+  const vocabSearchInput = container.querySelector('#masteredVocabSearchInput');
+  const levelTabsContainer = container.querySelector('#masteredLevelTabs');
+  const footerCount = container.querySelector('#masteredFooterCount');
+  const subtitleCount = container.querySelector('#masteredVocabSubtitle');
+  const goToVocabBtn = container.querySelector('#goToVocabBtn');
+
+  let cachedMasteredWords = null;
+  let activeLevelFilter = 'all';
+
+  const closeVocabModal = () => {
+    vocabModal.hidden = true;
+  };
+
+  const renderVocabList = (words) => {
+    const query = vocabSearchInput?.value.trim().toLowerCase() || '';
+
+    let filtered = words;
+    if (activeLevelFilter !== 'all') {
+      filtered = filtered.filter((w) => w.level.trim().toLowerCase() === activeLevelFilter.toLowerCase());
+    }
+    if (query) {
+      filtered = filtered.filter(
+        (w) =>
+          w.hanzi.toLowerCase().includes(query) ||
+          w.pinyin.toLowerCase().includes(query) ||
+          w.meaning.toLowerCase().includes(query) ||
+          w.english.toLowerCase().includes(query)
+      );
+    }
+
+    if (footerCount) footerCount.textContent = `Hiển thị: ${filtered.length} / ${words.length} từ`;
+
+    if (filtered.length === 0) {
+      vocabBody.innerHTML = `
+        <div class="mastered-empty-state">
+          <span class="empty-icon">🔍</span>
+          <strong>Không tìm thấy từ vựng phù hợp</strong>
+          <p>${query ? 'Thử tìm kiếm với từ khóa khác nhé.' : 'Bạn chưa có từ vựng nào thuộc cấp độ này.'}</p>
+        </div>
+      `;
+      return;
+    }
+
+    vocabBody.innerHTML = `
+      <div class="mastered-vocab-grid">
+        ${filtered.map((word) => `
+          <div class="mastered-card" data-hanzi="${escapeHtml(word.hanzi)}">
+            <div class="mastered-card-top">
+              <div class="mastered-hanzi-wrap">
+                <span class="mastered-pinyin">${escapeHtml(word.pinyin)}</span>
+                <strong class="mastered-hanzi">${escapeHtml(word.hanzi)}</strong>
+              </div>
+              <div class="mastered-card-badges">
+                <span class="mastered-level-tag">${escapeHtml(word.level)}</span>
+                <span class="mastered-star" title="Đã thuộc">★</span>
+              </div>
+            </div>
+
+            <div class="mastered-meaning">
+              <span>${escapeHtml(word.meaning)}</span>
+              ${word.wordType ? `<small class="mastered-type">(${escapeHtml(word.wordType)})</small>` : ''}
+            </div>
+
+            <div class="mastered-card-bottom">
+              <button type="button" class="mastered-speak-btn" data-speak-hanzi="${escapeHtml(word.hanzi)}" title="Phát âm tiếng Trung">
+                <span class="speaker-icon">🔊</span>
+                <span>Nghe</span>
+              </button>
+              ${word.masteredAt ? `<span class="mastered-date">Thuộc ngày ${new Date(word.masteredAt).toLocaleDateString('vi-VN')}</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    // Gắn sự kiện phát âm
+    vocabBody.querySelectorAll('[data-speak-hanzi]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const hanzi = btn.dataset.speakHanzi;
+        speakWord(hanzi);
+        btn.classList.add('is-speaking');
+        setTimeout(() => btn.classList.remove('is-speaking'), 800);
+      });
+    });
+  };
+
+  const openMasteredVocab = async () => {
+    vocabModal.hidden = false;
+
+    if (!cachedMasteredWords) {
+      vocabBody.innerHTML = `
+        <div class="mastered-loading-state">
+          <div class="profile-spinner"></div>
+          <p>Đang tải danh sách từ vựng đã thuộc...</p>
+        </div>
+      `;
+
+      try {
+        cachedMasteredWords = await loadMasteredVocabularies(user.id);
+      } catch (err) {
+        console.error('Lỗi khi tải từ vựng:', err);
+        cachedMasteredWords = [];
+      }
+    }
+
+    if (subtitleCount) {
+      subtitleCount.textContent = `Bạn đã hoàn thành và ghi nhớ ${cachedMasteredWords.length} từ vựng`;
+    }
+
+    // Tạo các nút lọc theo cấp độ nếu có
+    if (levelTabsContainer && cachedMasteredWords.length > 0) {
+      const levels = ['all', ...new Set(cachedMasteredWords.map((w) => w.level.trim()).filter(Boolean))];
+      levelTabsContainer.innerHTML = levels
+        .map(
+          (lvl) =>
+            `<button type="button" class="level-tab${lvl === activeLevelFilter ? ' active' : ''}" data-level="${escapeHtml(lvl)}">${lvl === 'all' ? 'Tất cả' : escapeHtml(lvl)}</button>`
+        )
+        .join('');
+
+      levelTabsContainer.querySelectorAll('.level-tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          levelTabsContainer.querySelectorAll('.level-tab').forEach((t) => t.classList.remove('active'));
+          tab.classList.add('active');
+          activeLevelFilter = tab.dataset.level;
+          renderVocabList(cachedMasteredWords);
+        });
+      });
+    }
+
+    if (cachedMasteredWords.length === 0) {
+      vocabBody.innerHTML = `
+        <div class="mastered-empty-state">
+          <span class="empty-icon">📖</span>
+          <strong>Chưa có từ vựng nào được đánh dấu đã thuộc</strong>
+          <p>Hãy vào mục Từ vựng, học và bấm biểu tượng ngôi sao (★) để thêm vào danh sách đã thuộc nhé!</p>
+          <a href="#vocabulary" class="primary-button" id="emptyVocabLink">Khám phá từ vựng ngay</a>
+        </div>
+      `;
+      vocabBody.querySelector('#emptyVocabLink')?.addEventListener('click', closeVocabModal);
+      return;
+    }
+
+    renderVocabList(cachedMasteredWords);
+  };
+
+  openVocabCard?.addEventListener('click', openMasteredVocab);
+  openVocabCard?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openMasteredVocab();
+    }
+  });
+
+  closeVocabBtn?.addEventListener('click', closeVocabModal);
+  closeVocabFooterBtn?.addEventListener('click', closeVocabModal);
+  closeVocabBackdrop?.addEventListener('click', closeVocabModal);
+  goToVocabBtn?.addEventListener('click', closeVocabModal);
+
+  vocabSearchInput?.addEventListener('input', () => {
+    if (cachedMasteredWords) renderVocabList(cachedMasteredWords);
+  });
+
+  // =========================================================================
+  // XỬ LÝ SỰ KIỆN CHO MODAL THAY ĐỔI ẢNH ĐẠI DIỆN
+  // =========================================================================
   const modal = container.querySelector('#avatarModal');
   const openBtn = container.querySelector('#openAvatarBtn');
   const closeBtn = container.querySelector('#closeAvatarModalBtn');
