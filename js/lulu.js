@@ -152,11 +152,14 @@ export async function syncPetWithSupabase() {
         .maybeSingle();
 
       if (row) {
+        // Giữ lại pendingExp từ localStorage (không sync cloud, chỉ local)
+        const localData = loadPetData();
         const merged = {
           name: row.pet_name || 'LuLu',
           level: row.level || 1,
           exp: row.exp || 0,
           maxExp: row.max_exp || 100,
+          pendingExp: localData.pendingExp || 0,
           fullness: row.fullness ?? 85,
           happiness: row.happiness ?? 90,
           energy: row.energy ?? 80,
@@ -198,11 +201,13 @@ export async function syncPetWithSupabase() {
           .maybeSingle();
 
         if (row) {
+          const localData = loadPetData();
           const merged = {
             name: row.pet_name || 'LuLu',
             level: row.level || 1,
             exp: row.exp || 0,
             maxExp: row.max_exp || 100,
+            pendingExp: localData.pendingExp || 0,
             fullness: row.fullness ?? 85,
             happiness: row.happiness ?? 90,
             energy: row.energy ?? 80,
