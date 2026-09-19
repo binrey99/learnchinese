@@ -1221,7 +1221,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
     // ----------------------------------------
     // FINISH MATCH & RECORD RESULT
     // ----------------------------------------
-    function finishMatch() {
+    async function finishMatch() {
       if (matchFinished) return;
       matchFinished = true;
       clearBattleSession();

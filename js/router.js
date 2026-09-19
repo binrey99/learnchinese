@@ -79,6 +79,8 @@ export function initRouter({ toast } = {}) {
   const pageView = document.querySelector('#pageView');
   if (!dashboard || !pageView) return;
 
+  let currentRoute = null;
+
   const render = () => {
     const route = window.location.hash.replace('#', '') || 'dashboard';
     const page = pages[route];
@@ -90,7 +92,14 @@ export function initRouter({ toast } = {}) {
       item.classList.toggle('active', item.dataset.route === route);
     });
 
-    if (isDashboard) return;
+    if (isDashboard) {
+      currentRoute = null;
+      return;
+    }
+
+    // Tránh render lại nếu đang ở cùng route (giữ nguyên state)
+    if (route === currentRoute) return;
+    currentRoute = route;
 
     pageView.innerHTML = `
       <section class="page-header">
@@ -100,21 +109,44 @@ export function initRouter({ toast } = {}) {
       ${page.template}
     `;
 
+    // Scroll về đầu trang khi chuyển route
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
     const options = { toast };
-    if (route === 'vocabulary') initVocabulary(options);
-    if (route === 'hsk') initHsk(options);
-    if (route === 'practice') initPractice({ onStart: (type) => { if (type === 'translation' || type === 'sentence-order') window.location.hash = type; else toast?.('Bài luyện tập đã sẵn sàng ✦'); } });
-    if (route === 'translation') initTranslation(options);
-    if (route === 'sentence-order') initSentenceOrder(options);
-    if (route === 'mock-exam') initMockExam({ onStart: () => toast?.('Đề thi thử đã được mở') });
-    if (route === 'materials') initMaterials({ onOpen: () => toast?.('Tài liệu đã được mở') });
-    if (route === 'profile') renderProfile();
-    if (route === 'leaderboard') initLeaderboard(options);
-    if (route === 'game') initGame(options);
-    if (route === 'battle') initBattle(options);
-    if (route === 'lulu') initLulu(options);
+    try {
+      if (route === 'vocabulary') initVocabulary(options);
+      if (route === 'hsk') initHsk(options);
+      if (route === 'practice') initPractice({ onStart: (type) => { if (type === 'translation' || type === 'sentence-order') window.location.hash = type; else toast?.('Bài luyện tập đã sẵn sàng ✦'); } });
+      if (route === 'translation') initTranslation(options);
+      if (route === 'sentence-order') initSentenceOrder(options);
+      if (route === 'mock-exam') initMockExam({ onStart: () => toast?.('Đề thi thử đã được mở') });
+      if (route === 'materials') initMaterials({ onOpen: () => toast?.('Tài liệu đã được mở') });
+      if (route === 'profile') renderProfile();
+      if (route === 'leaderboard') initLeaderboard(options);
+      if (route === 'game') initGame(options);
+      if (route === 'battle') initBattle(options);
+      if (route === 'lulu') initLulu(options);
+    } catch (err) {
+      console.error('[Router] Lỗi khi khởi tạo trang:', route, err);
+    }
   };
 
+  // Lắng nghe hashchange (khi hash thay đổi sang route khác)
   window.addEventListener('hashchange', render);
+
+  // Fix: Lắng nghe click để xử lý trường hợp hash không thay đổi
+  // (hashchange không fire) khi user click lại cùng một route
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href^="#"]');
+    if (!link) return;
+    const targetHash = link.getAttribute('href').replace('#', '');
+    if (!targetHash || targetHash === 'top') return;
+    if (window.location.hash === `#${targetHash}`) {
+      e.preventDefault();
+      render();
+    }
+  });
+
+  // Render ngay khi khởi tạo để xử lý trường hợp load thẳng vào một route
   render();
 }
