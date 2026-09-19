@@ -644,22 +644,14 @@ export function initLulu({ toast } = {}) {
         const transferred = await transferPendingExp();
         if (transferred) return;
 
-        // Không có EXP chờ → vuốt ve bình thường
-        pet.happiness = Math.min(100, pet.happiness + 5);
-        addExp(3);
-        triggerConfetti();
-
-        // Random cute speech
-        const nextQuote = LULU_QUOTES[Math.floor(Math.random() * LULU_QUOTES.length)];
-        currentQuote = nextQuote;
-        const speechZh = container.querySelector('.lulu-speech-zh');
-        const speechPy = container.querySelector('.lulu-speech-py');
-        const speechVi = container.querySelector('.lulu-speech-vi');
-        if (speechZh) speechZh.innerText = nextQuote.zh;
-        if (speechPy) speechPy.innerText = nextQuote.py;
-        if (speechVi) speechVi.innerText = nextQuote.vi;
-
-        toast?.(' LuLu cảm thấy rất hạnh phúc và thích được bạn xoa đầu!');
+        // Không có EXP chờ → nhắc nhở học bài
+        const noExpMessages = [
+          '🐾 Học bài đi rồi mình mới có EXP nha!',
+          '📚 Ôn từ vựng đi, mình đang đói EXP lắm~',
+          '✨ Bạn ơi, học thêm để nuôi mình nha!',
+          '🍊 Mình cần EXP! Học bài rồi quay lại nhé~'
+        ];
+        toast?.(noExpMessages[Math.floor(Math.random() * noExpMessages.length)]);
       });
     }
 
