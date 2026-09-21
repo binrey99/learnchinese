@@ -1713,6 +1713,34 @@ body.show-pinyin .speed-pinyin{display:block!important}
   }
 }
 
+/* ==========================================================================
+   MOBILE SIDEBAR (NÚT HAMBURGER) — điều hướng trên điện thoại
+   ========================================================================== */
+.topbar .topbar-brand{margin-right:auto}
+.menu-button{color:#28543b;border-radius:8px;padding:6px 8px;line-height:1;transition:.2s}
+.menu-button:hover{background:#f1f6f3}
+.sidebar-backdrop{position:fixed;inset:0;z-index:5;background:#202b3666;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s}
+.sidebar-backdrop.show{opacity:1;pointer-events:auto}
+
+/* ==========================================================================
+   LỊCH HỌC THEO THÁNG THẬT
+   ========================================================================== */
+.calendar-arrows button{transition:.2s}
+.calendar-arrows button:hover:not(:disabled){background:#e4f2e8;color:#28543b}
+.calendar-arrows button:disabled{opacity:.35;cursor:not-allowed}
+.calendar-summary{margin:14px 0 0;font-size:11px;color:#71807b}
+.calendar-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;color:#71807b;font-size:10px}
+.calendar-legend span{display:flex;align-items:center;gap:5px}
+.calendar-legend i{width:9px;height:9px;border-radius:50%;background:#e4f2e8;border:1px solid #bcdcc7}
+.calendar-legend i.today-swatch{background:#e88468;border-color:#e88468}
+.calendar-days span.done{cursor:help}
+
+@media(max-width:650px){
+  .menu-button{display:grid;place-items:center}
+  .sidebar{z-index:6}
+  body.sidebar-open{overflow:hidden}
+}
+
 
 
 

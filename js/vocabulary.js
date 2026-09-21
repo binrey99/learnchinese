@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { normalizeLevel, sortLevels } from './levels.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardLuluExp } from './lulu.js';
@@ -96,7 +97,7 @@ async function loadVocabularyFromSupabase() {
     pinyin: toPinyin(word.vocab),
     english: word.english_meaning || '',
     meaning: word.vietnamese_meaning,
-    level: word.book_level,
+    level: normalizeLevel(word.book_level),
     wordType: word.word_type,
     component: word.component
   }));
@@ -116,7 +117,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
     const remoteVocabulary = await loadVocabularyFromSupabase();
     if (remoteVocabulary.length) {
       words = remoteVocabulary;
-      availableCategories = [...new Set(remoteVocabulary.map((word) => word.level).filter(Boolean))];
+      availableCategories = sortLevels([...new Set(remoteVocabulary.map((word) => word.level).filter(Boolean))]);
     }
   } catch (error) {
     console.error('Unable to load vocabulary from Supabase:', error.message);
@@ -140,7 +141,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
 
   const list = container.querySelector('[data-vocabulary-list]');
   const renderCategory = (category) => {
-    const categoryWords = words.filter((word) => word.level.trim() === category);
+    const categoryWords = words.filter((word) => word.level === category);
     list.innerHTML = categoryWords.map((word) => `
       <article class="vocabulary-item" role="button" tabindex="0" data-vocabulary-index="${words.indexOf(word)}">
         <div class="vocabulary-hanzi"><span class="vocabulary-pinyin">${escapeHtml(word.pinyin || toPinyin(word.hanzi))}</span><strong>${escapeHtml(word.hanzi)}</strong></div>

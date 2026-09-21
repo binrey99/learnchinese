@@ -29,7 +29,14 @@ function initDashboard() {
 
   const showToast = createToast();
   initLessonActions(showToast);
-  initLogin({ toast: showToast, onAuthChanged: renderDashboardProgress });
+  // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động lẫn lịch học theo tháng
+  initLogin({
+    toast: showToast,
+    onAuthChanged: () => {
+      renderDashboardProgress();
+      renderCalendar();
+    }
+  });
   renderDashboardProgress();
   initRouter({ toast: showToast });
 

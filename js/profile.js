@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { normalizeLevel, sortLevels } from './levels.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 
 // Danh sách các avatar có sẵn trong hệ thống
@@ -131,7 +132,7 @@ async function loadMasteredVocabularies(userId) {
     pinyin: toPinyin(w.vocab),
     meaning: w.vietnamese_meaning || w.english_meaning || '',
     english: w.english_meaning || '',
-    level: w.book_level || 'HSK',
+    level: normalizeLevel(w.book_level || 'HSK'),
     wordType: w.word_type || '',
     component: w.component || '',
     masteredAt: masteryMap.get(String(w.id))
@@ -711,7 +712,7 @@ export async function renderProfile(options = {}) {
 
     // Tạo các nút lọc theo cấp độ nếu có
     if (levelTabsContainer && cachedMasteredWords.length > 0) {
-      const levels = ['all', ...new Set(cachedMasteredWords.map((w) => w.level.trim()).filter(Boolean))];
+      const levels = ['all', ...sortLevels([...new Set(cachedMasteredWords.map((w) => w.level).filter(Boolean))])];
       levelTabsContainer.innerHTML = levels
         .map(
           (lvl) =>

@@ -1,4 +1,5 @@
 import { supabase } from './supabase.js';
+import { normalizeLevel } from './levels.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardFoodReward } from './lulu.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
@@ -216,7 +217,7 @@ async function loadGameVocabulary() {
           hanzi: w.vocab.trim(),
           pinyin: toPinyin(w.vocab.trim()),
           meaning: w.vietnamese_meaning.trim(),
-          level: (w.book_level || 'HSK 1').trim()
+          level: normalizeLevel(w.book_level || 'HSK 1')
         }));
       if (valid.length >= 10) return valid;
     }
