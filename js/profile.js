@@ -250,6 +250,8 @@ export async function renderProfile(options = {}) {
   const learnerInfo = getLearnerTitle(totalPoints);
 
   const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Học viên';
+  // Tên hiển thị có thể đổi ngay trên trang nên giữ biến có thể cập nhật lại
+  let currentName = name;
   const email = profile?.email || user.email || '';
   let avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || localStorage.getItem('mandarinly_user_avatar') || 'picture/main_picture.png';
   const joinedDate = profile?.created_at || user.created_at;
@@ -353,7 +355,28 @@ export async function renderProfile(options = {}) {
             <span class="profile-badge">HỒ SƠ HỌC VIÊN</span>
             <span class="profile-rank-pill" style="border-color:${learnerInfo.color};color:${learnerInfo.color}">${learnerInfo.badge}</span>
           </div>
-          <h2>${escapeHtml(name)}</h2>
+          <div class="profile-name-row" id="profileNameRow">
+            <h2 id="profileNameText">${escapeHtml(name)}</h2>
+            <button class="profile-name-edit-btn" id="openEditNameBtn" type="button" title="Đổi tên hiển thị" aria-label="Đổi tên hiển thị">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path>
+              </svg>
+            </button>
+          </div>
+
+          <form class="profile-name-editor" id="nameEditor" hidden novalidate>
+            <input type="text" id="profileNameInput" name="fullName" maxlength="40" placeholder="Nhập tên hiển thị mới" autocomplete="name" aria-label="Tên hiển thị">
+            <div class="profile-name-actions">
+              <button type="button" class="secondary-button" id="cancelNameBtn">Hủy</button>
+              <button type="submit" class="primary-button" id="saveNameBtn">
+                <span class="btn-spinner" id="nameSaveSpinner" hidden></span>
+                <span id="saveNameText">Lưu tên</span>
+              </button>
+            </div>
+            <p class="profile-name-error" id="nameEditorError" hidden></p>
+          </form>
+
           <p class="profile-email">${escapeHtml(email)}</p>
 
           <div class="profile-meta-grid">
@@ -862,7 +885,7 @@ export async function renderProfile(options = {}) {
       const { error: profileError } = await supabase.from('profiles').upsert({
         id: user.id,
         email: user.email,
-        full_name: name,
+        full_name: currentName,
         avatar_url: selectedAvatarUrl,
         updated_at: new Date().toISOString()
       });
@@ -901,6 +924,117 @@ export async function renderProfile(options = {}) {
       saveBtn.disabled = false;
       spinner.hidden = true;
       saveText.textContent = 'Lưu ảnh đại diện';
+    }
+  });
+
+  // =========================================================================
+  // XỬ LÝ SỰ KIỆN ĐỔI TÊN HIỂN THỊ (đồng bộ lên Supabase)
+  // =========================================================================
+  const nameRow = container.querySelector('#profileNameRow');
+  const nameHeading = container.querySelector('#profileNameText');
+  const openNameBtn = container.querySelector('#openEditNameBtn');
+  const nameEditor = container.querySelector('#nameEditor');
+  const nameInput = container.querySelector('#profileNameInput');
+  const cancelNameBtn = container.querySelector('#cancelNameBtn');
+  const nameSaveBtn = container.querySelector('#saveNameBtn');
+  const nameSpinner = container.querySelector('#nameSaveSpinner');
+  const nameSaveText = container.querySelector('#saveNameText');
+  const nameError = container.querySelector('#nameEditorError');
+
+  const showNameError = (message) => {
+    if (!nameError) return;
+    nameError.hidden = false;
+    nameError.textContent = message;
+  };
+
+  const openNameEditor = () => {
+    nameInput.value = currentName;
+    if (nameError) nameError.hidden = true;
+    nameRow.hidden = true;
+    nameEditor.hidden = false;
+    nameInput.focus();
+    nameInput.select();
+  };
+
+  const closeNameEditor = () => {
+    nameEditor.hidden = true;
+    nameRow.hidden = false;
+    if (nameError) nameError.hidden = true;
+  };
+
+  openNameBtn?.addEventListener('click', openNameEditor);
+  cancelNameBtn?.addEventListener('click', closeNameEditor);
+
+  // Nhấn Esc để hủy nhanh khi đang sửa tên
+  nameInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeNameEditor();
+    }
+  });
+
+  nameEditor?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const newName = nameInput.value.trim().replace(/\s+/g, ' ');
+
+    if (!newName) {
+      showNameError('Tên hiển thị không được để trống.');
+      nameInput.focus();
+      return;
+    }
+    if (newName === currentName) {
+      closeNameEditor();
+      return;
+    }
+
+    nameSaveBtn.disabled = true;
+    nameSpinner.hidden = false;
+    nameSaveText.textContent = 'Đang lưu...';
+    if (nameError) nameError.hidden = true;
+
+    try {
+      // 1. Cập nhật vào auth.users (user_metadata)
+      const { error: authError } = await supabase.auth.updateUser({
+        data: { full_name: newName }
+      });
+      if (authError) console.warn('Cập nhật user_metadata cảnh báo:', authError.message);
+
+      // 2. Cập nhật bảng profiles - nguồn dữ liệu chính của tên hiển thị
+      const liveAvatar = profileAvatarImg?.src || avatarUrl;
+      const { error: profileError } = await supabase.from('profiles').upsert({
+        id: user.id,
+        email: user.email,
+        full_name: newName,
+        avatar_url: liveAvatar,
+        updated_at: new Date().toISOString()
+      });
+      if (profileError) throw profileError;
+
+      // 3. Đồng bộ tên trên bảng điểm để bảng xếp hạng hiển thị đúng ngay
+      try {
+        await supabase
+          .from('leaderboard_scores')
+          .update({ display_name: newName })
+          .eq('user_id', user.id);
+      } catch (_) {}
+
+      // 4. Cập nhật giao diện lập tức
+      currentName = newName;
+      if (nameHeading) nameHeading.textContent = newName;
+      const miniName = document.querySelector('.profile-mini strong');
+      if (miniName) miniName.textContent = newName;
+      window.dispatchEvent(new CustomEvent('profile-name-updated', { detail: { fullName: newName } }));
+
+      closeNameEditor();
+      toast?.('Đã cập nhật tên hiển thị! ✨');
+    } catch (err) {
+      console.error('Lỗi khi lưu tên hiển thị lên Supabase:', err);
+      showNameError('Có lỗi xảy ra khi lưu tên. Vui lòng thử lại!');
+    } finally {
+      nameSaveBtn.disabled = false;
+      nameSpinner.hidden = true;
+      nameSaveText.textContent = 'Lưu tên';
     }
   });
 }

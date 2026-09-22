@@ -681,6 +681,125 @@ body.show-pinyin .speed-pinyin{display:block!important}
   box-shadow: 0 4px 12px rgba(40, 84, 59, 0.3);
 }
 
+/* Bút chì sửa tên hiển thị + khung sửa tên ngay trên thẻ hồ sơ */
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-name-row[hidden] {
+  display: none;
+}
+
+.profile-name-row h2 {
+  margin: 4px 0 2px;
+  overflow-wrap: anywhere;
+}
+
+.profile-name-edit-btn {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  background: #f0fdf4;
+  color: #28543b;
+  border: 1px solid #cfe7d6;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.profile-name-edit-btn:hover {
+  background: #28543b;
+  color: #fff;
+  border-color: #28543b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(40, 84, 59, 0.2);
+}
+
+.profile-details .profile-name-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 14px;
+  max-width: 380px;
+}
+
+.profile-details .profile-name-editor[hidden] {
+  display: none;
+}
+
+.profile-name-editor input {
+  width: 100%;
+  border: 1.5px solid #cfe7d6;
+  border-radius: 9px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2937;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-name-editor input:focus {
+  border-color: #28543b;
+  box-shadow: 0 0 0 3px rgba(40, 84, 59, 0.12);
+}
+
+.profile-name-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.profile-name-actions .primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #28543b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.profile-name-actions .primary-button span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-name-actions .primary-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.profile-name-actions .secondary-button {
+  background: #fff;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-details .profile-name-error {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
 .profile-details {
   flex: 1;
 }
