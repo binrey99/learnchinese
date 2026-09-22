@@ -1,7 +1,6 @@
 import { renderCalendar } from './calendar.js';
 import { createToast } from './toast.js';
 import { initNavigation } from './navigation.js';
-import { initLessonActions } from './lessons.js';
 import { initLogin } from './login.js';
 import { initRouter } from './router.js';
 import { renderDashboardProgress } from './dashboard-progress.js';
@@ -28,7 +27,6 @@ function initDashboard() {
   initPinyinToggle();
 
   const showToast = createToast();
-  initLessonActions(showToast);
   // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động lẫn lịch học theo tháng
   initLogin({
     toast: showToast,
