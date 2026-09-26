@@ -1870,6 +1870,274 @@ body.show-pinyin .speed-pinyin{display:block!important}
   body.sidebar-open{overflow:hidden}
 }
 
+/* ==========================================================================
+   PHÂN TRANG TỪ VỰNG (VOCABULARY PAGINATION)
+   ========================================================================== */
+.vocabulary-pagination {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #fff;
+  border: 1px solid #dfeae3;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #243b2f08;
+}
+
+.vocabulary-pagination-info {
+  font-size: 13px;
+  color: #71807b;
+}
+
+.vocabulary-pagination-info strong {
+  color: #28543b;
+  font-weight: 700;
+}
+
+.vocabulary-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vocab-page-numbers {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.vocab-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  background: #fff;
+  border: 1px solid #dfeae3;
+  border-radius: 8px;
+  color: #28543b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.vocab-page-btn:hover:not(:disabled) {
+  border-color: #4f9d72;
+  background: #f1f8f3;
+  color: #1f4330;
+  transform: translateY(-1px);
+}
+
+.vocab-page-btn.active {
+  background: #28543b;
+  border-color: #28543b;
+  color: #fff;
+  cursor: default;
+  font-weight: 700;
+}
+
+.vocab-page-btn:disabled:not(.active) {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #e5ece8;
+  color: #9aa4a0;
+  transform: none;
+}
+
+.vocab-page-nav {
+  padding: 0 12px;
+  font-weight: 700;
+}
+
+.vocab-page-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 36px;
+  color: #879490;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.vocabulary-list-wrap {
+  position: relative;
+  min-height: 180px;
+}
+
+.vocabulary-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(1.5px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 2;
+  border-radius: 12px;
+  font-size: 13px;
+  color: #28543b;
+  font-weight: 600;
+  pointer-events: all;
+}
+
+.vocabulary-loading-overlay.active {
+  display: flex !important;
+}
+
+.vocabulary-loading-overlay[hidden] {
+  display: none !important;
+}
+
+.vocabulary-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid #dfeae3;
+  border-top-color: #28543b;
+  border-radius: 50%;
+  animation: vocab-spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+@keyframes vocab-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   LƯỚI TỪ VỰNG 2 CỘT & HIỂN THỊ COMPONENT (VOCABULARY 2-COL GRID)
+   ========================================================================== */
+.vocabulary-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+}
+
+@media (max-width: 768px) {
+  .vocabulary-list {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.vocabulary-item {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  min-height: 100px !important;
+  padding: 16px 58px 16px 18px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  border: 1px solid #dfeae3 !important;
+}
+
+.vocabulary-main-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.vocabulary-hanzi {
+  min-width: 55px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.vocabulary-hanzi strong {
+  font-family: 'Noto Sans SC', 'Noto Sans', sans-serif;
+  font-size: 26px;
+  color: #28543b;
+  line-height: 1.15;
+}
+
+.vocabulary-meanings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.vocabulary-english {
+  color: #879490;
+  font-size: 12px;
+}
+
+.vocabulary-vietnamese {
+  color: #527066;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.vocabulary-tag {
+  display: inline-block;
+  font-size: 10px;
+  color: #4f9d72;
+  background: #eaf6ee;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 600;
+}
+
+.vocabulary-component {
+  width: 100%;
+  font-size: 12px;
+  color: #3f6050;
+  background: #f4f8f5;
+  border: 1px dashed #cadfd2;
+  border-radius: 8px;
+  padding: 8px 12px;
+  line-height: 1.45;
+  box-sizing: border-box;
+  word-break: break-word;
+}
+
+.vocabulary-component-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #357a53;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 2px;
+}
+
+@media(max-width: 650px) {
+  .vocabulary-pagination {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .vocabulary-pagination-info {
+    font-size: 12px;
+  }
+  .vocab-page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .vocab-page-nav {
+    padding: 0 8px;
+  }
+}
+
+
 
 
 

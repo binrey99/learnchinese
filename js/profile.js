@@ -118,7 +118,7 @@ async function loadMasteredVocabularies(userId) {
   try {
     const { data, error } = await supabase
       .from('vocabulary')
-      .select('id, book_level, vocab, english_meaning, vietnamese_meaning, word_type, component')
+      .select('id, book_level, vocab, english_meaning, vietnamese_meaning, word_type, Example')
       .in('id', vocabIds);
 
     if (!error && data) vocabRows = data;
@@ -134,7 +134,7 @@ async function loadMasteredVocabularies(userId) {
     english: w.english_meaning || '',
     level: normalizeLevel(w.book_level || 'HSK'),
     wordType: w.word_type || '',
-    component: w.component || '',
+    example: w.Example || w.example || w.component || '',
     masteredAt: masteryMap.get(String(w.id))
   }));
 
