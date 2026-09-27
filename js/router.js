@@ -1,4 +1,5 @@
 import { initVocabulary } from './vocabulary.js';
+import { initWriting } from './writing.js';
 import { initHsk } from './hsk.js';
 import { initPractice } from './practice.js';
 import { initTranslation } from './translation.js';
@@ -17,10 +18,15 @@ const pages = {
     description: 'Mở rộng vốn từ và ôn tập theo cấp độ HSK.',
     template: '<div class="page-list" data-vocabulary></div>'
   },
+  writing: {
+    title: 'Tập viết chữ Hán',
+    description: 'Luyện viết từng nét chữ Hán trên ô kẻ 米字格 chuẩn mực theo từng cấp độ.',
+    template: '<div class="page-list" data-writing></div>'
+  },
   hsk: {
-    title: 'Lộ trình HSK',
-    description: 'Theo dõi tiến độ học theo từng cấp độ HSK.',
-    template: '<div class="page-list page-list-grid" data-hsk></div>'
+    title: 'Tập viết chữ Hán',
+    description: 'Luyện viết từng nét chữ Hán trên ô kẻ 米字格 chuẩn mực theo từng cấp độ.',
+    template: '<div class="page-list" data-writing></div>'
   },
   practice: {
     title: 'Luyện tập',
@@ -115,7 +121,7 @@ export function initRouter({ toast } = {}) {
     const options = { toast };
     try {
       if (route === 'vocabulary') initVocabulary(options);
-      if (route === 'hsk') initHsk(options);
+      if (route === 'writing' || route === 'hsk') initWriting(options);
       if (route === 'practice') initPractice({ onStart: (type) => { if (type === 'translation' || type === 'sentence-order') window.location.hash = type; else toast?.('Bài luyện tập đã sẵn sàng ✦'); } });
       if (route === 'translation') initTranslation(options);
       if (route === 'sentence-order') initSentenceOrder(options);
