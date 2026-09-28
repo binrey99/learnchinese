@@ -167,15 +167,53 @@ class SoundEffects {
 
 const sounds = new SoundEffects();
 
-// Chinese speech pronunciation
-function speakChinese(text) {
-  if (!('speechSynthesis' in window) || !text) return;
+// Chinese speech pronunciation with robust dual-engine fallback (Web Speech + YouDao audio)
+function speakChinese(text, onEnd) {
+  if (!text || sounds.muted) return;
+
+  // Engine 1: Web SpeechSynthesis
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = 0.85;
+
+      const voices = window.speechSynthesis.getVoices();
+      const zh = voices.find(
+        (v) => v.lang === 'zh-CN' || v.lang === 'zh_CN' || v.lang?.startsWith('zh') || v.name?.includes('Chinese')
+      );
+      if (zh) utterance.voice = zh;
+      if (onEnd) utterance.onend = onEnd;
+
+      let started = false;
+      utterance.onstart = () => { started = true; };
+      utterance.onerror = () => {
+        if (!started) playChineseAudioFallback(text, onEnd);
+      };
+
+      window.speechSynthesis.speak(utterance);
+
+      // Chrome speech synthesis safety fallback
+      setTimeout(() => {
+        if (!window.speechSynthesis.speaking && !started) {
+          playChineseAudioFallback(text, onEnd);
+        }
+      }, 250);
+      return;
+    } catch (_) {}
+  }
+
+  // Engine 2: High quality dictionary CDN audio
+  playChineseAudioFallback(text, onEnd);
+}
+
+function playChineseAudioFallback(text, onEnd) {
+  if (sounds.muted || !text) return;
   try {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'zh-CN';
-    utterance.rate = 0.85;
-    window.speechSynthesis.speak(utterance);
+    const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&le=zh`);
+    if (onEnd) audio.onended = onEnd;
+    audio.play().catch(() => {});
   } catch (_) {}
 }
 
@@ -454,7 +492,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                 <div class="card-back ${card.type}">
                   ${card.type === 'hanzi' ? `<span class="game-pinyin">${escapeHtml(card.pinyin || toPinyin(card.text))}</span>` : ''}
                   <strong class="card-main-text">${escapeHtml(card.text)}</strong>
-                  ${card.type === 'meaning' ? `<small class="card-sub-text">Nghĩa</small>` : ''}
+                  ${card.type === 'meaning' ? `<small class="card-sub-text">Nghĩa</small>` : '<span class="card-speaker-icon" title="Nghe phát âm">🔊</span>'}
                 </div>
               </div>
             </div>
@@ -483,16 +521,22 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     cardEls.forEach((cardEl) => {
       cardEl.addEventListener('click', () => {
         if (isLocked) return;
-        if (cardEl.classList.contains('is-flipped') || cardEl.classList.contains('is-matched')) return;
+        const cardIdx = Number(cardEl.dataset.cardIdx);
+        const cardData = shuffledCards[cardIdx];
+        if (cardEl.classList.contains('is-matched')) {
+          if (cardData.speakText) speakChinese(cardData.speakText);
+          return;
+        }
+        if (cardEl.classList.contains('is-flipped')) return;
 
         sounds.playFlip();
         cardEl.classList.add('is-flipped');
 
-        const cardIdx = Number(cardEl.dataset.cardIdx);
-        const cardData = shuffledCards[cardIdx];
+        // data already captured
+        // cardData already defined
         flippedCards.push({ el: cardEl, data: cardData });
 
-        if (cardData.speakText) {
+        if (cardData.type === 'hanzi' && cardData.speakText) {
           speakChinese(cardData.speakText);
         }
 
@@ -508,6 +552,14 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             sounds.playCorrect();
             first.el.classList.add('is-matched');
             second.el.classList.add('is-matched');
+
+            // Tự động phát âm chuẩn xác từ tiếng Trung khi lật chính xác 1 từ (khớp cặp)
+            const hanziToSpeak = first.data.type === 'hanzi' ? first.data.speakText : second.data.speakText;
+            if (hanziToSpeak) {
+              setTimeout(() => {
+                speakChinese(hanziToSpeak);
+              }, 120);
+            }
             if (matchesEl) matchesEl.textContent = `${matchedPairs} / ${pairCount}`;
             flippedCards = [];
             isLocked = false;

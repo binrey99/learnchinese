@@ -2382,7 +2382,10 @@ body.show-pinyin .vocabulary-detail-pinyin {
 .game-pinyin{display:none;font-size:12px;color:#3d8b5f;font-weight:700;line-height:1.2;margin-bottom:3px;text-align:center;letter-spacing:0.5px}
 body.show-pinyin .game-pinyin{display:block!important}
 .memory-card.is-matched .card-back{border-color:#34b76a!important;background:#e9f8ee!important;box-shadow:0 0 0 2px #34b76a44}
-.memory-card.is-matched{cursor:default}
+.memory-card.is-matched{cursor:pointer}
+.card-speaker-icon{font-size:13px;margin-top:3px;opacity:0.85;transition:transform .2s ease;display:inline-block}
+.memory-card:hover .card-speaker-icon{transform:scale(1.25)}
+@keyframes matchCardPop{0%{transform:rotateY(180deg) scale(.94)}50%{transform:rotateY(180deg) scale(1.06)}100%{transform:rotateY(180deg) scale(1)}}
 
 /* ==========================================
    GAME 2: ĐUA TỐC ĐỘ 60S (SPEED BLITZ)
