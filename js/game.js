@@ -536,9 +536,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         // cardData already defined
         flippedCards.push({ el: cardEl, data: cardData });
 
-        if (cardData.type === 'hanzi' && cardData.speakText) {
-          speakChinese(cardData.speakText);
-        }
+        // Không phát âm khi mới lật 1 thẻ lẻ, chỉ phát âm khi lật đúng cặp
 
         if (flippedCards.length === 2) {
           moves++;
