@@ -53,10 +53,16 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
   const updateTrigger = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const isLoggedIn = Boolean(session);
-    const label = isLoggedIn ? 'Đăng xuất' : 'Đăng nhập';
+    const label = 'Hồ sơ học viên';
     if (trigger.classList.contains('login-avatar')) {
       trigger.setAttribute('aria-label', label);
       trigger.setAttribute('title', label);
+      const avatarUrl = localStorage.getItem('mandarinly_user_avatar') || session?.user?.user_metadata?.avatar_url;
+      if (avatarUrl) {
+        trigger.innerHTML = `<img src="${avatarUrl}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } else {
+        trigger.innerHTML = `<svg class="login-avatar-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.7-3.5 2.9-5.3 6.5-5.3s5.8 1.8 6.5 5.3"></path></svg>`;
+      }
     } else {
       trigger.textContent = label;
     }
@@ -64,6 +70,12 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     if (accountEmail) accountEmail.textContent = session?.user?.email || 'Tài khoản';
     trigger.dataset.loggedIn = String(isLoggedIn);
   };
+
+  window.addEventListener('profile-avatar-updated', (e) => {
+    if (e.detail?.avatarUrl && trigger.classList.contains('login-avatar')) {
+      trigger.innerHTML = `<img src="${e.detail.avatarUrl}" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    }
+  });
 
   const updateMode = () => {
     isRegisterMode = !isRegisterMode;
@@ -76,17 +88,24 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     errorMessage.textContent = '';
   };
 
-  trigger.addEventListener('click', () => {
-    if (trigger.dataset.loggedIn === 'true') {
-      if (accountMenu) accountMenu.hidden = !accountMenu.hidden;
-      return;
+  trigger.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (accountMenu) accountMenu.hidden = true;
+    if (window.location.hash === '#profile') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.location.hash = '#profile';
     }
+  });
 
+  window.addEventListener('open-login-modal', () => {
     modal.classList.add('open');
     const emailInput = modal.querySelector('#loginEmail');
-    emailInput.value = localStorage.getItem(REMEMBERED_EMAIL_KEY) || '';
-    if (rememberAccount) rememberAccount.checked = Boolean(emailInput.value);
-    emailInput.focus();
+    if (emailInput) {
+      emailInput.value = localStorage.getItem(REMEMBERED_EMAIL_KEY) || '';
+      if (rememberAccount) rememberAccount.checked = Boolean(emailInput.value);
+      emailInput.focus();
+    }
   });
 
   logoutButton?.addEventListener('click', async () => {

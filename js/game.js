@@ -449,7 +449,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             <div class="memory-card" data-card-idx="${idx}" data-pair="${card.pairId}">
               <div class="card-inner">
                 <div class="card-front">
-                  <span class="card-pattern">🀄</span>
+                  <img src="picture/card_back.jpg" class="card-cover-img" alt="Mặt sau thẻ bài LuLu" loading="lazy">
                 </div>
                 <div class="card-back ${card.type}">
                   ${card.type === 'hanzi' ? `<span class="game-pinyin">${escapeHtml(card.pinyin || toPinyin(card.text))}</span>` : ''}

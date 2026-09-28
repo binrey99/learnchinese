@@ -170,48 +170,34 @@ export async function renderProfile(options = {}) {
     console.warn('Lỗi lấy thông tin user:', err);
   }
 
-  if (!user) {
-    container.innerHTML = `
-      <div class="profile-empty">
-        <div class="profile-empty-icon">🔒</div>
-        <strong>Bạn chưa đăng nhập</strong>
-        <span>Hãy đăng nhập tài khoản để xem hồ sơ, thống kê thành tích và đổi ảnh đại diện của bạn.</span>
-        <div class="profile-empty-actions">
-          <button type="button" class="primary-button" id="profileOpenLoginBtn">Đăng nhập ngay</button>
-          <a class="secondary-button" href="#dashboard">Về dashboard</a>
-        </div>
-      </div>
-    `;
-    document.querySelector('#profileOpenLoginBtn')?.addEventListener('click', () => {
-      document.querySelector('#loginTrigger')?.click();
-    });
-    return;
-  }
-
-  // Lấy dữ liệu hồ sơ từ bảng profiles
+  // Lấy dữ liệu hồ sơ từ bảng profiles nếu đã đăng nhập
   let profile = null;
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('email, full_name, avatar_url, bio, created_at')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (!error) profile = data;
-  } catch (err) {
-    console.warn('Không thể tải profile từ bảng profiles:', err);
+  if (user) {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('email, full_name, avatar_url, bio, created_at')
+        .eq('id', user.id)
+        .maybeSingle();
+      if (!error) profile = data;
+    } catch (err) {
+      console.warn('Không thể tải profile từ bảng profiles:', err);
+    }
   }
 
   // Lấy dữ liệu điểm số và thành tích từ leaderboard_scores
   let scoreRecords = [];
-  try {
-    const { data, error } = await supabase
-      .from('leaderboard_scores')
-      .select('category, points, description, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    if (!error && data) scoreRecords = data;
-  } catch (err) {
-    console.warn('Không thể tải leaderboard_scores:', err);
+  if (user) {
+    try {
+      const { data, error } = await supabase
+        .from('leaderboard_scores')
+        .select('category, points, description, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (!error && data) scoreRecords = data;
+    } catch (err) {
+      console.warn('Không thể tải leaderboard_scores:', err);
+    }
   }
 
   // Dự phòng gộp thêm điểm từ localStorage
@@ -223,16 +209,23 @@ export async function renderProfile(options = {}) {
 
   // Lấy số từ vựng đã thuộc từ vocabulary_mastery
   let masteredCount = 0;
-  try {
-    const { count, error } = await supabase
-      .from('vocabulary_mastery')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-    if (!error && typeof count === 'number') {
-      masteredCount = count;
+  if (user) {
+    try {
+      const { count, error } = await supabase
+        .from('vocabulary_mastery')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+      if (!error && typeof count === 'number') {
+        masteredCount = count;
+      }
+    } catch (err) {
+      console.warn('Không thể tải vocabulary_mastery:', err);
     }
-  } catch (err) {
-    console.warn('Không thể tải vocabulary_mastery:', err);
+  } else {
+    try {
+      const localMastered = JSON.parse(localStorage.getItem('mandarinly_local_mastered') || '[]');
+      masteredCount = localMastered.length;
+    } catch (_) {}
   }
 
   // Tính toán số liệu thống kê
@@ -249,13 +242,12 @@ export async function renderProfile(options = {}) {
 
   const learnerInfo = getLearnerTitle(totalPoints);
 
-  const name = profile?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Học viên';
-  // Tên hiển thị có thể đổi ngay trên trang nên giữ biến có thể cập nhật lại
+  const name = profile?.full_name || user?.user_metadata?.full_name || localStorage.getItem('mandarinly_user_name') || user?.email?.split('@')[0] || 'Học viên LuLu';
   let currentName = name;
-  const email = profile?.email || user.email || '';
-  let avatarUrl = profile?.avatar_url || user.user_metadata?.avatar_url || localStorage.getItem('mandarinly_user_avatar') || 'picture/main_picture.png';
-  const joinedDate = profile?.created_at || user.created_at;
-  const joined = joinedDate ? new Date(joinedDate).toLocaleDateString('vi-VN') : 'Gần đây';
+  const email = profile?.email || user?.email || 'Chưa liên kết tài khoản';
+  let avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || localStorage.getItem('mandarinly_user_avatar') || 'picture/main_picture.png';
+  const joinedDate = profile?.created_at || user?.created_at;
+  const joined = joinedDate ? new Date(joinedDate).toLocaleDateString('vi-VN') : 'Hôm nay';
 
   // Định nghĩa danh sách Huy Hiệu Thành Tích
   const BADGES = [
@@ -337,6 +329,17 @@ export async function renderProfile(options = {}) {
 
   container.innerHTML = `
     <div class="profile-layout">
+      ${!user ? `
+        <div class="profile-guest-banner">
+          <span class="guest-banner-icon">☁️</span>
+          <div class="guest-banner-text">
+            <strong>Hồ sơ học viên (Chế độ Học viên Khách)</strong>
+            <span>Đăng nhập hoặc đăng ký để đồng bộ thành tích học tập và lưu điểm vĩnh viễn trên đám mây.</span>
+          </div>
+          <button type="button" class="primary-button" id="profileLoginBannerBtn">Đăng nhập / Đăng ký</button>
+        </div>
+      ` : ''}
+
       <!-- Thẻ thông tin học viên -->
       <section class="profile-card">
         <div class="profile-avatar-wrapper">
@@ -354,6 +357,7 @@ export async function renderProfile(options = {}) {
           <div class="profile-badge-row">
             <span class="profile-badge">HỒ SƠ HỌC VIÊN</span>
             <span class="profile-rank-pill" style="border-color:${learnerInfo.color};color:${learnerInfo.color}">${learnerInfo.badge}</span>
+            ${user ? `<button type="button" class="profile-logout-pill" id="profilePageLogoutBtn" title="Đăng xuất">Đăng xuất</button>` : ''}
           </div>
           <div class="profile-name-row" id="profileNameRow">
             <h2 id="profileNameText">${escapeHtml(name)}</h2>
@@ -875,31 +879,33 @@ export async function renderProfile(options = {}) {
     if (errorText) errorText.hidden = true;
 
     try {
-      // 1. Cập nhật vào auth.users (user_metadata)
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { avatar_url: selectedAvatarUrl }
-      });
-      if (authError) console.warn('Cập nhật user_metadata cảnh báo:', authError.message);
+      if (user) {
+        // 1. Cập nhật vào auth.users (user_metadata)
+        const { error: authError } = await supabase.auth.updateUser({
+          data: { avatar_url: selectedAvatarUrl }
+        });
+        if (authError) console.warn('Cập nhật user_metadata cảnh báo:', authError.message);
 
-      // 2. Cập nhật / chèn vào bảng profiles
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: currentName,
-        avatar_url: selectedAvatarUrl,
-        updated_at: new Date().toISOString()
-      });
-      if (profileError) {
-        console.warn('Cập nhật bảng profiles cảnh báo:', profileError.message);
+        // 2. Cập nhật / chèn vào bảng profiles
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: user.id,
+          email: user.email,
+          full_name: currentName,
+          avatar_url: selectedAvatarUrl,
+          updated_at: new Date().toISOString()
+        });
+        if (profileError) {
+          console.warn('Cập nhật bảng profiles cảnh báo:', profileError.message);
+        }
+
+        // 3. Cập nhật avatar trên các bảng điểm nếu có
+        try {
+          await supabase
+            .from('leaderboard_scores')
+            .update({ avatar_url: selectedAvatarUrl })
+            .eq('user_id', user.id);
+        } catch (_) {}
       }
-
-      // 3. Cập nhật avatar trên các bảng điểm nếu có
-      try {
-        await supabase
-          .from('leaderboard_scores')
-          .update({ avatar_url: selectedAvatarUrl })
-          .eq('user_id', user.id);
-      } catch (_) {}
 
       // 4. Cập nhật giao diện lập tức và lưu cache đồng bộ
       profileAvatarImg.src = selectedAvatarUrl;
@@ -994,32 +1000,35 @@ export async function renderProfile(options = {}) {
     if (nameError) nameError.hidden = true;
 
     try {
-      // 1. Cập nhật vào auth.users (user_metadata)
-      const { error: authError } = await supabase.auth.updateUser({
-        data: { full_name: newName }
-      });
-      if (authError) console.warn('Cập nhật user_metadata cảnh báo:', authError.message);
+      if (user) {
+        // 1. Cập nhật vào auth.users (user_metadata)
+        const { error: authError } = await supabase.auth.updateUser({
+          data: { full_name: newName }
+        });
+        if (authError) console.warn('Cập nhật user_metadata cảnh báo:', authError.message);
 
-      // 2. Cập nhật bảng profiles - nguồn dữ liệu chính của tên hiển thị
-      const liveAvatar = profileAvatarImg?.src || avatarUrl;
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: user.id,
-        email: user.email,
-        full_name: newName,
-        avatar_url: liveAvatar,
-        updated_at: new Date().toISOString()
-      });
-      if (profileError) throw profileError;
+        // 2. Cập nhật bảng profiles - nguồn dữ liệu chính của tên hiển thị
+        const liveAvatar = profileAvatarImg?.src || avatarUrl;
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: user.id,
+          email: user.email,
+          full_name: newName,
+          avatar_url: liveAvatar,
+          updated_at: new Date().toISOString()
+        });
+        if (profileError) throw profileError;
 
-      // 3. Đồng bộ tên trên bảng điểm để bảng xếp hạng hiển thị đúng ngay
-      try {
-        await supabase
-          .from('leaderboard_scores')
-          .update({ display_name: newName })
-          .eq('user_id', user.id);
-      } catch (_) {}
+        // 3. Đồng bộ tên trên bảng điểm để bảng xếp hạng hiển thị đúng ngay
+        try {
+          await supabase
+            .from('leaderboard_scores')
+            .update({ display_name: newName })
+            .eq('user_id', user.id);
+        } catch (_) {}
+      }
 
-      // 4. Cập nhật giao diện lập tức
+      // 4. Cập nhật giao diện lập tức & lưu cache
+      localStorage.setItem('mandarinly_user_name', newName);
       currentName = newName;
       if (nameHeading) nameHeading.textContent = newName;
       const miniName = document.querySelector('.profile-mini strong');
@@ -1029,7 +1038,7 @@ export async function renderProfile(options = {}) {
       closeNameEditor();
       toast?.('Đã cập nhật tên hiển thị! ✨');
     } catch (err) {
-      console.error('Lỗi khi lưu tên hiển thị lên Supabase:', err);
+      console.error('Lỗi khi lưu tên hiển thị:', err);
       showNameError('Có lỗi xảy ra khi lưu tên. Vui lòng thử lại!');
     } finally {
       nameSaveBtn.disabled = false;
@@ -1037,4 +1046,28 @@ export async function renderProfile(options = {}) {
       nameSaveText.textContent = 'Lưu tên';
     }
   });
+
+  // Nút đăng nhập/đăng ký trên banner dành cho khách
+  const loginBannerBtn = container.querySelector('#profileLoginBannerBtn');
+  loginBannerBtn?.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('open-login-modal'));
+  });
+
+  // Nút đăng xuất trực tiếp trên hồ sơ
+  const logoutBtn = container.querySelector('#profilePageLogoutBtn');
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('mandarinly_user_avatar');
+      localStorage.removeItem('mandarinly_user_name');
+      toast?.('Đã đăng xuất tài khoản!');
+      setTimeout(() => {
+        window.location.hash = '#home';
+        window.location.reload();
+      }, 400);
+    } catch (err) {
+      console.error('Lỗi khi đăng xuất:', err);
+    }
+  });
 }
+

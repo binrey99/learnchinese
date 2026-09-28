@@ -3,71 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mandarinly - Learning Dashboard</title>
+  <title>LuLu Chinese - Vui Học Tiếng Trung Mỗi Ngày</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .topbar-brand-video, .topbar-brand video { width: 44px !important; height: 44px !important; max-width: 44px !important; object-fit: cover !important; border-radius: 50% !important; border: 2.5px solid #d8eee1; box-shadow: 0 2px 10px rgba(40,84,59,0.14); display: block; background: #fff; }
-    .mascot-note img { width: 48px !important; height: 48px !important; max-width: 48px !important; object-fit: cover !important; border-radius: 50% !important; }
-    body { background: linear-gradient(135deg, #e0f2fe 0%, #ccfbf1 100%) fixed !important; }
+    :root {
+      --font-main: 'Plus Jakarta Sans', 'Nunito', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+    }
+    body {
+      background: #FAFCFA !important;
+      background-image: 
+        radial-gradient(at 5% 5%, rgba(220, 252, 231, 0.75) 0px, transparent 45%),
+        radial-gradient(at 95% 8%, rgba(254, 243, 199, 0.7) 0px, transparent 45%),
+        radial-gradient(at 50% 95%, rgba(224, 242, 254, 0.6) 0px, transparent 50%),
+        radial-gradient(at 90% 85%, rgba(255, 237, 213, 0.5) 0px, transparent 40%) !important;
+      background-attachment: fixed !important;
+      font-family: var(--font-main) !important;
+    }
     .main-content { background: transparent !important; }
-    .primary-button { background: #28543b !important; }
   </style>
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar" id="sidebar">
-      <nav class="main-nav" aria-label="Điều hướng chính">
-        <p class="nav-label">Workspace</p>
-        <a class="nav-item active" data-route="dashboard" href="#dashboard"><span class="nav-icon">⌂</span> Tổng quan</a>
-        <a class="nav-item" data-route="practice" href="#practice"><span class="nav-icon">◈</span> Luyện tập <span class="nav-count">3</span></a>
-        <a class="nav-item" data-route="vocabulary" href="#vocabulary"><span class="nav-icon">Aa</span> Từ vựng</a>
-        <a class="nav-item" data-route="writing" href="#writing"><span class="nav-icon">✍️</span> Tập viết</a>
-        <a class="nav-item" data-route="mock-exam" href="#mock-exam"><span class="nav-icon">✎</span> Thi thử</a>
-        <a class="nav-item" data-route="materials" href="#materials"><span class="nav-icon">▤</span> Tài liệu</a>
-        <a class="nav-item" data-route="game" href="#game"><span class="nav-icon">🎮</span> Trò chơi</a>
-        <a class="nav-item" data-route="battle" href="#battle"><span class="nav-icon">⚔️</span> Thi đấu</a>
-        <a class="nav-item" data-route="lulu" href="#lulu"><span class="nav-icon">🍊</span> Nuôi LuLu</a>
-        <a class="nav-item" href="#calendar"><span class="nav-icon">▣</span> Lịch học</a>
-        <p class="nav-label spaced">Your space</p>
-        <a class="nav-item" href="#progress"><span class="nav-icon">↗</span> Tiến độ</a>
-        <a class="nav-item" href="#community"><span class="nav-icon">◎</span> Cộng đồng</a>
-      </nav>
-
-      <div class="sidebar-bottom">
-        <div class="streak-card">
-          <div class="streak-top"><span class="flame">✦</span><span>Chuỗi học tập</span></div>
-          <strong>12 ngày</strong>
-          <div class="mini-week" aria-label="Tiến độ trong tuần"><i></i><i></i><i></i><i></i><i></i><i class="muted"></i><i class="muted"></i></div>
-          <small>Thật tuyệt, hãy duy trì nhé!</small>
-        </div>
-        <a class="nav-item settings" href="#settings"><span class="nav-icon">⚙</span> Cài đặt</a>
-        <div class="profile-mini"><div class="avatar avatar-lime">HN</div><div><strong>Hà Nguyễn</strong><small>HSK 3 • 68%</small></div><span class="dots">•••</span></div>
-      </div>
-    </aside>
-
     <main class="main-content" id="dashboard">
       <header class="topbar">
-        <button class="menu-button" id="menuButton" type="button" aria-label="Mở menu điều hướng" aria-controls="sidebar" aria-expanded="false">☰</button>
-        <a class="topbar-brand" href="#dashboard" aria-label="LULU CHINESE trang chủ"><video class="topbar-brand-video" src="video/lulu_study.mp4" autoplay loop muted playsinline></video><strong>LULU CHINESE</strong></a>
-        <div class="top-actions"><label class="pinyin-toggle" title="Hiển thị pinyin phía trên chữ Hán"><input id="pinyinToggle" type="checkbox"><span>Hiện Pinyin</span></label><button class="login-trigger login-avatar" id="loginTrigger" aria-label="Đăng nhập"><svg class="login-avatar-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.7-3.5 2.9-5.3 6.5-5.3s5.8 1.8 6.5 5.3"></path></svg></button><div class="account-menu" id="accountMenu" hidden><strong id="accountEmail">Tài khoản</strong><a class="profile-link" id="profileLink" href="#profile">Xem hồ sơ</a><button type="button" id="logoutButton">Đăng xuất</button></div></div>
+        <a class="topbar-brand" href="#dashboard" aria-label="LULU CHINESE trang chủ">
+          <div class="brand-avatar-box">
+            <video class="topbar-brand-video" src="video/lulu_study.mp4" autoplay loop muted playsinline poster="picture/eat.jpg"></video>
+            <span class="brand-sparkle">✨</span>
+          </div>
+          <div class="brand-titles">
+            <strong>LULU CHINESE</strong>
+            <span class="brand-sub">学中文 • Nhớ lâu</span>
+          </div>
+        </a>
+        <div class="top-actions">
+          <div class="topbar-streak" title="Chuỗi học tập: 12 ngày liên tục!">
+            <span class="flame">🔥</span>
+            <strong>12 ngày</strong>
+          </div>
+          <label class="pinyin-toggle" title="Hiển thị pinyin phía trên chữ Hán">
+            <input id="pinyinToggle" type="checkbox">
+            <span class="pinyin-toggle-slider"></span>
+            <span class="pinyin-toggle-text">Hiện Pinyin</span>
+          </label>
+          <button class="login-trigger login-avatar" id="loginTrigger" aria-label="Hồ sơ học viên" title="Hồ sơ học viên">
+            <svg class="login-avatar-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.7-3.5 2.9-5.3 6.5-5.3s5.8 1.8 6.5 5.3"></path></svg>
+          </button>
+          <div class="account-menu" id="accountMenu" hidden>
+            <strong id="accountEmail">Tài khoản</strong>
+            <a class="profile-link" id="profileLink" href="#profile">Xem hồ sơ</a>
+            <button type="button" id="logoutButton">Đăng xuất</button>
+          </div>
+        </div>
       </header>
 
       <div class="content-wrap">
         <section class="quick-access" aria-labelledby="quickAccessTitle">
-          <div class="quick-heading"><div><h2 id="quickAccessTitle">Khám phá bài học</h2><p>Chọn nội dung bạn muốn học hôm nay</p></div><span class="quick-hint">9 chủ đề</span></div>
+          <div class="quick-heading">
+            <div>
+              <h2 id="quickAccessTitle">Khám phá bài học ✨</h2>
+              <p>Chọn nội dung bạn muốn học hôm nay</p>
+            </div>
+            <span class="quick-hint">🐾 9 chủ đề</span>
+          </div>
           <div class="quick-grid">
-            <a class="quick-card" href="#vocabulary"><img src="picture/vocabulary.png" alt="Linh vật học từ vựng"><span><strong>Từ vựng</strong><small>Học từ mới</small></span><b>→</b></a>
-            <a class="quick-card" href="#writing"><img src="picture/HSK.png" alt="Linh vật tập viết"><span><strong>Tập viết</strong><small>Luyện viết chữ Hán</small></span><b>→</b></a>
-            <a class="quick-card" href="#practice"><img src="picture/practice.png" alt="Linh vật luyện tập"><span><strong>Luyện tập</strong><small>Rèn kỹ năng</small></span><b>→</b></a>
-            <a class="quick-card" href="#mock-exam"><img src="picture/mock-exam.png" alt="Linh vật thi thử"><span><strong>Thi thử</strong><small>Kiểm tra năng lực</small></span><b>→</b></a>
-            <a class="quick-card" href="#materials"><img src="picture/main_picture.png" alt="Linh vật học cùng tài liệu"><span><strong>Tài liệu</strong><small>Kho học tập</small></span><b>→</b></a>
-            <a class="quick-card leaderboard-card" href="#leaderboard"><span class="leaderboard-cup" aria-hidden="true">🏆</span><span><strong>Xếp hạng tuần</strong><small>Đua top thành tích</small></span><b>→</b></a>
-            <a class="quick-card game-card" href="#game"><span class="game-badge" aria-hidden="true">🎮</span><span><strong>Trò chơi</strong><small>Vừa chơi vừa học</small></span><b>→</b></a>
-            <a class="quick-card battle-card" href="#battle"><span class="battle-badge" aria-hidden="true">⚔️</span><span><strong>Thi đấu</strong><small>Đối kháng realtime</small></span><b>→</b></a>
-            <a class="quick-card lulu-card" href="#lulu"><img src="picture/eat.jpg" alt="Linh vật LuLu đang ăn"><span><strong>Nuôi LuLu</strong><small>Chăm sóc thú cưng</small></span><b>→</b></a>
+            <a class="quick-card card-vocab" href="#vocabulary">
+              <div class="card-thumb"><img src="picture/vocabulary.png" alt="Linh vật học từ vựng"></div>
+              <span><strong>Từ vựng</strong><small>Học từ mới HSK</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-writing" href="#writing">
+              <div class="card-thumb"><img src="picture/HSK.png" alt="Linh vật tập viết"></div>
+              <span><strong>Tập viết</strong><small>Luyện viết chữ Hán</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-practice" href="#practice">
+              <div class="card-thumb"><img src="picture/practice.png" alt="Linh vật luyện tập"></div>
+              <span><strong>Luyện tập</strong><small>Rèn kỹ năng</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-mock" href="#mock-exam">
+              <div class="card-thumb"><img src="picture/mock-exam.png" alt="Linh vật thi thử"></div>
+              <span><strong>Thi thử</strong><small>Kiểm tra năng lực</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-materials" href="#materials">
+              <div class="card-thumb"><img src="picture/main_picture.png" alt="Linh vật học cùng tài liệu"></div>
+              <span><strong>Tài liệu</strong><small>Kho học tập bổ ích</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-leaderboard leaderboard-card" href="#leaderboard">
+              <div class="card-thumb"><span class="leaderboard-cup" aria-hidden="true">🏆</span></div>
+              <span><strong>Xếp hạng tuần</strong><small>Đua top thành tích</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-game game-card" href="#game">
+              <div class="card-thumb"><span class="game-badge" aria-hidden="true">🎮</span></div>
+              <span><strong>Trò chơi</strong><small>Vừa chơi vừa học</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-battle battle-card" href="#battle">
+              <div class="card-thumb"><span class="battle-badge" aria-hidden="true">⚔️</span></div>
+              <span><strong>Thi đấu</strong><small>Đối kháng realtime</small></span>
+              <b class="card-arrow">→</b>
+            </a>
+            <a class="quick-card card-lulu lulu-card" href="#lulu">
+              <div class="card-thumb"><img src="picture/eat.jpg" alt="Linh vật LuLu đang ăn"></div>
+              <span><strong>Nuôi LuLu</strong><small>Chăm sóc thú cưng</small></span>
+              <b class="card-arrow">→</b>
+            </a>
           </div>
         </section>
 
