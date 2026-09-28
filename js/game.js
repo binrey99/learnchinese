@@ -1174,7 +1174,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           isCorrect: entry.isCorrect,
           x: xPos,
           y: yPos,
-          speed: 0.75 + Math.min(0.9, score * 0.0004) + (Math.random() * 0.15 - 0.07),
+          speed: 0.38 + Math.min(0.45, score * 0.0002) + (Math.random() * 0.08 - 0.04),
           handled: false
         };
 
