@@ -66,6 +66,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -77,6 +78,8 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 button, a, input, select, textarea {
@@ -379,7 +382,7 @@ a {
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
   height: 74px;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(16px);
@@ -920,13 +923,42 @@ a {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 650px) {
   .quick-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
+  }
+  .quick-card {
+    padding: 8px 10px;
+    gap: 8px;
+    border-radius: var(--radius-sm);
+    min-height: 56px;
+  }
+  .card-thumb {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 10px;
+  }
+  .quick-card strong {
+    font-size: 12.5px;
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+  .quick-card small {
+    font-size: 10px;
+    line-height: 1.2;
   }
   .card-arrow, .quick-card>b {
     display: none;
+  }
+  .quick-card.lulu-card {
+    grid-column: 1 / -1;
+    min-height: 56px;
+  }
+  .quick-card.lulu-card .card-arrow, .quick-card.lulu-card>b {
+    display: grid;
+    margin-left: auto;
   }
 }
 
@@ -2158,11 +2190,133 @@ body.show-pinyin .vocabulary-detail-pinyin {
     display: block;
   }
   .topbar {
-    height: 66px;
-    padding: 0 16px;
+    height: 60px;
+    min-height: 60px;
+    padding: 0 12px;
+    padding-top: max(0px, env(safe-area-inset-top));
+    gap: 8px;
+    box-sizing: border-box;
+    align-items: center;
+  }
+  .topbar-brand {
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 0;
+  }
+  .brand-avatar-box {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+  }
+  .topbar-brand-video, .topbar-brand video {
+    width: 38px !important;
+    height: 38px !important;
+    max-width: 38px !important;
+    border-width: 2px !important;
+  }
+  .brand-sparkle {
+    font-size: 11px;
+    top: -2px;
+    right: -2px;
+  }
+  .brand-titles {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .brand-titles strong {
+    font-size: 14px;
+    white-space: nowrap;
+    line-height: 1.2;
+    letter-spacing: -0.3px;
+  }
+  .brand-titles .brand-sub {
+    font-size: 9.5px;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .top-actions {
+    gap: 6px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+  .topbar-streak {
+    padding: 4px 8px;
+    gap: 4px;
+    font-size: 11px;
+    border-width: 1.5px;
+    white-space: nowrap;
+  }
+  .topbar-streak .flame {
+    font-size: 14px;
+  }
+  .pinyin-toggle {
+    padding: 4px 8px;
+    gap: 6px;
+    font-size: 11px;
+    border-width: 1.5px;
+    white-space: nowrap;
+  }
+  .pinyin-toggle input {
+    width: 28px;
+    height: 18px;
+  }
+  .pinyin-toggle input:after {
+    width: 12px;
+    height: 12px;
+    top: 3px;
+    left: 3px;
+  }
+  .pinyin-toggle input:checked:after {
+    transform: translateX(10px);
+  }
+  .login-avatar {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    border-width: 1.5px;
+  }
+  .login-avatar-icon {
+    width: 17px;
+    height: 17px;
+  }
+  .account-menu {
+    top: 48px;
+    right: 0;
   }
   .content-wrap, .page-view {
-    padding: 20px 14px 40px;
+    padding: 16px 12px 36px;
+  }
+}
+
+@media (max-width: 440px) {
+  .topbar {
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .brand-titles .brand-sub {
+    display: none;
+  }
+  .brand-titles strong {
+    font-size: 13.5px;
+  }
+  .topbar-streak {
+    padding: 3px 6px;
+    font-size: 10.5px;
+  }
+  .pinyin-toggle {
+    padding: 3px 6px;
+    font-size: 10.5px;
+  }
+}
+
+@media (max-width: 375px) {
+  .pinyin-toggle-text {
+    display: none;
+  }
+  .pinyin-toggle {
+    padding: 4px 6px;
   }
 }
 
