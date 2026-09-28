@@ -449,7 +449,8 @@ a {
 
 .brand-titles {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .brand-titles strong {
@@ -457,12 +458,13 @@ a {
   font-weight: 800;
   color: #064e3b;
   letter-spacing: -0.4px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .brand-titles .brand-sub {
-  font-size: 10px;
-  font-weight: 700;
-  color: #059669;
+  display: none !important;
 }
 
 /* Topbar Actions */
@@ -2222,19 +2224,19 @@ body.show-pinyin .vocabulary-detail-pinyin {
   .brand-titles {
     min-width: 0;
     display: flex;
-    flex-direction: column;
+    align-items: center;
     justify-content: center;
   }
   .brand-titles strong {
     font-size: 14px;
     white-space: nowrap;
-    line-height: 1.2;
+    line-height: 1;
     letter-spacing: -0.3px;
+    display: inline-flex;
+    align-items: center;
   }
   .brand-titles .brand-sub {
-    font-size: 9.5px;
-    white-space: nowrap;
-    line-height: 1.2;
+    display: none !important;
   }
   .top-actions {
     gap: 6px;
