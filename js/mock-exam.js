@@ -1515,7 +1515,8 @@ function startExam(container, examData) {
     wordOrderSelections: {}, // questionId -> array of chips chosen
     secondsLeft: examData.durationMinutes * 60,
     timerInterval: null,
-    isSubmitted: false
+    isSubmitted: false,
+    autoSubmit: true
   };
 
   // Khởi tạo word order cho các câu viết
@@ -1531,7 +1532,7 @@ function startExam(container, examData) {
     updateTimerDisplay(container, state.secondsLeft);
     if (state.secondsLeft <= 0) {
       clearInterval(state.timerInterval);
-      submitExam(container, examData, state);
+      triggerAutoSubmitExam(container, examData, allQuestions, state, 'timeout');
     }
   }, 1000);
 
@@ -1551,6 +1552,53 @@ function updateTimerDisplay(container, seconds) {
   }
 }
 
+// Tự động nộp bài (Auto Submit) có đếm ngược thông báo
+function triggerAutoSubmitExam(container, examData, allQuestions, state, reason = 'complete') {
+  if (state.isSubmitted) return;
+  state.isSubmitted = true;
+  clearInterval(state.timerInterval);
+  window.speechSynthesis?.cancel();
+
+  const existing = container.querySelector('#autoSubmitOverlay');
+  if (existing) existing.remove();
+
+  const isTimeout = reason === 'timeout';
+  const overlay = document.createElement('div');
+  overlay.className = 'mock-auto-submit-overlay';
+  overlay.id = 'autoSubmitOverlay';
+  overlay.innerHTML = `
+    <div class="mock-auto-submit-card">
+      <div class="auto-icon">${isTimeout ? '⏱️' : '🎉'}</div>
+      <h3>${isTimeout ? 'Hết giờ làm bài!' : 'Đã hoàn thành câu hỏi cuối cùng!'}</h3>
+      <p>${isTimeout ? 'Thời gian làm bài đã kết thúc. Hệ thống đang tự động nộp bài thi của bạn...' : 'Toàn bộ bài thi đã được giải quyết! Đang tự động nộp bài và chấm điểm...'}</p>
+      <div class="mock-countdown-circle" id="autoSubmitCountNum">${isTimeout ? '1' : '2'}</div>
+      <button type="button" class="mock-btn-action primary" id="autoSubmitNowBtn">
+        Nộp bài & Xem kết quả ngay ➔
+      </button>
+    </div>
+  `;
+  container.appendChild(overlay);
+
+  let remaining = isTimeout ? 1 : 2;
+  const countNum = overlay.querySelector('#autoSubmitCountNum');
+
+  const countdown = setInterval(() => {
+    remaining--;
+    if (countNum) countNum.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(countdown);
+      overlay.remove();
+      submitExam(container, examData, state);
+    }
+  }, 800);
+
+  overlay.querySelector('#autoSubmitNowBtn')?.addEventListener('click', () => {
+    clearInterval(countdown);
+    overlay.remove();
+    submitExam(container, examData, state);
+  });
+}
+
 // Render khung phòng thi với Stepper 4 Phần rõ ràng
 function renderExamRoom(container, examData, allQuestions, state) {
   container.innerHTML = `
@@ -1566,6 +1614,10 @@ function renderExamRoom(container, examData, allQuestions, state) {
         </div>
 
         <div class="mock-header-right">
+          <label class="mock-auto-toggle" title="Tự động chuyển câu khi chọn đáp án và tự động nộp bài khi hoàn thành">
+            <input type="checkbox" id="autoSubmitToggle" ${state.autoSubmit ? 'checked' : ''}>
+            <span class="auto-toggle-text">⚡ Tự động nộp bài</span>
+          </label>
           <div class="mock-timer-box">
             <span class="mock-timer-icon">⏱️</span>
             <span class="mock-timer-val" id="examTimer">${examData.durationMinutes}:00</span>
@@ -1623,6 +1675,11 @@ function renderExamRoom(container, examData, allQuestions, state) {
     </div>
   `;
 
+  // Gắn sự kiện bật/tắt Tự động nộp bài
+  container.querySelector('#autoSubmitToggle')?.addEventListener('change', (e) => {
+    state.autoSubmit = e.target.checked;
+  });
+
   // Gắn sự kiện thoát
   container.querySelector('#mockExitBtn')?.addEventListener('click', () => {
     if (confirm('Bạn có chắc chắn muốn rời khỏi phòng thi? Kết quả hiện tại sẽ không được lưu.')) {
@@ -1638,10 +1695,6 @@ function renderExamRoom(container, examData, allQuestions, state) {
     const total = allQuestions.length;
     if (answeredCount < total) {
       if (!confirm(`Bạn mới hoàn thành ${answeredCount}/${total} câu hỏi. Bạn có chắc chắn muốn nộp bài sớm?`)) {
-        return;
-      }
-    } else {
-      if (!confirm('Bạn đã hoàn thành đủ các câu hỏi! Bấm OK để nộp bài và xem kết quả chấm điểm.')) {
         return;
       }
     }
@@ -1981,6 +2034,18 @@ function updateQuestionStage(container, examData, allQuestions, state) {
       const val = btn.dataset.tfVal === 'true';
       state.answers[currentQ.id] = val;
       updateQuestionStage(container, examData, allQuestions, state);
+      if (state.autoSubmit) {
+        setTimeout(() => {
+          if (isLast) {
+            triggerAutoSubmitExam(container, examData, allQuestions, state, 'complete');
+          } else if (isLastInSec && nextSec) {
+            showSectionIntermission(container, examData, allQuestions, state, currentSec, nextSec);
+          } else if (state.currentIndex < allQuestions.length - 1) {
+            state.currentIndex++;
+            updateQuestionStage(container, examData, allQuestions, state);
+          }
+        }, 400);
+      }
     });
   });
 
@@ -1990,6 +2055,18 @@ function updateQuestionStage(container, examData, allQuestions, state) {
       const choiceId = btn.dataset.choiceId;
       state.answers[currentQ.id] = choiceId;
       updateQuestionStage(container, examData, allQuestions, state);
+      if (state.autoSubmit) {
+        setTimeout(() => {
+          if (isLast) {
+            triggerAutoSubmitExam(container, examData, allQuestions, state, 'complete');
+          } else if (isLastInSec && nextSec) {
+            showSectionIntermission(container, examData, allQuestions, state, currentSec, nextSec);
+          } else if (state.currentIndex < allQuestions.length - 1) {
+            state.currentIndex++;
+            updateQuestionStage(container, examData, allQuestions, state);
+          }
+        }, 400);
+      }
     });
   });
 
@@ -2065,6 +2142,11 @@ function updateQuestionStage(container, examData, allQuestions, state) {
           };
           state.answers[currentQ.id] = spokenText;
           updateQuestionStage(container, examData, allQuestions, state);
+          if (state.autoSubmit && isLast) {
+            setTimeout(() => {
+              triggerAutoSubmitExam(container, examData, allQuestions, state, 'complete');
+            }, 800);
+          }
         };
 
         recognition.onerror = () => {
@@ -2095,6 +2177,11 @@ function updateQuestionStage(container, examData, allQuestions, state) {
     };
     state.answers[currentQ.id] = 'Đã nói';
     updateQuestionStage(container, examData, allQuestions, state);
+    if (state.autoSubmit && isLast) {
+      setTimeout(() => {
+        triggerAutoSubmitExam(container, examData, allQuestions, state, 'complete');
+      }, 700);
+    }
   });
 
   // Gắn sự kiện Chuyển câu trước
@@ -2114,8 +2201,8 @@ function updateQuestionStage(container, examData, allQuestions, state) {
       state.currentIndex++;
       updateQuestionStage(container, examData, allQuestions, state);
     } else {
-      // Đang ở câu cuối cùng của đề -> Nộp bài
-      container.querySelector('#mockSubmitTopBtn')?.click();
+      // Đang ở câu cuối cùng của đề -> Tự động nộp bài
+      triggerAutoSubmitExam(container, examData, allQuestions, state, 'complete');
     }
   });
 }
