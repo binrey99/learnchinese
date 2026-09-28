@@ -11,6 +11,9 @@ const PRESET_AVATARS = [
   { id: 'hsk', name: 'Capybara HSK', url: 'picture/HSK.png' },
   { id: 'practice', name: 'Capybara Luyện Tập', url: 'picture/practice.png' },
   { id: 'mock_exam', name: 'Capybara Thi Thử', url: 'picture/mock-exam.png' },
+  { id: 'leaderboard', name: 'Capybara Quán Quân', url: 'picture/leaderboard.png' },
+  { id: 'game', name: 'Capybara Trò Chơi', url: 'picture/game.png' },
+  { id: 'battle', name: 'Capybara Thi Đấu', url: 'picture/battle.png' },
   { id: 'goodbye', name: 'Capybara Vẫy Chào', url: 'picture/goodbye.jpg' }
 ];
 
