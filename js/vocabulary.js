@@ -35,6 +35,46 @@ function toPinyin(hanzi) {
   return pinyin(hanzi, { toneType: 'symbol' });
 }
 
+export function extractChineseSentence(example) {
+  if (!example || typeof example !== 'string') return '';
+  const text = example.trim();
+
+  // Bỏ tiền tố như "EXAMPLE:", "Ví dụ:", "VD:"
+  const clean = text.replace(/^(example|ví\s*dụ|vd|câu\s*ví\s*dụ)\s*[:：\-]\s*/i, '').trim();
+
+  // 1. Phân tách bằng dấu gạch chéo '/' (Ví dụ: "我爱你。/Wǒ ài nǐ./Tôi yêu bạn.")
+  if (clean.includes('/')) {
+    const parts = clean.split('/');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (/[\u4e00-\u9fa5]/.test(trimmed)) {
+        const match = trimmed.match(/^[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef\s,.?!:;，。？！：；“”‘’…]+/);
+        return (match ? match[0] : trimmed).trim();
+      }
+    }
+  }
+
+  // 2. Phân tách bằng dấu xuống dòng
+  if (clean.includes('\n')) {
+    const lines = clean.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (/[\u4e00-\u9fa5]/.test(trimmed) && !/^[a-zA-Z]/.test(trimmed)) {
+        const match = trimmed.match(/^[\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef\s,.?!:;，。？！：；“”‘’…]+/);
+        return (match ? match[0] : trimmed).trim();
+      }
+    }
+  }
+
+  // 3. Trích xuất chuỗi chữ Hán liên tục kèm dấu câu tiếng Trung
+  const match = clean.match(/[\u4e00-\u9fa5][\u4e00-\u9fa5\u3000-\u303f\uff00-\uffef\s,.?!:;，。？！：；“”‘’…]*/);
+  if (match) {
+    return match[0].trim();
+  }
+
+  return clean;
+}
+
 async function trackVocabularyView(vocabularyId) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !vocabularyId) return;
@@ -258,7 +298,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
           </div>
         </div>
         ${word.example ? `
-          <div class="vocabulary-component">
+          <div class="vocabulary-component" data-speak-example role="button" tabindex="0" title="Nhấp vào để nghe đọc câu chữ Hán">
             <span class="vocabulary-component-label">Example:</span>
             <span>${escapeHtml(word.example)}</span>
           </div>
@@ -484,12 +524,30 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
         <table><tbody>
           <tr><th>Nghĩa</th><td>${escapeHtml(word.meaning)}</td></tr>
           <tr><th>Từ loại</th><td>${escapeHtml(word.wordType || 'Chưa cập nhật')}</td></tr>
-          <tr><th>Example</th><td>${escapeHtml(word.example || 'Chưa cập nhật')}</td></tr>
+          <tr>
+            <th>Example</th>
+            <td class="vocabulary-detail-example-cell">
+              <span>${escapeHtml(word.example || 'Chưa cập nhật')}</span>
+              ${word.example ? `<button type="button" class="vocabulary-example-speak-btn" data-speak-modal-example title="Nghe câu chữ Hán">🔊 Nghe câu</button>` : ''}
+            </td>
+          </tr>
         </tbody></table>
       </section>`;
     detail.querySelector('[data-speak-vocabulary]').addEventListener('click', () => {
       speak(word.hanzi, detail.querySelector('[data-pronunciation-status]'));
     });
+    const modalExampleBtn = detail.querySelector('[data-speak-modal-example]');
+    if (modalExampleBtn) {
+      modalExampleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const chineseSentence = extractChineseSentence(word.example);
+        if (chineseSentence) {
+          modalExampleBtn.classList.add('is-speaking');
+          speak(chineseSentence, detail.querySelector('[data-pronunciation-status]'));
+          setTimeout(() => modalExampleBtn.classList.remove('is-speaking'), 1200);
+        }
+      });
+    }
     detail.querySelectorAll('[data-close-vocabulary-detail]').forEach((button) => button.addEventListener('click', closeDetail));
   };
 
@@ -539,11 +597,44 @@ export async function initVocabulary({ selector = '[data-vocabulary]' } = {}) {
       return;
     }
 
+    const exampleBox = event.target.closest('[data-speak-example], .vocabulary-component');
+    if (exampleBox) {
+      event.stopPropagation();
+      const chineseSentence = extractChineseSentence(word.example);
+      if (chineseSentence) {
+        exampleBox.classList.add('is-speaking');
+        speak(chineseSentence, {
+          set textContent(message) {
+            if (!message) exampleBox.classList.remove('is-speaking');
+          }
+        });
+        setTimeout(() => exampleBox.classList.remove('is-speaking'), 1200);
+      }
+      return;
+    }
+
     showDetail(word);
   });
 
   list.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
+    const exampleBox = event.target.closest('[data-speak-example], .vocabulary-component');
+    if (exampleBox) {
+      event.preventDefault();
+      event.stopPropagation();
+      const item = event.target.closest('[data-vocabulary-index]');
+      if (!item) return;
+      const index = Number(item.dataset.vocabularyIndex);
+      const word = currentWords[index];
+      if (!word) return;
+      const chineseSentence = extractChineseSentence(word.example);
+      if (chineseSentence) {
+        exampleBox.classList.add('is-speaking');
+        speak(chineseSentence);
+        setTimeout(() => exampleBox.classList.remove('is-speaking'), 1200);
+      }
+      return;
+    }
     if (event.target.closest('[data-speak-row], [data-mastered-row]')) return;
     const item = event.target.closest('[data-vocabulary-index]');
     if (!item) return;

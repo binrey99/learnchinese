@@ -4445,6 +4445,28 @@ body.show-pinyin .speed-pinyin{display:block!important}
   line-height: 1.45;
   box-sizing: border-box;
   word-break: break-word;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.vocabulary-component:hover {
+  background: #edf8f1;
+  border-color: #34b76a;
+  border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(52, 183, 106, 0.12);
+}
+
+.vocabulary-component:active {
+  transform: translateY(0);
+}
+
+.vocabulary-component.is-speaking {
+  background: #e3f6ea;
+  border-color: #248c4e;
+  border-style: solid;
+  box-shadow: 0 0 0 3px rgba(36, 140, 78, 0.22);
 }
 
 .vocabulary-component-label {
@@ -4453,8 +4475,58 @@ body.show-pinyin .speed-pinyin{display:block!important}
   color: #357a53;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 2px;
+}
+
+.vocabulary-component-label::after {
+  content: "🔊 Nghe câu";
+  font-size: 9px;
+  color: #248c4e;
+  background: #def4e5;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  opacity: 0.75;
+  transition: all 0.2s ease;
+}
+
+.vocabulary-component:hover .vocabulary-component-label::after {
+  opacity: 1;
+  background: #248c4e;
+  color: #ffffff;
+}
+
+.vocabulary-detail-example-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.vocabulary-example-speak-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #248c4e;
+  background: #def4e5;
+  border: 1px solid #a7f3d0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vocabulary-example-speak-btn:hover,
+.vocabulary-example-speak-btn.is-speaking {
+  background: #248c4e;
+  color: #fff;
+  border-color: #248c4e;
 }
 
 @media(max-width: 650px) {
