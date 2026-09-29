@@ -35,6 +35,8 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
   const authSwitch = modal?.querySelector('#authSwitch');
   const authSwitchText = modal?.querySelector('#authSwitchText');
   const authSwitchWrap = modal?.querySelector('#authSwitchWrap');
+  const googleLoginBtn = modal?.querySelector('#googleLoginBtn');
+  const oauthDivider = modal?.querySelector('#oauthDivider');
   const confirmPasswordField = modal?.querySelector('.confirm-password-field');
   const rememberAccount = modal?.querySelector('#rememberAccount');
   const accountMenu = document.querySelector('#accountMenu');
@@ -85,10 +87,12 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     pendingEmail = email;
     form.hidden = true;
     if (authSwitchWrap) authSwitchWrap.hidden = true;
+    if (oauthDivider) oauthDivider.hidden = true;
+    if (googleLoginBtn) googleLoginBtn.hidden = true;
     if (otpForm) otpForm.hidden = false;
 
     if (title) title.textContent = 'Xác thực tài khoản';
-    if (description) description.textContent = 'Nhập mã OTP gồm 6 chữ số để kích hoạt tài khoản của bạn.';
+    if (description) description.textContent = 'Nhập mã OTP gồm 6 đến 8 chữ số để kích hoạt tài khoản của bạn.';
     if (otpEmailDisplay) otpEmailDisplay.textContent = email;
     if (otpError) otpError.textContent = '';
     if (otpCodeInput) {
@@ -104,6 +108,8 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     if (otpForm) otpForm.hidden = true;
     if (form) form.hidden = false;
     if (authSwitchWrap) authSwitchWrap.hidden = false;
+    if (oauthDivider) oauthDivider.hidden = false;
+    if (googleLoginBtn) googleLoginBtn.hidden = false;
 
     isRegisterMode = false;
     if (title) title.textContent = 'Chào mừng trở lại';
@@ -206,9 +212,27 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     if (event.target === modal) closeModal();
   });
 
-  // Filter numeric input for OTP
+  // Filter numeric input for OTP (hỗ trợ cả 6 và 8 số)
   otpCodeInput?.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+  });
+
+  // Google OAuth Login handler
+  googleLoginBtn?.addEventListener('click', async () => {
+    try {
+      googleLoginBtn.disabled = true;
+      if (errorMessage) errorMessage.textContent = '';
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      if (errorMessage) errorMessage.textContent = err.message || 'Không thể kết nối đến Google. Vui lòng thử lại.';
+      googleLoginBtn.disabled = false;
+    }
   });
 
   // Back from OTP to login
@@ -251,7 +275,7 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     const token = otpCodeInput?.value.trim() || '';
 
     if (token.length < 6) {
-      if (otpError) otpError.textContent = 'Vui lòng nhập đầy đủ mã OTP gồm 6 chữ số.';
+      if (otpError) otpError.textContent = 'Vui lòng nhập đầy đủ mã OTP (từ 6 đến 8 chữ số).';
       return;
     }
 
