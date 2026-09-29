@@ -582,7 +582,21 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
 
   // Tự động lắng nghe trạng thái auth nếu user xác nhận qua đường link email ở tab khác
   supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN') {
+    if (event === 'PASSWORD_RECOVERY') {
+      if (modal.classList.contains('open')) {
+        closeModal();
+      }
+      await updateTrigger();
+      await onAuthChanged?.();
+      window.location.hash = '#profile';
+      toast?.('Xác thực thành công! Hãy nhập mật khẩu mới của bạn bên dưới.');
+      setTimeout(() => {
+        const pwdCard = document.querySelector('.profile-security-card');
+        const newPwdInput = document.querySelector('#newPasswordInput');
+        pwdCard?.scrollIntoView({ behavior: 'smooth' });
+        newPwdInput?.focus();
+      }, 600);
+    } else if (event === 'SIGNED_IN') {
       if (modal.classList.contains('open')) {
         closeModal();
       }
