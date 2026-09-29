@@ -88,7 +88,16 @@ export function initRouter({ toast } = {}) {
   let currentRoute = null;
 
   const render = () => {
-    const route = window.location.hash.replace('#', '') || 'dashboard';
+    let route = window.location.hash.replace('#', '') || 'dashboard';
+
+    // Xử lý khi đăng nhập OAuth Google chuyển hướng về có chứa access_token trong hash
+    if (route.startsWith('access_token') || route.startsWith('error_description') || route.startsWith('refresh_token')) {
+      route = 'dashboard';
+      setTimeout(() => {
+        history.replaceState(null, document.title, window.location.pathname + window.location.search);
+      }, 500);
+    }
+
     const page = pages[route];
     const isDashboard = !page;
 
