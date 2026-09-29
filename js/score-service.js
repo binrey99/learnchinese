@@ -138,6 +138,11 @@ export async function recordScore({ category, points, description = '' }) {
   } else {
     console.log('ℹ️ Người dùng chưa đăng nhập, điểm được lưu tạm tại localStorage.');
   }
+
+  // Phát sự kiện thông báo hoạt động học tập mới để cập nhật chuỗi streak và tiến độ
+  window.dispatchEvent(new CustomEvent('activity-recorded', {
+    detail: { category, points, description, created_at: now }
+  }));
 }
 
 /**

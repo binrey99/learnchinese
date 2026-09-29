@@ -4,6 +4,7 @@ import { initNavigation } from './navigation.js';
 import { initLogin } from './login.js';
 import { initRouter } from './router.js';
 import { renderDashboardProgress } from './dashboard-progress.js';
+import { initStreak } from './streak.js';
 
 function initPinyinToggle() {
   const toggle = document.querySelector('#pinyinToggle');
@@ -22,17 +23,20 @@ function initPinyinToggle() {
 }
 
 function initDashboard() {
+  const showToast = createToast();
+
+  initStreak({ toast: showToast });
   renderCalendar();
   initNavigation();
   initPinyinToggle();
 
-  const showToast = createToast();
-  // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động lẫn lịch học theo tháng
+  // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động, lịch học và chuỗi ngày học
   initLogin({
     toast: showToast,
     onAuthChanged: () => {
       renderDashboardProgress();
       renderCalendar();
+      window.dispatchEvent(new CustomEvent('auth-changed'));
     }
   });
   renderDashboardProgress();

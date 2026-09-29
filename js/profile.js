@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { normalizeLevel, sortLevels } from './levels.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
+import { toLocalDateKey, calculateStreak } from './streak.js';
 
 // Danh sách các avatar có sẵn trong hệ thống
 const PRESET_AVATARS = [
@@ -252,8 +253,25 @@ export async function renderProfile(options = {}) {
   const joinedDate = profile?.created_at || user?.created_at;
   const joined = joinedDate ? new Date(joinedDate).toLocaleDateString('vi-VN') : 'Hôm nay';
 
+  // Tính chuỗi ngày học thực tế
+  const activeDateSet = new Set();
+  combinedScores.forEach((row) => {
+    const key = toLocalDateKey(row?.created_at);
+    if (key) activeDateSet.add(key);
+  });
+  const streakInfo = calculateStreak(activeDateSet);
+
   // Định nghĩa danh sách Huy Hiệu Thành Tích
   const BADGES = [
+    {
+      id: 'streak_3',
+      icon: '🔥',
+      name: 'Chăm Chỉ 3 Ngày',
+      desc: 'Duy trì chuỗi học 3 ngày liên tiếp',
+      target: 3,
+      current: Math.min(streakInfo.streak, 3),
+      unlocked: streakInfo.streak >= 3
+    },
     {
       id: 'first_step',
       icon: '🌱',
@@ -387,6 +405,10 @@ export async function renderProfile(options = {}) {
           <p class="profile-email">${escapeHtml(email)}</p>
 
           <div class="profile-meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Chuỗi ngày học</span>
+              <strong class="meta-value" style="color:#ea580c">🔥 ${streakInfo.streak} ngày</strong>
+            </div>
             <div class="meta-item">
               <span class="meta-label">Danh hiệu</span>
               <strong class="meta-value" style="color:${learnerInfo.color}">${learnerInfo.title}</strong>
