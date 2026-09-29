@@ -92,7 +92,7 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     if (otpForm) otpForm.hidden = false;
 
     if (title) title.textContent = 'Xác thực tài khoản';
-    if (description) description.textContent = 'Nhập mã OTP gồm 6 đến 8 chữ số để kích hoạt tài khoản của bạn.';
+    if (description) description.textContent = 'Nhập mã OTP gồm 6 chữ số để kích hoạt tài khoản của bạn.';
     if (otpEmailDisplay) otpEmailDisplay.textContent = email;
     if (otpError) otpError.textContent = '';
     if (otpCodeInput) {
@@ -212,9 +212,9 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     if (event.target === modal) closeModal();
   });
 
-  // Filter numeric input for OTP (hỗ trợ cả 6 và 8 số)
+  // Filter numeric input for OTP (chuẩn 6 chữ số)
   otpCodeInput?.addEventListener('input', (e) => {
-    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 8);
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
   });
 
   // Google OAuth Login handler
@@ -222,10 +222,11 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     try {
       googleLoginBtn.disabled = true;
       if (errorMessage) errorMessage.textContent = '';
+      const redirectUrl = window.location.origin + window.location.pathname;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: redirectUrl
         }
       });
       if (error) throw error;
@@ -274,8 +275,8 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     e.preventDefault();
     const token = otpCodeInput?.value.trim() || '';
 
-    if (token.length < 6) {
-      if (otpError) otpError.textContent = 'Vui lòng nhập đầy đủ mã OTP (từ 6 đến 8 chữ số).';
+    if (token.length !== 6) {
+      if (otpError) otpError.textContent = 'Vui lòng nhập đầy đủ mã OTP gồm 6 chữ số.';
       return;
     }
 
