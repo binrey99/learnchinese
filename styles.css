@@ -1804,6 +1804,141 @@ a {
   transform: translateY(-1px);
 }
 
+/* Change Password in Profile */
+.profile-security-card {
+  padding: 24px 28px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.security-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+}
+.security-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.security-icon {
+  font-size: 24px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+}
+.change-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pwd-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 650px) {
+  .pwd-field-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+.pwd-input-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.pwd-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pwd-input-wrap input {
+  width: 100%;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 40px 10px 14px;
+  font-size: 13px;
+  outline: none;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+.pwd-input-wrap input:focus {
+  background: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+.pwd-toggle-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  opacity: 0.6;
+  padding: 4px;
+  transition: opacity .2s;
+}
+.pwd-toggle-btn:hover {
+  opacity: 1;
+}
+.pwd-action-row {
+  display: flex;
+  justify-content: flex-end;
+}
+.pwd-submit-btn {
+  padding: 10px 22px !important;
+  font-size: 13px !important;
+}
+.pwd-error-msg {
+  color: #e11d48;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+.pwd-success-msg {
+  color: #15804d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Forgot Password in Login Modal */
+.pwd-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 14px 0 6px;
+}
+.pwd-label-row label {
+  margin: 0 !important;
+}
+.forgot-pwd-link {
+  background: transparent;
+  border: none;
+  font-size: 11.5px;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity .2s;
+}
+.forgot-pwd-link:hover {
+  text-decoration: underline;
+}
+
 /* ==========================================================================
    TOAST NOTIFICATION (BOUNCY, CUTE)
    ========================================================================== */

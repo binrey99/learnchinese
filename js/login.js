@@ -53,6 +53,20 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
   const otpResendBtn = modal?.querySelector('#otpResendBtn');
   const otpBackBtn = modal?.querySelector('#otpBackBtn');
 
+  // Forgot Password Elements
+  const openForgotPwdBtn = modal?.querySelector('#openForgotPwdBtn');
+  const forgotPasswordForm = modal?.querySelector('#forgotPasswordForm');
+  const forgotEmailInput = modal?.querySelector('#forgotEmailInput');
+  const sendForgotCodeBtn = modal?.querySelector('#sendForgotCodeBtn');
+  const forgotError1 = modal?.querySelector('#forgotError1');
+  const forgotStep1 = modal?.querySelector('#forgotStep1');
+  const forgotStep2 = modal?.querySelector('#forgotStep2');
+  const forgotOtpInput = modal?.querySelector('#forgotOtpInput');
+  const forgotNewPassword = modal?.querySelector('#forgotNewPassword');
+  const forgotError2 = modal?.querySelector('#forgotError2');
+  const submitResetPwdBtn = modal?.querySelector('#submitResetPwdBtn');
+  const forgotBackBtn = modal?.querySelector('#forgotBackBtn');
+
   let isRegisterMode = false;
   let isOtpMode = false;
   let pendingEmail = '';
@@ -89,6 +103,7 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     if (authSwitchWrap) authSwitchWrap.hidden = true;
     if (oauthDivider) oauthDivider.hidden = true;
     if (googleLoginBtn) googleLoginBtn.hidden = true;
+    if (forgotPasswordForm) forgotPasswordForm.hidden = true;
     if (otpForm) otpForm.hidden = false;
 
     if (title) title.textContent = 'Xác thực tài khoản';
@@ -102,10 +117,34 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     startOtpCountdown();
   };
 
+  const switchToForgotMode = () => {
+    isOtpMode = false;
+    form.hidden = true;
+    if (authSwitchWrap) authSwitchWrap.hidden = true;
+    if (oauthDivider) oauthDivider.hidden = true;
+    if (googleLoginBtn) googleLoginBtn.hidden = true;
+    if (otpForm) otpForm.hidden = true;
+    if (forgotPasswordForm) forgotPasswordForm.hidden = false;
+
+    if (title) title.textContent = 'Đặt lại mật khẩu';
+    if (description) description.textContent = 'Khôi phục quyền truy cập vào tài khoản học tập của bạn.';
+
+    if (forgotStep1) forgotStep1.hidden = false;
+    if (forgotStep2) forgotStep2.hidden = true;
+    if (forgotError1) forgotError1.textContent = '';
+    if (forgotError2) forgotError2.textContent = '';
+    const emailVal = form.querySelector('#loginEmail')?.value.trim() || '';
+    if (forgotEmailInput) {
+      forgotEmailInput.value = emailVal;
+      setTimeout(() => forgotEmailInput.focus(), 150);
+    }
+  };
+
   const exitOtpMode = () => {
     isOtpMode = false;
     clearInterval(countdownTimer);
     if (otpForm) otpForm.hidden = true;
+    if (forgotPasswordForm) forgotPasswordForm.hidden = true;
     if (form) form.hidden = false;
     if (authSwitchWrap) authSwitchWrap.hidden = false;
     if (oauthDivider) oauthDivider.hidden = false;
@@ -130,6 +169,7 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     exitOtpMode();
     form.reset();
     otpForm?.reset();
+    forgotPasswordForm?.reset();
   };
 
   const updateTrigger = async () => {
@@ -239,6 +279,124 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
   // Back from OTP to login
   otpBackBtn?.addEventListener('click', () => {
     exitOtpMode();
+  });
+
+  // Open Forgot Password mode
+  openForgotPwdBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    switchToForgotMode();
+  });
+
+  // Back from Forgot Password to login
+  forgotBackBtn?.addEventListener('click', () => {
+    exitOtpMode();
+  });
+
+  // Filter numeric input for Forgot Password OTP (6 digits)
+  forgotOtpInput?.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+  });
+
+  // Send reset password OTP code
+  sendForgotCodeBtn?.addEventListener('click', async () => {
+    const email = forgotEmailInput?.value.trim() || '';
+    if (!email || !email.includes('@')) {
+      if (forgotError1) forgotError1.textContent = 'Vui lòng nhập địa chỉ email hợp lệ.';
+      return;
+    }
+    if (forgotError1) forgotError1.textContent = '';
+    sendForgotCodeBtn.disabled = true;
+    sendForgotCodeBtn.textContent = 'Đang gửi mã...';
+
+    try {
+      const redirectUrl = window.location.origin + window.location.pathname;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl
+      });
+
+      if (error) {
+        if (forgotError1) forgotError1.textContent = error.message || 'Không thể gửi mã đặt lại mật khẩu.';
+        return;
+      }
+
+      toast?.('Mã OTP đặt lại mật khẩu đã được gửi về email của bạn! 📩');
+      if (forgotStep1) forgotStep1.hidden = true;
+      if (forgotStep2) forgotStep2.hidden = false;
+      setTimeout(() => forgotOtpInput?.focus(), 150);
+    } catch (err) {
+      if (forgotError1) forgotError1.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+    } finally {
+      sendForgotCodeBtn.disabled = false;
+      sendForgotCodeBtn.textContent = 'Gửi mã xác nhận';
+    }
+  });
+
+  // Submit reset password with OTP + new password
+  forgotPasswordForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = forgotEmailInput?.value.trim() || '';
+    const token = forgotOtpInput?.value.trim() || '';
+    const newPassword = forgotNewPassword?.value || '';
+
+    if (!email || !email.includes('@')) {
+      if (forgotError2) forgotError2.textContent = 'Địa chỉ email không hợp lệ.';
+      return;
+    }
+
+    if (token.length !== 6) {
+      if (forgotError2) forgotError2.textContent = 'Vui lòng nhập đầy đủ mã OTP 6 chữ số.';
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      if (forgotError2) forgotError2.textContent = 'Mật khẩu mới phải có ít nhất 6 ký tự.';
+      return;
+    }
+
+    if (submitResetPwdBtn) {
+      submitResetPwdBtn.disabled = true;
+      submitResetPwdBtn.textContent = 'Đang đặt lại mật khẩu...';
+    }
+    if (forgotError2) forgotError2.textContent = '';
+
+    try {
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'recovery'
+      });
+
+      if (verifyError) {
+        const msg = verifyError.message?.toLowerCase() || '';
+        if (msg.includes('expired') || msg.includes('invalid') || msg.includes('token')) {
+          forgotError2.textContent = 'Mã OTP không chính xác hoặc đã hết hạn. Hãy kiểm tra lại.';
+        } else {
+          forgotError2.textContent = verifyError.message || 'Mã xác thực không hợp lệ.';
+        }
+        return;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) {
+        forgotError2.textContent = updateError.message || 'Không thể cập nhật mật khẩu mới.';
+        return;
+      }
+
+      closeModal();
+      await updateTrigger();
+      await onAuthChanged?.();
+      toast?.('Đặt lại mật khẩu thành công! 🔑✨');
+    } catch (err) {
+      if (forgotError2) forgotError2.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+    } finally {
+      if (submitResetPwdBtn) {
+        submitResetPwdBtn.disabled = false;
+        submitResetPwdBtn.textContent = 'Xác nhận đổi mật khẩu';
+      }
+    }
   });
 
   // Resend OTP handler
