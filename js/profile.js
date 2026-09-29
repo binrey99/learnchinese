@@ -56,7 +56,7 @@ function speakWord(hanzi) {
   audio.play().catch(() => {});
 }
 
-function getLearnerTitle(points = 0) {
+export function getLearnerTitle(points = 0) {
   if (points >= 1000) return { title: 'Bậc Thầy Tiếng Trung', badge: '👑 Hạng Hoàng Kim', color: '#eab308' };
   if (points >= 500) return { title: 'Cao Thủ Mandarinly', badge: '🥇 Hạng Bạch Kim', color: '#f59e0b' };
   if (points >= 200) return { title: 'Học Bá Tiềm Năng', badge: '🥈 Hạng Vàng', color: '#10b981' };
