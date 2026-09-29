@@ -142,7 +142,7 @@
       <button class="login-close" type="button" data-close-login aria-label="Đóng đăng nhập">×</button>
       <img class="login-mascot" src="picture/main_picture.png" alt="Linh vật học tiếng Trung">
       <h2 id="loginTitle">Chào mừng trở lại</h2>
-      <p>Đăng nhập để tiếp tục hành trình học tiếng Trung.</p>
+      <p id="loginSubtitle">Đăng nhập để tiếp tục hành trình học tiếng Trung.</p>
       <form id="loginForm">
         <label for="loginEmail">Email</label>
         <input id="loginEmail" type="email" placeholder="ban@example.com" autocomplete="email" required>
@@ -156,7 +156,30 @@
         <p class="login-error" id="loginError" role="alert"></p>
         <button class="primary-button login-submit" type="submit">Đăng nhập</button>
       </form>
-      <p class="auth-switch"><span id="authSwitchText">Chưa có tài khoản?</span> <button type="button" id="authSwitch">Đăng ký ngay</button></p>
+      <p class="auth-switch" id="authSwitchWrap"><span id="authSwitchText">Chưa có tài khoản?</span> <button type="button" id="authSwitch">Đăng ký ngay</button></p>
+
+      <!-- Form nhập mã OTP xác thực email -->
+      <form id="otpForm" hidden>
+        <div class="otp-notice">
+          <p>Mã xác thực 6 chữ số đã được gửi đến email:</p>
+          <strong id="otpEmailDisplay">ban@example.com</strong>
+          <small>Vui lòng kiểm tra hộp thư đến (hoặc mục Thư rác/Spam)</small>
+        </div>
+        <label for="otpCodeInput">Nhập mã OTP (6 chữ số)</label>
+        <div class="otp-input-wrap">
+          <input id="otpCodeInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+        </div>
+        <p class="login-error" id="otpError" role="alert"></p>
+        <button class="primary-button login-submit" type="submit" id="otpSubmitBtn">Xác nhận mã OTP</button>
+        <div class="otp-actions">
+          <button type="button" class="otp-resend-btn" id="otpResendBtn" disabled>
+            Gửi lại mã (<span id="otpCountdown">60</span>s)
+          </button>
+          <button type="button" class="otp-back-btn" id="otpBackBtn">
+            ← Quay lại đăng nhập
+          </button>
+        </div>
+      </form>
     </div>
   </div>
   <div class="toast" id="toast">Bài học đã sẵn sàng ✦</div>
