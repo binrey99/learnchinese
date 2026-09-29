@@ -174,6 +174,28 @@ export async function renderProfile(options = {}) {
     console.warn('Lỗi lấy thông tin user:', err);
   }
 
+  // Khi chưa đăng nhập: Chỉ hiển thị duy nhất nút/khung Đăng nhập / Đăng ký
+  if (!user) {
+    container.innerHTML = `
+      <div class="profile-layout">
+        <div class="profile-guest-banner">
+          <span class="guest-banner-icon">☁️</span>
+          <div class="guest-banner-text">
+            <strong>Hồ sơ học viên (Chế độ Học viên Khách)</strong>
+            <span>Đăng nhập hoặc đăng ký để đồng bộ thành tích học tập và lưu điểm vĩnh viễn trên đám mây.</span>
+          </div>
+          <button type="button" class="primary-button" id="profileLoginBannerBtn">Đăng nhập / Đăng ký</button>
+        </div>
+      </div>
+    `;
+
+    const loginBannerBtn = container.querySelector('#profileLoginBannerBtn');
+    loginBannerBtn?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('open-login-modal'));
+    });
+    return;
+  }
+
   // Lấy dữ liệu hồ sơ từ bảng profiles nếu đã đăng nhập
   let profile = null;
   if (user) {
@@ -350,16 +372,7 @@ export async function renderProfile(options = {}) {
 
   container.innerHTML = `
     <div class="profile-layout">
-      ${!user ? `
-        <div class="profile-guest-banner">
-          <span class="guest-banner-icon">☁️</span>
-          <div class="guest-banner-text">
-            <strong>Hồ sơ học viên (Chế độ Học viên Khách)</strong>
-            <span>Đăng nhập hoặc đăng ký để đồng bộ thành tích học tập và lưu điểm vĩnh viễn trên đám mây.</span>
-          </div>
-          <button type="button" class="primary-button" id="profileLoginBannerBtn">Đăng nhập / Đăng ký</button>
-        </div>
-      ` : ''}
+      <!-- Thẻ thông tin học viên -->
 
       <!-- Thẻ thông tin học viên -->
       <section class="profile-card">
@@ -1115,12 +1128,6 @@ export async function renderProfile(options = {}) {
       nameSpinner.hidden = true;
       nameSaveText.textContent = 'Lưu tên';
     }
-  });
-
-  // Nút đăng nhập/đăng ký trên banner dành cho khách
-  const loginBannerBtn = container.querySelector('#profileLoginBannerBtn');
-  loginBannerBtn?.addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('open-login-modal'));
   });
 
   // Nút đăng xuất trực tiếp trên hồ sơ
