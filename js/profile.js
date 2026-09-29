@@ -391,7 +391,16 @@ export async function renderProfile(options = {}) {
           <div class="profile-badge-row">
             <span class="profile-badge">HỒ SƠ HỌC VIÊN</span>
             <span class="profile-rank-pill" style="border-color:${learnerInfo.color};color:${learnerInfo.color}">${learnerInfo.badge}</span>
-            ${user ? `<button type="button" class="profile-logout-pill" id="profilePageLogoutBtn" title="Đăng xuất">Đăng xuất</button>` : ''}
+            <div class="profile-top-actions">
+              <button type="button" class="profile-logout-pill" id="profilePageLogoutBtn" title="Đăng xuất">Đăng xuất</button>
+              <button type="button" class="profile-change-pwd-pill" id="openChangePwdModalBtn" title="Đổi mật khẩu tài khoản">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>Đổi mật khẩu</span>
+              </button>
+            </div>
           </div>
           <div class="profile-name-row" id="profileNameRow">
             <h2 id="profileNameText">${escapeHtml(name)}</h2>
@@ -552,50 +561,62 @@ export async function renderProfile(options = {}) {
         }
       </section>
 
-      <!-- Cài đặt bảo mật & Đổi mật khẩu -->
-      ${user ? `
-        <section class="profile-card profile-security-card">
-          <div class="security-card-header">
-            <div class="security-header-left">
-              <span class="security-icon">🔐</span>
-              <div>
-                <h3 class="profile-section-title" style="margin: 0;">Đổi mật khẩu tài khoản</h3>
-                <p class="profile-section-subtitle" style="margin: 2px 0 0;">Cập nhật mật khẩu mới định kỳ để bảo vệ tài khoản học tập</p>
-              </div>
+    </div>
+
+    <!-- Modal Đổi Mật Khẩu Widget -->
+    <div class="pwd-change-modal" id="pwdChangeModal" hidden>
+      <div class="pwd-change-backdrop" id="closePwdChangeBackdrop"></div>
+      <div class="pwd-change-card" role="dialog" aria-modal="true" aria-labelledby="pwdChangeTitle">
+        <div class="pwd-change-header">
+          <div class="pwd-change-title-box">
+            <span class="pwd-change-icon">🔐</span>
+            <div>
+              <h3 id="pwdChangeTitle">Đổi mật khẩu tài khoản</h3>
+              <p>Nhập mật khẩu hiện tại và mật khẩu mới của bạn</p>
             </div>
           </div>
+          <button class="pwd-change-close" id="closePwdChangeBtn" type="button" aria-label="Đóng">×</button>
+        </div>
 
-          <form id="changePasswordForm" class="change-password-form">
-            <div class="pwd-field-row">
-              <div class="pwd-input-group">
-                <label for="newPasswordInput">Mật khẩu mới (tối thiểu 6 ký tự)</label>
-                <div class="pwd-input-wrap">
-                  <input type="password" id="newPasswordInput" placeholder="Nhập mật khẩu mới" minlength="6" required autocomplete="new-password">
-                  <button type="button" class="pwd-toggle-btn" data-target="newPasswordInput" aria-label="Ẩn/Hiện mật khẩu">👁️</button>
-                </div>
-              </div>
-
-              <div class="pwd-input-group">
-                <label for="confirmNewPasswordInput">Xác nhận mật khẩu mới</label>
-                <div class="pwd-input-wrap">
-                  <input type="password" id="confirmNewPasswordInput" placeholder="Nhập lại mật khẩu mới" minlength="6" required autocomplete="new-password">
-                  <button type="button" class="pwd-toggle-btn" data-target="confirmNewPasswordInput" aria-label="Ẩn/Hiện mật khẩu">👁️</button>
-                </div>
+        <form id="changePasswordModalForm">
+          <div class="pwd-change-body">
+            <div class="pwd-input-group">
+              <label for="currentPasswordInput">Mật khẩu cũ (hiện tại)</label>
+              <div class="pwd-input-wrap">
+                <input type="password" id="currentPasswordInput" placeholder="Nhập mật khẩu hiện tại" required autocomplete="current-password">
+                <button type="button" class="pwd-toggle-btn" data-target="currentPasswordInput" aria-label="Ẩn/Hiện mật khẩu">👁️</button>
               </div>
             </div>
 
-            <p class="pwd-error-msg" id="changePasswordError" hidden></p>
-            <p class="pwd-success-msg" id="changePasswordSuccess" hidden></p>
-
-            <div class="pwd-action-row">
-              <button type="submit" class="primary-button pwd-submit-btn" id="changePasswordSubmitBtn">
-                <span class="btn-spinner" id="pwdSpinner" hidden></span>
-                <span id="pwdSubmitText">Cập nhật mật khẩu</span>
-              </button>
+            <div class="pwd-input-group">
+              <label for="newPasswordModalInput">Mật khẩu mới (tối thiểu 6 ký tự)</label>
+              <div class="pwd-input-wrap">
+                <input type="password" id="newPasswordModalInput" placeholder="Nhập mật khẩu mới" minlength="6" required autocomplete="new-password">
+                <button type="button" class="pwd-toggle-btn" data-target="newPasswordModalInput" aria-label="Ẩn/Hiện mật khẩu">👁️</button>
+              </div>
             </div>
-          </form>
-        </section>
-      ` : ''}
+
+            <div class="pwd-input-group">
+              <label for="confirmNewPasswordModalInput">Xác nhận mật khẩu mới</label>
+              <div class="pwd-input-wrap">
+                <input type="password" id="confirmNewPasswordModalInput" placeholder="Nhập lại mật khẩu mới" minlength="6" required autocomplete="new-password">
+                <button type="button" class="pwd-toggle-btn" data-target="confirmNewPasswordModalInput" aria-label="Ẩn/Hiện mật khẩu">👁️</button>
+              </div>
+            </div>
+
+            <p class="pwd-error-msg" id="changePasswordModalError" hidden></p>
+            <p class="pwd-success-msg" id="changePasswordModalSuccess" hidden></p>
+          </div>
+
+          <div class="pwd-change-footer">
+            <button type="button" class="secondary-button" id="closePwdChangeFooterBtn">Hủy</button>
+            <button type="submit" class="primary-button" id="submitChangePwdModalBtn">
+              <span class="btn-spinner" id="pwdModalSpinner" hidden></span>
+              <span id="pwdModalSubmitText">Xác nhận đổi mật khẩu</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- Modal Xem Danh Sách Từ Vựng Đã Thuộc -->
@@ -1148,16 +1169,40 @@ export async function renderProfile(options = {}) {
   });
 
   // =========================================================================
-  // XỬ LÝ ĐỔI MẬT KHẨU TÀI KHOẢN (CHANGE PASSWORD)
+  // XỬ LÝ WIDGET ĐỔI MẬT KHẨU TÀI KHOẢN (CHANGE PASSWORD MODAL)
   // =========================================================================
-  const changePwdForm = container.querySelector('#changePasswordForm');
-  const newPwdInput = container.querySelector('#newPasswordInput');
-  const confirmNewPwdInput = container.querySelector('#confirmNewPasswordInput');
-  const pwdError = container.querySelector('#changePasswordError');
-  const pwdSuccess = container.querySelector('#changePasswordSuccess');
-  const pwdSubmitBtn = container.querySelector('#changePasswordSubmitBtn');
-  const pwdSpinner = container.querySelector('#pwdSpinner');
-  const pwdSubmitText = container.querySelector('#pwdSubmitText');
+  const pwdModal = container.querySelector('#pwdChangeModal');
+  const openPwdModalBtn = container.querySelector('#openChangePwdModalBtn');
+  const closePwdModalBtn = container.querySelector('#closePwdChangeBtn');
+  const closePwdModalFooterBtn = container.querySelector('#closePwdChangeFooterBtn');
+  const closePwdModalBackdrop = container.querySelector('#closePwdChangeBackdrop');
+
+  const changePwdModalForm = container.querySelector('#changePasswordModalForm');
+  const currentPwdInput = container.querySelector('#currentPasswordInput');
+  const newPwdModalInput = container.querySelector('#newPasswordModalInput');
+  const confirmNewPwdModalInput = container.querySelector('#confirmNewPasswordModalInput');
+  const pwdModalError = container.querySelector('#changePasswordModalError');
+  const pwdModalSuccess = container.querySelector('#changePasswordModalSuccess');
+  const submitChangePwdModalBtn = container.querySelector('#submitChangePwdModalBtn');
+  const pwdModalSpinner = container.querySelector('#pwdModalSpinner');
+  const pwdModalSubmitText = container.querySelector('#pwdModalSubmitText');
+
+  const openPwdModal = () => {
+    changePwdModalForm?.reset();
+    if (pwdModalError) pwdModalError.hidden = true;
+    if (pwdModalSuccess) pwdModalSuccess.hidden = true;
+    if (pwdModal) pwdModal.hidden = false;
+    setTimeout(() => currentPwdInput?.focus(), 150);
+  };
+
+  const closePwdModal = () => {
+    if (pwdModal) pwdModal.hidden = true;
+  };
+
+  openPwdModalBtn?.addEventListener('click', openPwdModal);
+  closePwdModalBtn?.addEventListener('click', closePwdModal);
+  closePwdModalFooterBtn?.addEventListener('click', closePwdModal);
+  closePwdModalBackdrop?.addEventListener('click', closePwdModal);
 
   // Nút ẩn/hiện mật khẩu
   container.querySelectorAll('.pwd-toggle-btn').forEach((btn) => {
@@ -1172,59 +1217,102 @@ export async function renderProfile(options = {}) {
     });
   });
 
-  changePwdForm?.addEventListener('submit', async (e) => {
+  changePwdModalForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (pwdError) pwdError.hidden = true;
-    if (pwdSuccess) pwdSuccess.hidden = true;
+    if (pwdModalError) pwdModalError.hidden = true;
+    if (pwdModalSuccess) pwdModalSuccess.hidden = true;
 
-    const newPwd = newPwdInput?.value || '';
-    const confirmPwd = confirmNewPwdInput?.value || '';
+    const oldPwd = currentPwdInput?.value || '';
+    const newPwd = newPwdModalInput?.value || '';
+    const confirmPwd = confirmNewPwdModalInput?.value || '';
+
+    if (!oldPwd) {
+      if (pwdModalError) {
+        pwdModalError.textContent = 'Vui lòng nhập mật khẩu hiện tại.';
+        pwdModalError.hidden = false;
+      }
+      currentPwdInput?.focus();
+      return;
+    }
 
     if (newPwd.length < 6) {
-      if (pwdError) {
-        pwdError.textContent = 'Mật khẩu mới phải có tối thiểu 6 ký tự.';
-        pwdError.hidden = false;
+      if (pwdModalError) {
+        pwdModalError.textContent = 'Mật khẩu mới phải có tối thiểu 6 ký tự.';
+        pwdModalError.hidden = false;
       }
-      newPwdInput?.focus();
+      newPwdModalInput?.focus();
       return;
     }
 
     if (newPwd !== confirmPwd) {
-      if (pwdError) {
-        pwdError.textContent = 'Mật khẩu xác nhận không khớp với mật khẩu mới.';
-        pwdError.hidden = false;
+      if (pwdModalError) {
+        pwdModalError.textContent = 'Mật khẩu xác nhận không khớp với mật khẩu mới.';
+        pwdModalError.hidden = false;
       }
-      confirmNewPwdInput?.focus();
+      confirmNewPwdModalInput?.focus();
       return;
     }
 
-    if (pwdSubmitBtn) pwdSubmitBtn.disabled = true;
-    if (pwdSpinner) pwdSpinner.hidden = false;
-    if (pwdSubmitText) pwdSubmitText.textContent = 'Đang cập nhật...';
+    if (oldPwd === newPwd) {
+      if (pwdModalError) {
+        pwdModalError.textContent = 'Mật khẩu mới không được trùng với mật khẩu cũ.';
+        pwdModalError.hidden = false;
+      }
+      newPwdModalInput?.focus();
+      return;
+    }
+
+    if (submitChangePwdModalBtn) submitChangePwdModalBtn.disabled = true;
+    if (pwdModalSpinner) pwdModalSpinner.hidden = false;
+    if (pwdModalSubmitText) pwdModalSubmitText.textContent = 'Đang kiểm tra...';
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      // 1. Kiểm tra mật khẩu cũ bằng cách xác thực lại với email của user
+      const userEmail = user?.email || (await supabase.auth.getUser()).data?.user?.email;
+      if (userEmail) {
+        const { error: verifyError } = await supabase.auth.signInWithPassword({
+          email: userEmail,
+          password: oldPwd
+        });
+
+        if (verifyError) {
+          if (pwdModalError) {
+            pwdModalError.textContent = 'Mật khẩu cũ không chính xác. Vui lòng kiểm tra lại!';
+            pwdModalError.hidden = false;
+          }
+          currentPwdInput?.focus();
+          return;
+        }
+      }
+
+      if (pwdModalSubmitText) pwdModalSubmitText.textContent = 'Đang đổi mật khẩu...';
+
+      // 2. Cập nhật mật khẩu mới lên Supabase
+      const { error: updateError } = await supabase.auth.updateUser({
         password: newPwd
       });
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
-      changePwdForm.reset();
-      if (pwdSuccess) {
-        pwdSuccess.textContent = '✓ Mật khẩu đã được thay đổi thành công!';
-        pwdSuccess.hidden = false;
+      changePwdModalForm.reset();
+      if (pwdModalSuccess) {
+        pwdModalSuccess.textContent = '✓ Đổi mật khẩu thành công!';
+        pwdModalSuccess.hidden = false;
       }
-      toast?.('Đổi mật khẩu thành công! ✦');
+      toast?.('Đổi mật khẩu thành công! 🔑✨');
+      setTimeout(() => {
+        closePwdModal();
+      }, 1200);
     } catch (err) {
       console.error('Lỗi khi đổi mật khẩu:', err);
-      if (pwdError) {
-        pwdError.textContent = err.message || 'Không thể đổi mật khẩu. Vui lòng thử lại sau.';
-        pwdError.hidden = false;
+      if (pwdModalError) {
+        pwdModalError.textContent = err.message || 'Không thể đổi mật khẩu. Vui lòng thử lại sau.';
+        pwdModalError.hidden = false;
       }
     } finally {
-      if (pwdSubmitBtn) pwdSubmitBtn.disabled = false;
-      if (pwdSpinner) pwdSpinner.hidden = true;
-      if (pwdSubmitText) pwdSubmitText.textContent = 'Cập nhật mật khẩu';
+      if (submitChangePwdModalBtn) submitChangePwdModalBtn.disabled = false;
+      if (pwdModalSpinner) pwdModalSpinner.hidden = true;
+      if (pwdModalSubmitText) pwdModalSubmitText.textContent = 'Xác nhận đổi mật khẩu';
     }
   });
 }
