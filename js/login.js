@@ -240,6 +240,9 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
     await updateTrigger();
     await onAuthChanged?.();
     toast?.('Bạn đã đăng xuất');
+    setTimeout(() => {
+      window.location.reload();
+    }, 400);
   });
 
   profileLink?.addEventListener('click', () => {
@@ -389,6 +392,9 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
       await updateTrigger();
       await onAuthChanged?.();
       toast?.('Đặt lại mật khẩu thành công! 🔑✨');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (err) {
       if (forgotError2) forgotError2.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
     } finally {
@@ -479,6 +485,9 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
       await updateTrigger();
       await onAuthChanged?.();
       toast?.('Kích hoạt tài khoản thành công! Chào mừng bạn ✦');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (err) {
       if (otpError) otpError.textContent = err.message || 'Lỗi xác thực mã OTP. Vui lòng thử lại.';
     } finally {
@@ -566,6 +575,9 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
       await updateTrigger();
       await onAuthChanged?.();
       toast?.(isRegisterMode ? 'Đăng ký thành công ✦' : 'Đăng nhập thành công ✦');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       const msg = error.message?.toLowerCase() || '';
       if (msg.includes('invalid login credentials')) {
@@ -597,11 +609,18 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
         newPwdInput?.focus();
       }, 600);
     } else if (event === 'SIGNED_IN') {
+      const isOAuthRedirect = window.location.hash.includes('access_token=');
       if (modal.classList.contains('open')) {
         closeModal();
       }
       await updateTrigger();
       await onAuthChanged?.();
+      if (isOAuthRedirect) {
+        setTimeout(() => {
+          window.location.hash = '#profile';
+          window.location.reload();
+        }, 500);
+      }
     } else if (event === 'SIGNED_OUT') {
       await updateTrigger();
       await onAuthChanged?.();
