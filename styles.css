@@ -377,12 +377,16 @@ a {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  padding-top: 74px;
 }
 
 .topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 50;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 100;
   height: 74px;
   background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(16px);
@@ -1492,7 +1496,7 @@ a {
 .login-modal {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 1000;
   display: grid;
   place-items: center;
   background: rgba(15, 23, 42, 0.5);
@@ -2303,7 +2307,7 @@ body.show-pinyin .vocabulary-pinyin {
 .vocabulary-detail {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: 1000;
   display: grid;
   place-items: center;
   padding: 20px;
@@ -2730,6 +2734,9 @@ body.show-pinyin .vocabulary-detail-pinyin {
   }
   .menu-button {
     display: block;
+  }
+  .main-content {
+    padding-top: 60px;
   }
   .topbar {
     height: 60px;
