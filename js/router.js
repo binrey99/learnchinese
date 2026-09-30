@@ -117,10 +117,6 @@ export function initRouter({ toast } = {}) {
     currentRoute = route;
 
     pageView.innerHTML = `
-      <section class="page-header">
-        <div><p class="eyebrow">MANDARINLY WORKSPACE</p><h1>${page.title}</h1><p class="subtitle">${page.description}</p></div>
-        <a class="back-link" href="#dashboard">← Về dashboard</a>
-      </section>
       ${page.template}
     `;
 
