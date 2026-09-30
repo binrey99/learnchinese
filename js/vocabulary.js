@@ -3,7 +3,6 @@ import { normalizeLevel, sortLevels } from './levels.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardLuluExp } from './lulu.js';
-import { HANZI_TO_ENGLISH } from './english-meanings.js';
 
 export const PAGE_SIZE = 20;
 
@@ -130,12 +129,11 @@ function removeAccents(str = '') {
 
 function mapVocabularyRow(word) {
   const rawHanzi = String(word.vocab || '').trim();
-  const mappedEnglish = HANZI_TO_ENGLISH[rawHanzi] || word.english_meaning || '';
   return {
     id: word.id,
     hanzi: rawHanzi,
     pinyin: toPinyin(rawHanzi),
-    english: mappedEnglish,
+    english: word.english_meaning || '',
     meaning: word.vietnamese_meaning,
     level: normalizeLevel(word.book_level),
     wordType: word.word_type,
