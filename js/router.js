@@ -14,8 +14,8 @@ import { initLulu } from './lulu.js';
 
 const pages = {
   vocabulary: {
-    title: 'Từ vựng',
-    description: 'Mở rộng vốn từ và ôn tập theo cấp độ HSK.',
+    title: 'Từ vựng & Thẻ',
+    description: 'Tra cứu danh sách từ vựng và ôn luyện phản xạ qua thẻ ghi nhớ Flashcard 3D theo cấp độ HSK.',
     template: '<div class="page-list" data-vocabulary></div>'
   },
   writing: {

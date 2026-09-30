@@ -8414,3 +8414,705 @@ body.show-pinyin .speed-pinyin{display:block!important}
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   VOCABULARY MODE TABS (TỪ VỰNG & THẺ FLASHCARD 3D)
+   ========================================================================== */
+.vocab-mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 22px;
+  background: #f1f7f3;
+  padding: 8px;
+  border-radius: 20px;
+  border: 1.5px solid #d7e8dc;
+}
+
+.vocab-mode-tab {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vocab-mode-tab:hover {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.vocab-mode-tab.active {
+  background: #ffffff;
+  border-color: #86efac;
+  box-shadow: 0 8px 22px rgba(22, 101, 52, 0.1);
+  transform: translateY(-1px);
+}
+
+.mode-tab-icon {
+  font-size: 26px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #e6f4ea;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.vocab-mode-tab.active .mode-tab-icon {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  transform: scale(1.06);
+}
+
+.mode-tab-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mode-tab-text strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.vocab-mode-tab.active .mode-tab-text strong {
+  color: #14532d;
+}
+
+.mode-tab-text small {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.vocab-mode-panel[hidden] {
+  display: none !important;
+}
+
+/* ==========================================================================
+   GIAO DIỆN THẺ (FLASHCARD 3D)
+   ========================================================================== */
+.fc-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 16px;
+  border: 1px solid #e2ece5;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.03);
+}
+
+.fc-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fc-filter-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #d5e3d9;
+  background: #f8fbf9;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.fc-filter-pill:hover {
+  border-color: #86efac;
+  color: #166534;
+}
+
+.fc-filter-pill.active {
+  background: #166534;
+  border-color: #166534;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(22, 101, 52, 0.22);
+}
+
+.fc-deck-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fc-set-selector {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f7f3;
+  border: 1px solid #d5e3d9;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.fc-set-nav-btn {
+  border: none;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.fc-set-nav-btn:hover:not(:disabled) {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.fc-set-nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fc-set-badge {
+  font-size: 12px;
+  font-weight: 800;
+  color: #14532d;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+
+.fc-action-chip {
+  padding: 7px 13px;
+  border-radius: 10px;
+  border: 1px solid #d5e3d9;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.fc-action-chip:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.fc-action-chip.active {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #14532d;
+}
+
+/* Thanh tiến trình bộ thẻ */
+.fc-progress-card {
+  background: #ffffff;
+  border: 1px solid #e2ece5;
+  border-radius: 14px;
+  padding: 12px 18px;
+  margin-bottom: 18px;
+}
+
+.fc-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.fc-mastered-pill {
+  color: #b45309;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.fc-progress-bar-track {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.fc-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Sân khấu 3D Flashcard */
+.fc-stage-wrapper {
+  margin: 10px 0 20px;
+}
+
+.fc-empty-state {
+  background: #ffffff;
+  border: 2px dashed #cbd5e1;
+  border-radius: 24px;
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.fc-empty-state[hidden] {
+  display: none !important;
+}
+
+.fc-empty-icon {
+  font-size: 46px;
+}
+
+.fc-scene {
+  width: 100%;
+  max-width: 680px;
+  height: 390px;
+  margin: 0 auto;
+  perspective: 1400px;
+}
+
+.fc-scene[hidden] {
+  display: none !important;
+}
+
+.fc-card-3d {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.fc-card-3d.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.fc-card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.fc-card-front {
+  background: linear-gradient(160deg, #ffffff 0%, #f4fbf7 100%);
+  border: 2px solid #bbf7d0;
+  transform: rotateY(0deg);
+  z-index: 2;
+}
+
+.fc-card-back {
+  background: linear-gradient(160deg, #ffffff 0%, #fefce8 100%);
+  border: 2px solid #fde047;
+  transform: rotateY(180deg);
+}
+
+.fc-card-3d.is-flipped .fc-card-front {
+  pointer-events: none;
+}
+
+.fc-card-3d:not(.is-flipped) .fc-card-back {
+  pointer-events: none;
+}
+
+.fc-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fc-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-level-tag {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fc-type-tag {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.fc-card-corner-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fc-corner-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-size: 18px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.fc-corner-btn:hover {
+  transform: scale(1.08);
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.fc-corner-star.is-mastered {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #d97706;
+}
+
+.fc-front-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  margin: auto 0;
+}
+
+.fc-front-pinyin {
+  font-size: 22px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.fc-front-hanzi {
+  font-size: 72px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: 2px;
+  font-family: 'Noto Sans SC', 'Plus Jakarta Sans', sans-serif;
+}
+
+.fc-card-footer {
+  text-align: center;
+  border-top: 1px dashed #e2e8f0;
+  padding-top: 12px;
+}
+
+.fc-flip-guide {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* Mặt sau thẻ */
+.fc-back-head-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fc-back-hanzi {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+
+.fc-back-pinyin {
+  font-size: 18px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.fc-back-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: auto 0;
+  overflow-y: auto;
+  max-height: 230px;
+}
+
+.fc-meaning-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #fde68a;
+  border-radius: 16px;
+  padding: 14px 18px;
+}
+
+.fc-field-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.fc-meaning-vi {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #14532d;
+  line-height: 1.3;
+}
+
+.fc-meaning-en {
+  margin: 6px 0 0;
+  font-size: 13.5px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.fc-example-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.fc-example-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.fc-example-audio-btn {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.fc-example-audio-btn:hover {
+  background: #dcfce7;
+}
+
+.fc-example-content {
+  margin: 0;
+  font-size: 13.5px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+/* Hàng nút điều khiển chính dưới thẻ */
+.fc-main-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  max-width: 680px;
+  margin: 0 auto 26px;
+}
+
+.fc-main-controls[hidden] {
+  display: none !important;
+}
+
+.fc-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1.5px solid #d5e3d9;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+}
+
+.fc-ctrl-btn:hover {
+  transform: translateY(-2px);
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.fc-ctrl-flip {
+  background: #166534;
+  border-color: #166534;
+  color: #ffffff;
+}
+
+.fc-ctrl-flip:hover {
+  background: #14532d;
+  border-color: #14532d;
+  color: #ffffff;
+}
+
+.fc-ctrl-master.is-mastered {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #b45309;
+}
+
+/* Danh sách thu nhỏ các thẻ trong bộ */
+.fc-deck-overview {
+  background: #ffffff;
+  border: 1px solid #e2ece5;
+  border-radius: 18px;
+  padding: 18px 20px;
+}
+
+.fc-deck-overview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.fc-deck-overview-head h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.fc-deck-overview-head small {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.fc-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+}
+
+.fc-mini-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  text-align: left;
+}
+
+.fc-mini-item:hover {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.fc-mini-item.active {
+  border-color: #16a34a;
+  background: #dcfce7;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.15);
+}
+
+.fc-mini-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.fc-mini-hanzi {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.fc-mini-star {
+  margin-left: auto;
+  color: #f59e0b;
+  font-size: 13px;
+}
+
+@media (max-width: 650px) {
+  .vocab-mode-tabs {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 6px;
+  }
+  .vocab-mode-tab {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .mode-tab-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+  .mode-tab-text strong {
+    font-size: 14px;
+  }
+  .mode-tab-text small {
+    display: none;
+  }
+  .fc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .fc-deck-tools {
+    justify-content: space-between;
+  }
+  .fc-scene {
+    height: 350px;
+  }
+  .fc-card-face {
+    padding: 18px 18px;
+  }
+  .fc-front-hanzi {
+    font-size: 54px;
+  }
+  .fc-main-controls {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
