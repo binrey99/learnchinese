@@ -420,22 +420,6 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
         </div>
       </div>
 
-      <!-- Các nút điều khiển chính dưới thẻ -->
-      <div class="fc-main-controls" id="fcMainControls">
-        <button type="button" class="fc-ctrl-btn fc-ctrl-prev" id="fcPrevBtn">
-          <span>←</span> <strong>Thẻ trước</strong>
-        </button>
-        <button type="button" class="fc-ctrl-btn fc-ctrl-flip" id="fcFlipBtn">
-          <span>🔄</span> <strong>Lật thẻ</strong>
-        </button>
-        <button type="button" class="fc-ctrl-btn fc-ctrl-master" id="fcMasterBtn">
-          <span id="fcMasterBtnIcon">☆</span> <strong id="fcMasterBtnText">Đánh dấu thuộc</strong>
-        </button>
-        <button type="button" class="fc-ctrl-btn fc-ctrl-next" id="fcNextBtn">
-          <strong>Thẻ tiếp</strong> <span>→</span>
-        </button>
-      </div>
-
       <!-- Lưới danh sách thu nhỏ của 20 thẻ trong bộ -->
       <div class="fc-deck-overview">
         <div class="fc-deck-overview-head">
@@ -1347,10 +1331,10 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       toggleFlipCard();
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      fcNextBtn?.click();
+      goToNextCard();
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      fcPrevBtn?.click();
+      goToPrevCard();
     }
   });
 
