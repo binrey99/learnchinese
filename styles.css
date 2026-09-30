@@ -9116,3 +9116,51 @@ body.show-pinyin .speed-pinyin{display:block!important}
     gap: 10px;
   }
 }
+
+/* Hiệu ứng vuốt chuyển thẻ trái / phải */
+.fc-scene {
+  touch-action: pan-y;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fc-scene.swipe-out-left {
+  transform: translateX(-90px) rotate(-4deg) scale(0.96);
+  opacity: 0;
+  transition: transform 0.14s ease-in, opacity 0.14s ease-in;
+}
+
+.fc-scene.swipe-in-right {
+  animation: fcSlideInRight 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.fc-scene.swipe-out-right {
+  transform: translateX(90px) rotate(4deg) scale(0.96);
+  opacity: 0;
+  transition: transform 0.14s ease-in, opacity 0.14s ease-in;
+}
+
+.fc-scene.swipe-in-left {
+  animation: fcSlideInLeft 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fcSlideInRight {
+  from {
+    transform: translateX(70px) rotate(3deg) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fcSlideInLeft {
+  from {
+    transform: translateX(-70px) rotate(-3deg) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}

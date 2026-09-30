@@ -378,7 +378,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
               </div>
 
               <div class="fc-card-footer">
-                <span class="fc-flip-guide">👆 Chạm vào thẻ hoặc nhấn phím <strong>Space</strong> để lật xem nghĩa</span>
+                <span class="fc-flip-guide">👆 Chạm để lật mặt • 👈👉 Vuốt trái / phải để chuyển thẻ</span>
               </div>
             </div>
 
@@ -413,7 +413,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
               </div>
 
               <div class="fc-card-footer">
-                <span class="fc-flip-guide">🔄 Chạm vào thẻ để lật lại mặt chữ Hán</span>
+                <span class="fc-flip-guide">🔄 Chạm để lật lại • 👈👉 Vuốt trái / phải để chuyển thẻ</span>
               </div>
             </div>
           </div>
@@ -1103,9 +1103,136 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     });
   };
 
+  let isCardAnimating = false;
+  let ignoreNextClick = false;
+
+  const goToNextCard = () => {
+    if (!fcFilteredWords.length || isCardAnimating) return;
+    isCardAnimating = true;
+    fcScene?.classList.remove('swipe-in-right', 'swipe-in-left', 'swipe-out-right');
+    fcScene?.classList.add('swipe-out-left');
+    setTimeout(() => {
+      fcCurrentIndex = (fcCurrentIndex + 1) % fcFilteredWords.length;
+      updateFlashcardView(true);
+      fcScene?.classList.remove('swipe-out-left');
+      fcScene?.classList.add('swipe-in-right');
+      setTimeout(() => {
+        fcScene?.classList.remove('swipe-in-right');
+        isCardAnimating = false;
+      }, 180);
+    }, 140);
+  };
+
+  const goToPrevCard = () => {
+    if (!fcFilteredWords.length || isCardAnimating) return;
+    isCardAnimating = true;
+    fcScene?.classList.remove('swipe-in-right', 'swipe-in-left', 'swipe-out-left');
+    fcScene?.classList.add('swipe-out-right');
+    setTimeout(() => {
+      fcCurrentIndex = (fcCurrentIndex - 1 + fcFilteredWords.length) % fcFilteredWords.length;
+      updateFlashcardView(true);
+      fcScene?.classList.remove('swipe-out-right');
+      fcScene?.classList.add('swipe-in-left');
+      setTimeout(() => {
+        fcScene?.classList.remove('swipe-in-left');
+        isCardAnimating = false;
+      }, 180);
+    }, 140);
+  };
+
+  // Thao tác vuốt trái / vuốt phải (Touch & Mouse Drag) để chuyển thẻ
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+  let swipeCurrentX = 0;
+  let isSwiping = false;
+  let isMouseDown = false;
+
+  const handleSwipeStart = (x, y) => {
+    swipeStartX = x;
+    swipeStartY = y;
+    swipeCurrentX = x;
+    isSwiping = false;
+    if (fcScene) fcScene.style.transition = 'none';
+  };
+
+  const handleSwipeMove = (x, y) => {
+    swipeCurrentX = x;
+    const dx = swipeCurrentX - swipeStartX;
+    const dy = y - swipeStartY;
+
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+      isSwiping = true;
+      const clampedDx = Math.max(-130, Math.min(130, dx * 0.55));
+      const tilt = clampedDx * 0.035;
+      if (fcScene) {
+        fcScene.style.transform = `translateX(${clampedDx}px) rotate(${tilt}deg)`;
+      }
+    }
+  };
+
+  const handleSwipeEnd = () => {
+    const dx = swipeCurrentX - swipeStartX;
+    if (fcScene) {
+      fcScene.style.transition = '';
+      fcScene.style.transform = '';
+    }
+
+    if (isSwiping) {
+      ignoreNextClick = true;
+      setTimeout(() => {
+        ignoreNextClick = false;
+      }, 260);
+
+      if (dx <= -45) {
+        // Vuốt sang trái -> Thẻ tiếp theo
+        goToNextCard();
+      } else if (dx >= 45) {
+        // Vuốt sang phải -> Thẻ trước đó
+        goToPrevCard();
+      }
+    }
+    isSwiping = false;
+  };
+
+  fcScene?.addEventListener('touchstart', (e) => {
+    if (e.target.closest('button') || !e.touches.length) return;
+    handleSwipeStart(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  fcScene?.addEventListener('touchmove', (e) => {
+    if (!e.touches.length) return;
+    handleSwipeMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  fcScene?.addEventListener('touchend', () => {
+    handleSwipeEnd();
+  });
+
+  fcScene?.addEventListener('touchcancel', () => {
+    handleSwipeEnd();
+  });
+
+  // Hỗ trợ kéo chuột trái/phải trên máy tính
+  fcScene?.addEventListener('mousedown', (e) => {
+    if (e.button !== 0 || e.target.closest('button')) return;
+    isMouseDown = true;
+    handleSwipeStart(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isMouseDown || activeMode !== 'flashcard') return;
+    handleSwipeMove(e.clientX, e.clientY);
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!isMouseDown) return;
+    isMouseDown = false;
+    handleSwipeEnd();
+  });
+
   // Sự kiện click vào thẻ để lật
   fcCard3d?.addEventListener('click', (e) => {
-    if (e.target.closest('button')) return;
+    if (ignoreNextClick || e.target.closest('button')) return;
     toggleFlipCard();
   });
 
@@ -1137,16 +1264,8 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // Nút Lật thẻ, Thẻ trước, Thẻ tiếp
   fcFlipBtn?.addEventListener('click', toggleFlipCard);
-  fcPrevBtn?.addEventListener('click', () => {
-    if (!fcFilteredWords.length) return;
-    fcCurrentIndex = (fcCurrentIndex - 1 + fcFilteredWords.length) % fcFilteredWords.length;
-    updateFlashcardView(true);
-  });
-  fcNextBtn?.addEventListener('click', () => {
-    if (!fcFilteredWords.length) return;
-    fcCurrentIndex = (fcCurrentIndex + 1) % fcFilteredWords.length;
-    updateFlashcardView(true);
-  });
+  fcPrevBtn?.addEventListener('click', goToPrevCard);
+  fcNextBtn?.addEventListener('click', goToNextCard);
 
   // Chuyển cấp độ HSK trong phần Thẻ
   container.querySelectorAll('[data-fc-category]').forEach((tab) => {
