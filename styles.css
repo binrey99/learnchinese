@@ -9174,3 +9174,104 @@ body.show-pinyin .speed-pinyin{display:block!important}
     opacity: 1;
   }
 }
+
+/* Thanh công cụ HSK + Ô tìm kiếm từ vựng */
+.vocabulary-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.vocabulary-toolbar-row .vocabulary-tabs {
+  margin-bottom: 0;
+  flex: 1 1 auto;
+}
+
+.vocabulary-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 1 310px;
+  min-width: 240px;
+  height: 38px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s ease;
+}
+
+.vocabulary-search-box:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
+}
+
+.vocabulary-search-icon {
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.vocabulary-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  font-family: inherit;
+}
+
+.vocabulary-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.vocabulary-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.vocabulary-search-clear {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.vocabulary-search-clear[hidden] {
+  display: none !important;
+}
+
+.vocabulary-search-clear:hover {
+  background: #cbd5e1;
+  color: #0f172a;
+}
+
+@media (max-width: 650px) {
+  .vocabulary-search-box {
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+}
+

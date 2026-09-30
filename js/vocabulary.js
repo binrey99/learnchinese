@@ -117,12 +117,90 @@ async function saveMasteredVocabulary(userId, vocabularyId, isMastered) {
   if (error) throw error;
 }
 
+function removeAccents(str = '') {
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim();
+}
+
+function mapVocabularyRow(word) {
+  return {
+    id: word.id,
+    hanzi: word.vocab,
+    pinyin: toPinyin(word.vocab),
+    english: word.english_meaning || '',
+    meaning: word.vietnamese_meaning,
+    level: normalizeLevel(word.book_level),
+    wordType: word.word_type,
+    example: word.Example || word.example || word.component || ''
+  };
+}
+
 /**
- * Phân trang từ Supabase: chỉ lấy đúng 20 từ cho trang hiện tại và tổng số từ theo cấp độ
+ * Phân trang từ Supabase: chỉ lấy đúng 20 từ cho trang hiện tại và tổng số từ theo cấp độ (hoặc theo từ khóa tìm kiếm)
  */
-async function fetchVocabularyPage(category, page = 1) {
+async function fetchVocabularyPage(category, page = 1, searchQuery = '') {
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
+  const trimmedSearch = searchQuery.trim();
+
+  if (trimmedSearch) {
+    const safeQ = trimmedSearch.replace(/[,()]/g, ' ').trim();
+    if (safeQ) {
+      const { data, count, error } = await supabase
+        .from('vocabulary')
+        .select('id, book_level, vocab, english_meaning, vietnamese_meaning, word_type, Example', { count: 'exact' })
+        .or(`vocab.ilike.%${safeQ}%,vietnamese_meaning.ilike.%${safeQ}%,english_meaning.ilike.%${safeQ}%`)
+        .order('id', { ascending: true })
+        .range(from, to);
+
+      if (!error && data && data.length > 0) {
+        const rows = data.map(mapVocabularyRow);
+        return {
+          words: rows,
+          total: count !== null && count !== undefined ? count : rows.length
+        };
+      }
+    }
+
+    // Fallback tìm kiếm theo Pinyin không dấu hoặc tiếng Việt không dấu trên cấp độ hiện tại
+    let catQuery = supabase
+      .from('vocabulary')
+      .select('id, book_level, vocab, english_meaning, vietnamese_meaning, word_type, Example');
+    const noSpace = category.replace(/\s+/g, '');
+    if (noSpace !== category) {
+      catQuery = catQuery.or(`book_level.eq.${category},book_level.eq.${noSpace}`);
+    } else {
+      catQuery = catQuery.eq('book_level', category);
+    }
+    const { data: catData, error: catError } = await catQuery.order('id', { ascending: true }).limit(1000);
+    if (catError) throw catError;
+
+    const normQ = removeAccents(trimmedSearch);
+    const normQNoSpace = normQ.replace(/\s+/g, '');
+    const matched = (catData || []).map(mapVocabularyRow).filter((w) => {
+      const pyNorm = removeAccents(w.pinyin);
+      const pyNoSpace = pyNorm.replace(/\s+/g, '');
+      const viNorm = removeAccents(w.meaning);
+      const enNorm = removeAccents(w.english);
+      return (
+        String(w.hanzi || '').includes(trimmedSearch) ||
+        pyNorm.includes(normQ) ||
+        (normQNoSpace && pyNoSpace.includes(normQNoSpace)) ||
+        viNorm.includes(normQ) ||
+        enNorm.includes(normQ)
+      );
+    });
+
+    return {
+      words: matched.slice(from, from + PAGE_SIZE),
+      total: matched.length
+    };
+  }
 
   let query = supabase
     .from('vocabulary')
@@ -141,16 +219,7 @@ async function fetchVocabularyPage(category, page = 1) {
 
   if (error) throw error;
 
-  const rows = (data || []).map((word) => ({
-    id: word.id,
-    hanzi: word.vocab,
-    pinyin: toPinyin(word.vocab),
-    english: word.english_meaning || '',
-    meaning: word.vietnamese_meaning,
-    level: normalizeLevel(word.book_level),
-    wordType: word.word_type,
-    example: word.Example || word.example || word.component || ''
-  }));
+  const rows = (data || []).map(mapVocabularyRow);
 
   return {
     words: rows,
@@ -161,8 +230,23 @@ async function fetchVocabularyPage(category, page = 1) {
 /**
  * Fallback dữ liệu mẫu khi offline hoặc lỗi kết nối Supabase
  */
-function getFallbackVocabularyPage(category, page = 1) {
-  const filtered = vocabulary.filter((word) => normalizeLevel(word.level) === normalizeLevel(category));
+function getFallbackVocabularyPage(category, page = 1, searchQuery = '') {
+  const trimmedSearch = searchQuery.trim();
+  const normQ = removeAccents(trimmedSearch);
+  const filtered = vocabulary.filter((word) => {
+    if (!trimmedSearch) {
+      return normalizeLevel(word.level) === normalizeLevel(category);
+    }
+    const pyNorm = removeAccents(word.pinyin || toPinyin(word.hanzi));
+    const viNorm = removeAccents(word.meaning);
+    const enNorm = removeAccents(word.english || '');
+    return (
+      String(word.hanzi || '').includes(trimmedSearch) ||
+      pyNorm.includes(normQ) ||
+      viNorm.includes(normQ) ||
+      enNorm.includes(normQ)
+    );
+  });
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE;
   return {
@@ -243,6 +327,8 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   let totalPages = 1;
   let currentWords = [];
   let isLoading = false;
+  let searchQuery = '';
+  let searchDebounceTimer = null;
   let user = null;
   let masteredVocabularyIds = new Set();
 
@@ -294,10 +380,24 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
     <!-- PANEL 1: TỪ VỰNG (GIỮ NGUYÊN GIAO DIỆN & NỘI DUNG CŨ) -->
     <div class="vocab-mode-panel" data-mode-panel="list">
-      <div class="vocabulary-tabs" role="tablist">
-        ${availableCategories.map((category, index) => `
-          <button type="button" class="vocabulary-tab${index === 0 ? ' active' : ''}" data-vocabulary-category="${escapeHtml(category)}">${escapeHtml(category)}</button>
-        `).join('')}
+      <div class="vocabulary-toolbar-row">
+        <div class="vocabulary-tabs" role="tablist">
+          ${availableCategories.map((category, index) => `
+            <button type="button" class="vocabulary-tab${index === 0 ? ' active' : ''}" data-vocabulary-category="${escapeHtml(category)}">${escapeHtml(category)}</button>
+          `).join('')}
+        </div>
+        <div class="vocabulary-search-box">
+          <span class="vocabulary-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            class="vocabulary-search-input"
+            id="vocabularySearchInput"
+            placeholder="Tìm từ vựng (Hán, Pinyin, nghĩa)..."
+            autocomplete="off"
+            aria-label="Tìm kiếm từ vựng"
+          />
+          <button type="button" class="vocabulary-search-clear" id="vocabularySearchClear" hidden aria-label="Xóa tìm kiếm">×</button>
+        </div>
       </div>
       <div class="vocabulary-list-wrap">
         <div class="vocabulary-list" data-vocabulary-list></div>
@@ -558,9 +658,16 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   // =========================================================================
   // PHẦN 1: DANH SÁCH TỪ VỰNG (GIỮ NGUYÊN NỘI DUNG & GIAO DIỆN CŨ)
   // =========================================================================
+  const searchInput = container.querySelector('#vocabularySearchInput');
+  const searchClearBtn = container.querySelector('#vocabularySearchClear');
+
   const renderWordsList = (words) => {
     if (!words.length) {
-      list.innerHTML = '<p class="vocabulary-loading">Chưa có từ vựng cho nhóm này.</p>';
+      if (searchQuery.trim()) {
+        list.innerHTML = `<p class="vocabulary-loading">Không tìm thấy từ vựng nào khớp với "<strong>${escapeHtml(searchQuery.trim())}</strong>".</p>`;
+      } else {
+        list.innerHTML = '<p class="vocabulary-loading">Chưa có từ vựng cho nhóm này.</p>';
+      }
       return;
     }
 
@@ -607,8 +714,11 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     const requestId = ++activeRequestId;
     currentCategory = category;
     currentPage = page;
+    const trimmedSearch = searchQuery.trim();
 
-    const cacheKey = `${category}:${page}`;
+    const cacheKey = trimmedSearch
+      ? `search:${trimmedSearch.toLowerCase()}:${category}:${page}`
+      : `${category}:${page}`;
     if (pageCache.has(cacheKey)) {
       const cached = pageCache.get(cacheKey);
       currentWords = cached.words;
@@ -636,10 +746,10 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     try {
       let result = null;
       try {
-        result = await fetchVocabularyPage(category, page);
+        result = await fetchVocabularyPage(category, page, trimmedSearch);
       } catch (error) {
         console.warn('Supabase fetch failed, falling back:', error.message);
-        result = getFallbackVocabularyPage(category, page);
+        result = getFallbackVocabularyPage(category, page, trimmedSearch);
       }
 
       if (requestId !== activeRequestId) return;
@@ -666,12 +776,40 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     }
   };
 
+  // Ô tìm kiếm từ vựng
+  searchInput?.addEventListener('input', () => {
+    const val = searchInput.value;
+    if (searchClearBtn) {
+      searchClearBtn.hidden = !val.trim();
+    }
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => {
+      searchQuery = val.trim();
+      loadPage(currentCategory, 1, false);
+    }, 220);
+  });
+
+  searchClearBtn?.addEventListener('click', () => {
+    if (!searchInput) return;
+    searchInput.value = '';
+    searchClearBtn.hidden = true;
+    searchQuery = '';
+    clearTimeout(searchDebounceTimer);
+    loadPage(currentCategory, 1, false);
+    searchInput.focus();
+  });
+
   // Đổi tab cấp độ (Danh sách từ vựng)
   container.querySelectorAll('[data-vocabulary-category]').forEach((tab) => {
     tab.addEventListener('click', () => {
-      if (isLoading) return;
       const targetCategory = tab.dataset.vocabularyCategory;
-      if (targetCategory === currentCategory) return;
+      if (targetCategory === currentCategory && !searchQuery) return;
+
+      if (searchQuery) {
+        searchQuery = '';
+        if (searchInput) searchInput.value = '';
+        if (searchClearBtn) searchClearBtn.hidden = true;
+      }
 
       container.querySelectorAll('[data-vocabulary-category]').forEach((item) => item.classList.remove('active'));
       tab.classList.add('active');
