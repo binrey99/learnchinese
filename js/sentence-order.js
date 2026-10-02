@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardLuluExp } from './lulu.js';
+import { recordMistakeWord } from './srs-service.js';
 
 
 const levels = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'];
@@ -93,9 +94,18 @@ export function initSentenceOrder({ selector = '[data-sentence-order]', toast } 
         });
         container.querySelector('[data-check-order]').addEventListener('click', async () => {
           const correct = normalizeChinese(selected.map((item) => item.word).join('')) === normalizeChinese(exercise.answer_zh);
+          if (!correct && exercise.answer_zh) {
+            recordMistakeWord({
+              hanzi: exercise.answer_zh,
+              meaning: exercise.question_vi,
+              level: selectedLevel,
+              example: exercise.explanation || '',
+              source: `Sắp xếp câu ${selectedLevel}`
+            });
+          }
           answerStates.set(index, correct);
           const feedback = container.querySelector('[data-order-feedback]');
-          feedback.innerHTML = `<strong class="${correct ? 'correct' : 'incorrect'}">${correct ? 'Chính xác!' : 'Chưa đúng'}</strong><p>Đáp án: <b>${escapeHtml(exercise.answer_zh)}</b></p><small>${escapeHtml(exercise.explanation || '')}</small><button type="button" data-next-order>${index === exercises.length - 1 ? 'Hoàn thành bài' : 'Câu tiếp theo →'}</button>`;
+          feedback.innerHTML = `<strong class="${correct ? 'correct' : 'incorrect'}">${correct ? 'Chính xác!' : 'Chưa đúng (Đã lưu vào Sổ tay từ hay sai)'}</strong><p>Đáp án: <b>${escapeHtml(exercise.answer_zh)}</b></p><small>${escapeHtml(exercise.explanation || '')}</small><button type="button" data-next-order>${index === exercises.length - 1 ? 'Hoàn thành bài' : 'Câu tiếp theo →'}</button>`;
           try { await saveProgress(user?.id, selectedLevel, lesson, index + 1, correct); } catch (error) { toast?.('Không thể lưu tiến độ: ' + error.message); }
           container.querySelector('[data-next-order]').addEventListener('click', () => { if (index === exercises.length - 1) renderOverview(); else { index += 1; renderQuestion(); } });
         });

@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardLuluExp } from './lulu.js';
+import { recordMistakeWord } from './srs-service.js';
 
 
 const levels = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6'];
@@ -96,10 +97,19 @@ export async function initTranslation({ selector = '[data-translation]', toast }
       input.focus();
       const check = async () => {
         const isCorrect = normalizeChinese(input.value) === normalizeChinese(exercise.answer_zh);
+        if (!isCorrect && exercise.answer_zh) {
+          recordMistakeWord({
+            hanzi: exercise.answer_zh,
+            meaning: exercise.question_vi,
+            level: selectedLevel,
+            example: exercise.explanation || '',
+            source: `Luyện dịch ${selectedLevel}`
+          });
+        }
         const feedback = container.querySelector('[data-feedback]');
         answerStates.set(index, isCorrect);
         container.querySelector(`[data-go-question="${index}"]`).classList.add(isCorrect ? 'correct' : 'incorrect');
-        feedback.innerHTML = `<strong class="${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Chính xác!' : 'Chưa đúng'}</strong><p>Đáp án: <b>${escapeHtml(exercise.answer_zh)}</b></p><small>${escapeHtml(exercise.explanation || '')}</small><button type="button" data-next-question>${index === exercises.length - 1 ? 'Hoàn thành bài' : 'Câu tiếp theo →'}</button>`;
+        feedback.innerHTML = `<strong class="${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? 'Chính xác!' : 'Chưa đúng (Đã lưu vào Sổ tay từ hay sai)'}</strong><p>Đáp án: <b>${escapeHtml(exercise.answer_zh)}</b></p><small>${escapeHtml(exercise.explanation || '')}</small><button type="button" data-next-question>${index === exercises.length - 1 ? 'Hoàn thành bài' : 'Câu tiếp theo →'}</button>`;
         try { await saveAnswer(user?.id, selectedLevel, lesson, index + 1, isCorrect); } catch (error) { toast?.('Không thể lưu tiến độ: ' + error.message); }
         container.querySelector('[data-next-question]').addEventListener('click', async () => { if (index === exercises.length - 1) await renderOverview(); else { index += 1; renderQuestion(); } });
       };

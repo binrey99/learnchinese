@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { recordScore } from './score-service.js';
 import { awardFoodReward } from './lulu.js';
+import { recordMistakeWord } from './srs-service.js';
 
 function toPinyin(hanzi) {
   try {
@@ -912,6 +913,13 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
             sounds.playWrong();
             const correctBtn = card.querySelector(`[data-answer="${q.correctAnswer}"]`);
             if (correctBtn) correctBtn.classList.add('correct');
+            if (q.correctAnswer) {
+              recordMistakeWord({
+                hanzi: q.correctAnswer,
+                meaning: String(q.prompt || '').replace(/^Nghĩa\s*"|"\s*là chữ Hán nào\??/gi, '').trim(),
+                source: 'Đấu trường 1v1'
+              });
+            }
           }
 
           const speedBonus = Math.round((roundTimeLeft / 20) * 50);
@@ -964,6 +972,14 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
             sounds.playWrong();
             const correctBtn = card.querySelector(`[data-answer="${q.correctAnswer}"]`);
             if (correctBtn) correctBtn.classList.add('correct');
+            if (q.speakText) {
+              recordMistakeWord({
+                hanzi: q.speakText,
+                pinyin: q.pinyinPrompt || '',
+                meaning: q.correctAnswer,
+                source: 'Đấu trường 1v1'
+              });
+            }
           }
 
           const speedBonus = Math.round((roundTimeLeft / 20) * 50);

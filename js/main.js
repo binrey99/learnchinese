@@ -5,6 +5,8 @@ import { initLogin } from './login.js';
 import { initRouter } from './router.js';
 import { renderDashboardProgress } from './dashboard-progress.js';
 import { initStreak } from './streak.js';
+import { renderDashboardActivityAndBadges } from './recent-activity.js';
+import { renderDashboardSrsBanner } from './srs-service.js';
 
 function initPinyinToggle() {
   const toggle = document.querySelector('#pinyinToggle');
@@ -25,22 +27,29 @@ function initPinyinToggle() {
 function initDashboard() {
   const showToast = createToast();
 
-  initStreak({ toast: showToast });
-  renderCalendar();
-  initNavigation();
-  initPinyinToggle();
+  try { initStreak({ toast: showToast }); } catch (err) { console.error(err); }
+  try { renderCalendar(); } catch (err) { console.error(err); }
+  try { renderDashboardSrsBanner('#dashboardSrsWidget'); } catch (err) { console.error(err); }
+  try { initNavigation(); } catch (err) { console.error(err); }
+  try { initPinyinToggle(); } catch (err) { console.error(err); }
 
-  // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động, lịch học và chuỗi ngày học
-  initLogin({
-    toast: showToast,
-    onAuthChanged: () => {
-      renderDashboardProgress();
-      renderCalendar();
-      window.dispatchEvent(new CustomEvent('auth-changed'));
-    }
-  });
-  renderDashboardProgress();
-  initRouter({ toast: showToast });
+  // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động, lịch học, hoạt động gần đây, huy hiệu và chuỗi ngày học
+  try {
+    initLogin({
+      toast: showToast,
+      onAuthChanged: () => {
+        try { renderDashboardProgress(); } catch (err) { console.error(err); }
+        try { renderCalendar(); } catch (err) { console.error(err); }
+        try { renderDashboardActivityAndBadges({ toast: showToast }); } catch (err) { console.error(err); }
+        try { renderDashboardSrsBanner('#dashboardSrsWidget'); } catch (err) { console.error(err); }
+        window.dispatchEvent(new CustomEvent('auth-changed'));
+      }
+    });
+  } catch (err) { console.error(err); }
+
+  try { renderDashboardProgress(); } catch (err) { console.error(err); }
+  try { renderDashboardActivityAndBadges({ toast: showToast }); } catch (err) { console.error(err); }
+  try { initRouter({ toast: showToast }); } catch (err) { console.error(err); }
 
   const brandVideos = document.querySelectorAll('.topbar-brand-video, video');
   brandVideos.forEach((v) => {

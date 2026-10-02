@@ -3,6 +3,14 @@ import { normalizeLevel, sortLevels } from './levels.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardLuluExp } from './lulu.js';
+import {
+  getSrsSummary,
+  getSrsCard,
+  toggleBookmarkSrsWord,
+  recordSrsReview,
+  renderSrsStudyPanel,
+  renderMistakesNotebookPanel
+} from './srs-service.js';
 
 export const PAGE_SIZE = 20;
 
@@ -361,6 +369,8 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   // 1. Thanh 2 Tab chuyển đổi nhanh: Từ vựng & Thẻ
   // 2. Panel Từ vựng (giữ nguyên 100% nội dung và giao diện cũ)
   // 3. Panel Thẻ Flashcard 3D mới
+  const initSrsSummary = getSrsSummary();
+
   container.innerHTML = `
     <div class="vocab-mode-tabs" role="tablist" aria-label="Chọn chế độ học">
       <button type="button" class="vocab-mode-tab active" data-mode-tab="list" role="tab" aria-selected="true">
@@ -375,6 +385,20 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
         <div class="mode-tab-text">
           <strong>Thẻ (Flashcard 3D)</strong>
           <small>Lật thẻ 2 mặt ghi nhớ nhanh</small>
+        </div>
+      </button>
+      <button type="button" class="vocab-mode-tab" data-mode-tab="srs" role="tab" aria-selected="false">
+        <span class="mode-tab-icon">🧠</span>
+        <div class="mode-tab-text">
+          <strong>Ôn tập SRS <span class="mode-tab-badge" id="vocabTabSrsBadge">${initSrsSummary.dueCount}</span></strong>
+          <small>Ngắt quãng thông minh SM-2</small>
+        </div>
+      </button>
+      <button type="button" class="vocab-mode-tab" data-mode-tab="mistakes" role="tab" aria-selected="false">
+        <span class="mode-tab-icon">📓</span>
+        <div class="mode-tab-text">
+          <strong>Sổ Tay Từ Hay Sai <span class="mode-tab-badge warn" id="vocabTabMistakesBadge">${initSrsSummary.mistakeCount}</span></strong>
+          <small>Khắc phục từ khó & hay nhầm</small>
         </div>
       </button>
     </div>
@@ -519,6 +543,17 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
             </div>
           </div>
         </div>
+
+        <!-- Thanh đánh giá nhanh SRS ngay dưới Thẻ 3D -->
+        <div class="fc-srs-quick-bar" id="fcSrsQuickBar">
+          <span class="fc-srs-bar-label">🧠 Đánh giá độ nhớ (SRS):</span>
+          <div class="fc-srs-btns">
+            <button type="button" class="fc-srs-btn again" data-fc-srs="again" title="Quên từ này -> Lưu vào Sổ tay từ hay sai & ôn lại sau 1 phút">🔁 Quên (1p)</button>
+            <button type="button" class="fc-srs-btn hard" data-fc-srs="hard" title="Hơi khó nhớ -> Ôn lại sau 10 phút">😓 Khó (10p)</button>
+            <button type="button" class="fc-srs-btn good" data-fc-srs="good" title="Nhớ được -> Ôn lại sau 1–3 ngày (+5đ)">👍 Nhớ (+5đ)</button>
+            <button type="button" class="fc-srs-btn easy" data-fc-srs="easy" title="Quá dễ -> Nhảy bậc 3–7 ngày (+8đ)">⚡ Quá dễ (+8đ)</button>
+          </div>
+        </div>
       </div>
 
       <!-- Lưới danh sách thu nhỏ của 20 thẻ trong bộ -->
@@ -530,10 +565,18 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
         <div class="fc-mini-grid" id="fcMiniGrid"></div>
       </div>
     </div>
+
+    <!-- PANEL 3: ÔN TẬP NGẮT QUÃNG THÔNG MINH (SRS) -->
+    <div class="vocab-mode-panel" data-mode-panel="srs" hidden></div>
+
+    <!-- PANEL 4: SỔ TAY TỪ HAY SAI (MISTAKE NOTEBOOK) -->
+    <div class="vocab-mode-panel" data-mode-panel="mistakes" hidden></div>
   `;
 
   const listPanel = container.querySelector('[data-mode-panel="list"]');
   const flashcardPanel = container.querySelector('[data-mode-panel="flashcard"]');
+  const srsPanel = container.querySelector('[data-mode-panel="srs"]');
+  const mistakesPanel = container.querySelector('[data-mode-panel="mistakes"]');
   const list = container.querySelector('[data-vocabulary-list]');
   const overlay = container.querySelector('[data-vocabulary-overlay]');
   const paginationContainer = container.querySelector('[data-vocabulary-pagination-container]');
@@ -625,39 +668,101 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   };
 
   // =========================================================================
-  // CHUYỂN ĐỔI GIỮA 2 TAB: TỪ VỰNG & THẺ
+  // CHUYỂN ĐỔI GIỮA 4 TAB: TỪ VỰNG, THẺ, ÔN TẬP SRS, SỔ TAY TỪ HAY SAI
   // =========================================================================
+  let customSrsPracticeQueue = null;
+
+  const getStarterWordsForSrs = async () => {
+    if (currentWords && currentWords.length > 0) {
+      return currentWords.slice(0, 10);
+    }
+    try {
+      const res = await fetchVocabularyPage(currentCategory, 1);
+      return (res.words || []).slice(0, 10);
+    } catch (_) {
+      return getFallbackVocabularyPage(currentCategory, 1).words.slice(0, 10);
+    }
+  };
+
+  const updateSrsTabBadges = () => {
+    const s = getSrsSummary();
+    const srsBadge = container.querySelector('#vocabTabSrsBadge');
+    const mistakeBadge = container.querySelector('#vocabTabMistakesBadge');
+    if (srsBadge) srsBadge.textContent = String(s.dueCount);
+    if (mistakeBadge) mistakeBadge.textContent = String(s.mistakeCount);
+  };
+
+  window.addEventListener('srs-updated', updateSrsTabBadges);
+
+  const switchModeTab = (targetMode, customQueue = null) => {
+    activeMode = targetMode;
+    if (customQueue) {
+      customSrsPracticeQueue = customQueue;
+    }
+
+    container.querySelectorAll('[data-mode-tab]').forEach((btn) => {
+      const isCurrent = btn.dataset.modeTab === activeMode;
+      btn.classList.toggle('active', isCurrent);
+      btn.setAttribute('aria-selected', String(isCurrent));
+    });
+
+    listPanel.hidden = activeMode !== 'list';
+    flashcardPanel.hidden = activeMode !== 'flashcard';
+    if (srsPanel) srsPanel.hidden = activeMode !== 'srs';
+    if (mistakesPanel) mistakesPanel.hidden = activeMode !== 'mistakes';
+
+    if (activeMode !== 'list') closeDetail();
+
+    if (activeMode === 'list') {
+      renderWordsList(currentWords);
+    } else if (activeMode === 'flashcard') {
+      if (fcRawWords.length === 0) {
+        loadFlashcardSet(fcCategory, fcPage);
+      } else {
+        applyFlashcardFilter(false);
+      }
+    } else if (activeMode === 'srs' && srsPanel) {
+      renderSrsStudyPanel(srsPanel, {
+        speak,
+        toast,
+        getStarterWords: getStarterWordsForSrs,
+        forcedQueue: customSrsPracticeQueue,
+        onClearForcedQueue: () => {
+          customSrsPracticeQueue = null;
+        }
+      });
+    } else if (activeMode === 'mistakes' && mistakesPanel) {
+      renderMistakesNotebookPanel(mistakesPanel, {
+        speak,
+        toast,
+        getStarterWords: getStarterWordsForSrs,
+        onPracticeTheseWords: (wordsToPractice) => {
+          switchModeTab('srs', wordsToPractice);
+          toast?.(`Bắt đầu ôn tập khắc phục ${wordsToPractice.length} từ hay sai! 🚀`);
+        }
+      });
+    }
+  };
+
   container.querySelectorAll('[data-mode-tab]').forEach((tabBtn) => {
     tabBtn.addEventListener('click', () => {
       const targetMode = tabBtn.dataset.modeTab;
       if (targetMode === activeMode) return;
-      activeMode = targetMode;
-
-      container.querySelectorAll('[data-mode-tab]').forEach((btn) => {
-        const isCurrent = btn.dataset.modeTab === activeMode;
-        btn.classList.toggle('active', isCurrent);
-        btn.setAttribute('aria-selected', String(isCurrent));
-      });
-
-      if (activeMode === 'list') {
-        listPanel.hidden = false;
-        flashcardPanel.hidden = true;
-        renderWordsList(currentWords);
-      } else {
-        listPanel.hidden = true;
-        flashcardPanel.hidden = false;
-        closeDetail();
-        if (fcRawWords.length === 0) {
-          loadFlashcardSet(fcCategory, fcPage);
-        } else {
-          applyFlashcardFilter(false);
-        }
-      }
+      customSrsPracticeQueue = null;
+      switchModeTab(targetMode);
     });
   });
 
+  window.addEventListener('open-vocab-subtab', (e) => {
+    const requested = e.detail?.tab;
+    if (requested) {
+      sessionStorage.removeItem('mandarinly_open_vocab_tab');
+      switchModeTab(requested);
+    }
+  });
+
   // =========================================================================
-  // PHẦN 1: DANH SÁCH TỪ VỰNG (GIỮ NGUYÊN NỘI DUNG & GIAO DIỆN CŨ)
+  // PHẦN 1: DANH SÁCH TỪ VỰNG (GIỮ NGUYÊN NỘI DUNG & GIAO DIỆN CŨ + NÚT GHIM SRS)
   // =========================================================================
   const searchInput = container.querySelector('#vocabularySearchInput');
   const searchClearBtn = container.querySelector('#vocabularySearchClear');
@@ -672,7 +777,10 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       return;
     }
 
-    list.innerHTML = words.map((word, index) => `
+    list.innerHTML = words.map((word, index) => {
+      const srsCard = getSrsCard(word.hanzi);
+      const isInSrs = Boolean(srsCard?.bookmarked || (srsCard?.mistakeCount || 0) > 0);
+      return `
       <article class="vocabulary-item" role="button" tabindex="0" data-vocabulary-index="${index}">
         <div class="vocabulary-main-row">
           <div class="vocabulary-hanzi">
@@ -691,10 +799,12 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
             <span>${escapeHtml(word.example)}</span>
           </div>
         ` : ''}
+        <button class="vocabulary-row-srs${isInSrs ? ' is-pinned' : ''}" type="button" title="${isInSrs ? 'Đã lưu trong Sổ tay SRS / Từ khó' : 'Lưu vào Sổ tay Ôn tập SRS'}" aria-label="Lưu vào Sổ tay SRS" data-srs-bookmark-row>📌</button>
         <button class="vocabulary-row-speak" type="button" aria-label="Phát âm ${escapeHtml(word.hanzi)}" data-speak-row>🔊</button>
         <button class="vocabulary-row-mastered${masteredVocabularyIds.has(String(word.id)) ? ' is-mastered' : ''}" type="button" aria-label="${masteredVocabularyIds.has(String(word.id)) ? 'Bỏ đánh dấu đã thuộc' : 'Đánh dấu đã thuộc'}" aria-pressed="${masteredVocabularyIds.has(String(word.id))}" data-mastered-row>${masteredVocabularyIds.has(String(word.id)) ? '★' : '☆'}</button>
       </article>
-    `).join('');
+    `;
+    }).join('');
   };
 
   const showOverlay = () => {
@@ -893,6 +1003,28 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     const index = Number(item.dataset.vocabularyIndex);
     const word = currentWords[index];
     if (!word) return;
+
+    const srsPinBtn = event.target.closest('[data-srs-bookmark-row]');
+    if (srsPinBtn) {
+      event.stopPropagation();
+      const res = toggleBookmarkSrsWord({
+        id: word.id,
+        hanzi: word.hanzi,
+        pinyin: word.pinyin || toPinyin(word.hanzi),
+        meaning: word.meaning,
+        english: word.english,
+        level: word.level || currentCategory,
+        example: word.example,
+        source: `Từ vựng ${word.level || currentCategory}`
+      });
+      srsPinBtn.classList.toggle('is-pinned', res.added);
+      toast?.(
+        res.added
+          ? `📌 Đã lưu "${word.hanzi}" vào Sổ tay Ôn tập SRS!`
+          : `Đã bỏ ghim "${word.hanzi}" khỏi Sổ tay SRS.`
+      );
+      return;
+    }
 
     const masteredBtn = event.target.closest('[data-mastered-row]');
     if (masteredBtn) {
@@ -1462,6 +1594,31 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     }
   });
 
+  // Đánh giá nhanh SRS ngay trên Thẻ 3D
+  container.querySelectorAll('[data-fc-srs]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const word = fcFilteredWords[fcCurrentIndex];
+      if (!word) return;
+      const grade = btn.dataset.fcSrs || 'good';
+      recordSrsReview(word.hanzi, grade, {
+        id: word.id,
+        hanzi: word.hanzi,
+        pinyin: word.pinyin || toPinyin(word.hanzi),
+        meaning: word.meaning,
+        english: word.english,
+        level: word.level || fcCategory,
+        example: word.example
+      });
+      if (grade === 'again') {
+        toast?.(`🔁 Đã đưa "${word.hanzi}" vào Sổ tay từ hay sai để ôn lại!`);
+      } else {
+        toast?.(`🧠 Đã lưu lịch ôn SRS cho từ "${word.hanzi}"!`);
+      }
+      goToNextCard();
+    });
+  });
+
   // Hỗ trợ bàn phím khi đang mở tab Thẻ
   fcCard3d?.addEventListener('keydown', (e) => {
     if (activeMode !== 'flashcard') return;
@@ -1479,4 +1636,11 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // Tải trang đầu tiên cho Danh sách từ vựng
   await loadPage(currentCategory, 1, false);
+
+  // Kiểm tra nếu người dùng bấm từ Banner SRS/Sổ tay ở Trang chủ sang
+  const initialSubTab = sessionStorage.getItem('mandarinly_open_vocab_tab');
+  if (initialSubTab && (initialSubTab === 'srs' || initialSubTab === 'mistakes')) {
+    sessionStorage.removeItem('mandarinly_open_vocab_tab');
+    switchModeTab(initialSubTab);
+  }
 }

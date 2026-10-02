@@ -11,6 +11,7 @@ import { initSentenceOrder } from './sentence-order.js';
 import { initGame } from './game.js';
 import { initBattle } from './battle.js';
 import { initLulu } from './lulu.js';
+import { initActivityPage } from './recent-activity.js';
 
 const pages = {
   vocabulary: {
@@ -77,6 +78,11 @@ const pages = {
     title: 'Nuôi LuLu',
     description: 'Chăm sóc bé Capybara LuLu, cho ăn, tắm suối nước nóng và cùng nhau học tiếng Trung.',
     template: '<div data-lulu></div>'
+  },
+  activity: {
+    title: 'Nhật ký Hoạt động & Huy hiệu',
+    description: 'Xem toàn bộ lịch sử hoạt động học tập và bộ sưu tập huy hiệu thành tích của bạn.',
+    template: '<div data-activity-page></div>'
   }
 };
 
@@ -137,6 +143,7 @@ export function initRouter({ toast } = {}) {
       if (route === 'game') initGame(options);
       if (route === 'battle') initBattle(options);
       if (route === 'lulu') initLulu(options);
+      if (route === 'activity') initActivityPage(options);
     } catch (err) {
       console.error('[Router] Lỗi khi khởi tạo trang:', route, err);
     }

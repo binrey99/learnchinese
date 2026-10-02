@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { normalizeLevel } from './levels.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardFoodReward } from './lulu.js';
+import { recordMistakeWord } from './srs-service.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 
 function toPinyin(hanzi) {
@@ -771,6 +772,13 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             sounds.playWrong();
             btn.classList.add('opt-wrong');
             streakEl.textContent = '0x';
+            recordMistakeWord({
+              hanzi: targetWord.hanzi,
+              pinyin: targetWord.pinyin,
+              meaning: targetWord.meaning,
+              level: targetWord.level,
+              source: 'Đua tốc độ 60s'
+            });
 
             // Phạt trừ -3 giây khi trả lời sai
             timeLeft = Math.max(0, timeLeft - 3);
@@ -927,6 +935,16 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           sounds.playWrong();
           const hEl = selectedHanzi;
           const mEl = selectedMeaning;
+          const wrongWord = selectedWords[Number(hEl.dataset.id)];
+          if (wrongWord) {
+            recordMistakeWord({
+              hanzi: wrongWord.hanzi,
+              pinyin: wrongWord.pinyin,
+              meaning: wrongWord.meaning,
+              level: wrongWord.level,
+              source: 'Nối cặp từ'
+            });
+          }
           hEl.classList.add('is-wrong');
           mEl.classList.add('is-wrong');
 
@@ -1112,6 +1130,15 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         sounds.playWrong();
         lives--;
         livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+        if (currentTarget) {
+          recordMistakeWord({
+            hanzi: currentTarget.hanzi,
+            pinyin: currentTarget.pinyin,
+            meaning: currentTarget.meaning,
+            level: currentTarget.level,
+            source: 'Chạm từ rơi'
+          });
+        }
 
         item.el.classList.add('pop-wrong');
         showPopupText('-1 ❤️ Sai từ!', false, item.x, Math.max(20, item.y - 15));

@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { normalizeLevel, sortLevels } from './levels.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 import { toLocalDateKey, calculateStreak } from './streak.js';
+import { buildBadgesList } from './recent-activity.js';
 
 // Danh sách các avatar có sẵn trong hệ thống
 const PRESET_AVATARS = [
@@ -265,6 +266,9 @@ export async function renderProfile(options = {}) {
   const examPoints = combinedScores
     .filter((r) => r.category === 'mock_exam')
     .reduce((acc, r) => acc + Number(r.points || 0), 0);
+  const writingPoints = combinedScores
+    .filter((r) => r.category === 'practice')
+    .reduce((acc, r) => acc + Number(r.points || 0), 0);
 
   const learnerInfo = getLearnerTitle(totalPoints);
 
@@ -283,90 +287,16 @@ export async function renderProfile(options = {}) {
   });
   const streakInfo = calculateStreak(activeDateSet);
 
-  // Định nghĩa danh sách Huy Hiệu Thành Tích
-  const BADGES = [
-    {
-      id: 'streak_3',
-      icon: '🔥',
-      name: 'Chăm Chỉ 3 Ngày',
-      desc: 'Duy trì chuỗi học 3 ngày liên tiếp',
-      target: 3,
-      current: Math.min(streakInfo.streak, 3),
-      unlocked: streakInfo.streak >= 3
-    },
-    {
-      id: 'first_step',
-      icon: '🌱',
-      name: 'Bước Đầu Khám Phá',
-      desc: 'Tích lũy 10 điểm học tập đầu tiên',
-      target: 10,
-      current: Math.min(totalPoints, 10),
-      unlocked: totalPoints >= 10
-    },
-    {
-      id: 'vocab_5',
-      icon: '📖',
-      name: 'Vốn Từ Khởi Động',
-      desc: 'Thuộc từ 5 từ vựng HSK trở lên',
-      target: 5,
-      current: Math.min(masteredCount, 5),
-      unlocked: masteredCount >= 5
-    },
-    {
-      id: 'vocab_20',
-      icon: '📚',
-      name: 'Bậc Thầy Từ Vựng',
-      desc: 'Đánh dấu thuộc 20 từ vựng',
-      target: 20,
-      current: Math.min(masteredCount, 20),
-      unlocked: masteredCount >= 20
-    },
-    {
-      id: 'translator',
-      icon: '✍️',
-      name: 'Thông Dịch Viên',
-      desc: 'Đạt từ 50 điểm bài tập dịch & câu',
-      target: 50,
-      current: Math.min(translationPoints, 50),
-      unlocked: translationPoints >= 50
-    },
-    {
-      id: 'gamer',
-      icon: '🎮',
-      name: 'Chiến Thần Đấu Trường',
-      desc: 'Đạt 50 điểm trò chơi hoặc đấu 1v1',
-      target: 50,
-      current: Math.min(gamePoints, 50),
-      unlocked: gamePoints >= 50
-    },
-    {
-      id: 'exam_master',
-      icon: '📝',
-      name: 'Sẵn Sàng HSK',
-      desc: 'Hoàn thành bài thi thử tiếng Trung',
-      target: 100,
-      current: Math.min(examPoints, 100),
-      unlocked: examPoints >= 100
-    },
-    {
-      id: 'scholar_500',
-      icon: '🥇',
-      name: 'Học Bá Mandarinly',
-      desc: 'Đạt mốc 500 điểm tích lũy',
-      target: 500,
-      current: Math.min(totalPoints, 500),
-      unlocked: totalPoints >= 500
-    },
-    {
-      id: 'legend_1000',
-      icon: '👑',
-      name: 'Huyền Thoại Ngôn Ngữ',
-      desc: 'Tích lũy xuất sắc 1000 điểm toàn năng',
-      target: 1000,
-      current: Math.min(totalPoints, 1000),
-      unlocked: totalPoints >= 1000
-    }
-  ];
+  // Định nghĩa danh sách 12 Huy Hiệu Thành Tích đồng bộ với Trang chủ
+  const BADGES = buildBadgesList({
+    streak: streakInfo.streak,
+    totalPoints,
+    masteredCount,
+    translationPoints,
+    gamePoints,
+    examPoints,
+    writingPoints
+  });
 
   const unlockedBadgesCount = BADGES.filter((b) => b.unlocked).length;
 
