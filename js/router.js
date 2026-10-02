@@ -83,6 +83,11 @@ const pages = {
     title: 'Nhật ký Hoạt động & Huy hiệu',
     description: 'Xem toàn bộ lịch sử hoạt động học tập và bộ sưu tập huy hiệu thành tích của bạn.',
     template: '<div data-activity-page></div>'
+  },
+  'support-admin': {
+    title: 'Quản lý Hỗ trợ & Tin nhắn',
+    description: 'Trung tâm tiếp nhận và phản hồi tin nhắn trực tuyến từ học viên.',
+    template: '<div data-support-admin></div>'
   }
 };
 
@@ -144,6 +149,11 @@ export function initRouter({ toast } = {}) {
       if (route === 'battle') initBattle(options);
       if (route === 'lulu') initLulu(options);
       if (route === 'activity') initActivityPage(options);
+      if (route === 'support-admin') {
+        import('./support-chat.js')
+          .then((m) => m.initSupportAdminPage?.(options))
+          .catch((err) => console.error('[Router] Lỗi tải trang Quản lý Hỗ trợ:', err));
+      }
     } catch (err) {
       console.error('[Router] Lỗi khi khởi tạo trang:', route, err);
     }

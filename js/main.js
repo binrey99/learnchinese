@@ -51,6 +51,11 @@ function initDashboard() {
   try { renderDashboardActivityAndBadges({ toast: showToast }); } catch (err) { console.error(err); }
   try { initRouter({ toast: showToast }); } catch (err) { console.error(err); }
 
+  // Tải khung chat hỗ trợ bằng dynamic import để không bao giờ chặn trang chính
+  import('./support-chat.js')
+    .then((m) => m.initSupportChatWidget?.({ toast: showToast }))
+    .catch((err) => console.warn('[SupportChat] Bỏ qua widget chat:', err));
+
   const brandVideos = document.querySelectorAll('.topbar-brand-video, video');
   brandVideos.forEach((v) => {
     v.muted = true;
