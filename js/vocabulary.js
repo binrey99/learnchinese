@@ -1275,27 +1275,6 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     return false;
   };
 
-  const ensureMicrophoneAccess = async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      return true;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((track) => track.stop());
-      return true;
-    } catch (err) {
-      console.warn('[Microphone] Quyền micro bị từ chối hoặc lỗi:', err);
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        toast?.('⚠️ Trình duyệt chưa được cấp quyền dùng Micro! Vui lòng bấm vào biểu tượng Micro/Ổ khóa trên thanh địa chỉ URL để Cho phép (Allow).');
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        toast?.('⚠️ Không tìm thấy thiết bị Micro trên máy tính/điện thoại của bạn.');
-      } else {
-        toast?.('⚠️ Không thể kích hoạt Micro: ' + (err.message || 'Lỗi không xác định'));
-      }
-      return false;
-    }
-  };
-
   let fcSpeechInstance = null;
   let fcSpeechTimeout = null;
   let fcIsStopping = false;
@@ -1315,15 +1294,21 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
         fcSpeechInstance.abort();
       } catch (_) {}
       fcSpeechInstance = null;
-      setTimeout(() => { fcIsStopping = false; }, 120);
+      setTimeout(() => { fcIsStopping = false; }, 100);
     }
   };
 
-  startVoiceRecognition = async () => {
+  startVoiceRecognition = () => {
     if (activeMode !== 'flashcard' || !fcFilteredWords.length) return;
     if (!SpeechRecognition) {
-      toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói (Web Speech API). Hãy dùng Google Chrome hoặc Microsoft Edge nhé!');
+      toast?.('Trình duyệt trên thiết bị này chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Safari trên iOS 14.5+ nhé!');
       return;
+    }
+
+    // Cảnh báo nếu mở trên điện thoại bằng HTTP (IP lan) thay vì HTTPS
+    const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!isSecure && window.location.protocol === 'http:') {
+      toast?.('⚠️ Chú ý: Trình duyệt trên điện thoại (Chrome/Safari) bắt buộc phải dùng giao thức HTTPS để bật được Micro!');
     }
 
     stopVoiceRecognition();
@@ -1331,20 +1316,14 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     const word = fcFilteredWords[fcCurrentIndex];
     if (!word) return;
 
-    // Yêu cầu quyền Micro nếu chưa cấp
-    const hasMic = await ensureMicrophoneAccess();
-    if (!hasMic) {
-      fcVoiceModeActive = false;
-      fcVoiceModeBtn?.classList.remove('active');
-      fcVoiceModeBtn?.setAttribute('aria-pressed', 'false');
-      return;
-    }
-
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'zh-CN';
-      recognition.continuous = true; // Lắng nghe liên tục, không ngắt quãng giữa câu
-      recognition.interimResults = true; // Bắt kết quả ngay lập tức trong thời gian thực khi nói
+      // Lưu ý quan trọng cho điện thoại (Android Chrome / iOS Safari):
+      // continuous = true thường khiến mobile không thu được tín hiệu âm thanh hoặc bị treo im lặng.
+      // Dùng continuous = false đảm bảo điện thoại bắt âm cực nhạy và ổn định 100%.
+      recognition.continuous = false;
+      recognition.interimResults = true;
       recognition.maxAlternatives = 5;
 
       fcSpeechInstance = recognition;
@@ -1352,14 +1331,14 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       updateMicButtonsState(true);
       setVoiceFeedback('listening', `🎙️ Đang nghe micro... Hãy đọc to: <strong>"${word.hanzi}"</strong>`);
 
-      // Tự động tạm dừng sau 15 giây nếu không phát hiện âm thanh (để tiết kiệm pin)
+      // Tự động dừng sau 16 giây nếu người dùng không nói gì (tiết kiệm pin thiết bị)
       clearTimeout(fcSpeechTimeout);
       fcSpeechTimeout = setTimeout(() => {
         if (fcIsListening && !fcVoiceModeActive) {
           stopVoiceRecognition();
-          setVoiceFeedback('retry', `⏱️ Đã tạm dừng nghe. Bấm 🎙️ trên thẻ để đọc lại từ <strong>"${word.hanzi}"</strong> nhé!`);
+          setVoiceFeedback('retry', `⏱️ Đã dừng nghe. Bấm 🎙️ trên thẻ để thử lại từ <strong>"${word.hanzi}"</strong> nhé!`);
         }
-      }, 15000);
+      }, 16000);
 
       recognition.onstart = () => {
         fcIsListening = true;
@@ -1405,7 +1384,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
             }
           }, 600);
         } else if (bestCandidate) {
-          // HIỂN THỊ KẾT QUẢ ĐANG NGHE ĐƯỢC TRONG THỜI GIAN THỰC ĐỂ NGƯỜI DÙNG THẤY WEB ĐANG THU ÂM
+          // HIỂN THỊ KẾT QUẢ ĐANG NGHE ĐƯỢC TRỰC TIẾP
           setVoiceFeedback('listening', `🎙️ Đang nghe: <em>"${bestCandidate}"</em> • Cần đọc: <strong>"${word.hanzi}"</strong>`);
         }
       };
@@ -1413,11 +1392,16 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       recognition.onerror = (e) => {
         console.warn('[SpeechRecognition] error:', e.error);
         if (e.error === 'no-speech') {
-          // Tạm thời chưa nghe thấy âm thanh, tiếp tục giữ micro mở
+          // Chưa nghe thấy tiếng, onend sẽ tự động lặp chu kỳ tiếp theo nếu vẫn đang bật mic
           return;
         }
-        if (e.error === 'not-allowed') {
-          toast?.('⚠️ Trình duyệt chưa được cấp quyền dùng Micro! Vui lòng bấm vào biểu tượng Micro trên thanh địa chỉ URL để Cho phép.');
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+          const isLanHttp = location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1';
+          if (isLanHttp) {
+            toast?.('⚠️ Trình duyệt điện thoại chặn Micro khi truy cập qua HTTP (IP mạng). Cần deploy lên Vercel/Netlify hoặc dùng HTTPS/ngrok.');
+          } else {
+            toast?.('⚠️ Trình duyệt chưa được cấp quyền dùng Micro! Vui lòng bấm vào biểu tượng Micro/Ổ khóa trên thanh địa chỉ để Cho phép (Allow).');
+          }
           fcVoiceModeActive = false;
           fcVoiceModeBtn?.classList.remove('active');
           fcVoiceModeBtn?.setAttribute('aria-pressed', 'false');
@@ -1425,32 +1409,39 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
           return;
         }
         if (e.error === 'network') {
-          toast?.('⚠️ Lỗi kết nối dịch vụ giọng nói. Vui lòng kiểm tra kết nối mạng Internet.');
+          toast?.('⚠️ Lỗi kết nối dịch vụ giọng nói Google. Vui lòng kiểm tra kết nối mạng Internet.');
           stopVoiceRecognition();
           return;
         }
         if (e.error === 'audio-capture') {
-          toast?.('⚠️ Không thu được tín hiệu từ Micro. Hãy kiểm tra Micro của thiết bị.');
+          toast?.('⚠️ Không thu được tín hiệu từ Micro điện thoại. Hãy kiểm tra Micro của thiết bị.');
           stopVoiceRecognition();
           return;
         }
       };
 
       recognition.onend = () => {
-        // Tự động duy trì thu âm nếu người dùng vẫn đang trong phiên luyện
+        // Trên điện thoại (continuous = false), một phát ngôn kết thúc sẽ gọi onend.
+        // Tự động duy trì thu âm lượt tiếp theo nếu người dùng vẫn đang trong phiên luyện và chưa dừng
         if (fcIsListening && !fcIsStopping && activeMode === 'flashcard') {
-          try {
-            recognition.start();
-          } catch (_) {
-            fcIsListening = false;
-            updateMicButtonsState(false);
-          }
+          clearTimeout(fcVoiceRestartTimer);
+          fcVoiceRestartTimer = setTimeout(() => {
+            if (fcIsListening && !fcIsStopping && activeMode === 'flashcard') {
+              try {
+                recognition.start();
+              } catch (_) {
+                fcIsListening = false;
+                updateMicButtonsState(false);
+              }
+            }
+          }, 250);
         } else {
           fcIsListening = false;
           updateMicButtonsState(false);
         }
       };
 
+      // Gọi start() đồng bộ ngay trong luồng sự kiện click/tap của người dùng để tránh lỗi bảo mật trên điện thoại (iOS / Android User Activation)
       recognition.start();
     } catch (err) {
       console.warn('[SpeechRecognition] start error:', err);
