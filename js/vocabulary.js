@@ -1234,53 +1234,95 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     return text.replace(/[\s\p{P}\p{S}]/gu, '').trim();
   };
 
+  const normalizePhonetic = (str) => {
+    if (!str) return '';
+    try {
+      return pinyin(str, { toneType: 'none' })
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+    } catch (_) {
+      return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+  };
+
   const checkPronunciationMatch = (transcript, targetWord) => {
     if (!transcript || !targetWord) return false;
     const cleanSpoken = cleanChineseText(transcript);
     const cleanTarget = cleanChineseText(targetWord.hanzi);
     if (!cleanSpoken || !cleanTarget) return false;
 
-    // 1. So khớp chữ Hán trực tiếp
+    // 1. So khớp chữ Hán trực tiếp (Chính xác hoặc chuỗi con)
     if (cleanSpoken.includes(cleanTarget) || (cleanTarget.length >= 2 && cleanTarget.includes(cleanSpoken))) {
       return true;
     }
 
     // 2. So khớp theo âm đọc Pinyin không dấu (xử lý từ đồng âm chữ Hán: 他/它/她, 四/寺/似...)
-    try {
-      const spokenPy = pinyin(cleanSpoken, { toneType: 'none' }).toLowerCase().replace(/[^a-z]/g, '');
-      const targetPy = pinyin(cleanTarget, { toneType: 'none' }).toLowerCase().replace(/[^a-z]/g, '');
-      if (spokenPy && targetPy) {
-        if (spokenPy.includes(targetPy) || (targetPy.length >= 4 && targetPy.includes(spokenPy))) {
-          return true;
-        }
-        if (cleanTarget.length === 1 && (spokenPy.endsWith(targetPy) || spokenPy.startsWith(targetPy) || spokenPy === targetPy)) {
-          return true;
-        }
-      }
-    } catch (_) {}
+    const targetPy = normalizePhonetic(cleanTarget);
+    const spokenPy = normalizePhonetic(cleanSpoken);
+
+    if (spokenPy && targetPy) {
+      if (spokenPy === targetPy) return true;
+      if (spokenPy.includes(targetPy)) return true;
+      if (cleanTarget.length >= 2 && targetPy.length >= 4 && targetPy.includes(spokenPy)) return true;
+    }
+
+    // 3. So khớp nếu kết quả nhận diện là chữ cái Latin/Pinyin (ví dụ thiết bị trả về "ni hao")
+    const rawLatinSpoken = transcript.toLowerCase().replace(/[^a-z]/g, '');
+    if (rawLatinSpoken && targetPy) {
+      if (rawLatinSpoken === targetPy || rawLatinSpoken.includes(targetPy)) return true;
+    }
 
     return false;
   };
 
-  stopVoiceRecognition = () => {
-    clearTimeout(fcVoiceRestartTimer);
-    if (fcRecognition) {
-      try {
-        fcRecognition.onresult = null;
-        fcRecognition.onerror = null;
-        fcRecognition.onend = null;
-        fcRecognition.abort();
-      } catch (_) {}
-      fcRecognition = null;
+  const ensureMicrophoneAccess = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return true;
     }
-    fcIsListening = false;
-    updateMicButtonsState(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      return true;
+    } catch (err) {
+      console.warn('[Microphone] Quyền micro bị từ chối hoặc lỗi:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        toast?.('⚠️ Trình duyệt chưa được cấp quyền dùng Micro! Vui lòng bấm vào biểu tượng Micro/Ổ khóa trên thanh địa chỉ URL để Cho phép (Allow).');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        toast?.('⚠️ Không tìm thấy thiết bị Micro trên máy tính/điện thoại của bạn.');
+      } else {
+        toast?.('⚠️ Không thể kích hoạt Micro: ' + (err.message || 'Lỗi không xác định'));
+      }
+      return false;
+    }
   };
 
-  startVoiceRecognition = () => {
+  let fcSpeechInstance = null;
+  let fcSpeechTimeout = null;
+  let fcIsStopping = false;
+
+  stopVoiceRecognition = () => {
+    clearTimeout(fcVoiceRestartTimer);
+    clearTimeout(fcSpeechTimeout);
+    fcIsListening = false;
+    updateMicButtonsState(false);
+
+    if (fcSpeechInstance) {
+      fcIsStopping = true;
+      try {
+        fcSpeechInstance.onresult = null;
+        fcSpeechInstance.onerror = null;
+        fcSpeechInstance.onend = null;
+        fcSpeechInstance.abort();
+      } catch (_) {}
+      fcSpeechInstance = null;
+      setTimeout(() => { fcIsStopping = false; }, 120);
+    }
+  };
+
+  startVoiceRecognition = async () => {
     if (activeMode !== 'flashcard' || !fcFilteredWords.length) return;
     if (!SpeechRecognition) {
-      toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói (Web Speech API). Hãy dùng Google Chrome hoặc Edge nhé!');
+      toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói (Web Speech API). Hãy dùng Google Chrome hoặc Microsoft Edge nhé!');
       return;
     }
 
@@ -1289,34 +1331,63 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     const word = fcFilteredWords[fcCurrentIndex];
     if (!word) return;
 
+    // Yêu cầu quyền Micro nếu chưa cấp
+    const hasMic = await ensureMicrophoneAccess();
+    if (!hasMic) {
+      fcVoiceModeActive = false;
+      fcVoiceModeBtn?.classList.remove('active');
+      fcVoiceModeBtn?.setAttribute('aria-pressed', 'false');
+      return;
+    }
+
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'zh-CN';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 4;
+      recognition.continuous = true; // Lắng nghe liên tục, không ngắt quãng giữa câu
+      recognition.interimResults = true; // Bắt kết quả ngay lập tức trong thời gian thực khi nói
+      recognition.maxAlternatives = 5;
 
-      fcRecognition = recognition;
+      fcSpeechInstance = recognition;
       fcIsListening = true;
       updateMicButtonsState(true);
-      setVoiceFeedback('listening', `🎙️ Đang nghe... Hãy đọc: <strong>"${word.hanzi}"</strong>`);
+      setVoiceFeedback('listening', `🎙️ Đang nghe micro... Hãy đọc to: <strong>"${word.hanzi}"</strong>`);
+
+      // Tự động tạm dừng sau 15 giây nếu không phát hiện âm thanh (để tiết kiệm pin)
+      clearTimeout(fcSpeechTimeout);
+      fcSpeechTimeout = setTimeout(() => {
+        if (fcIsListening && !fcVoiceModeActive) {
+          stopVoiceRecognition();
+          setVoiceFeedback('retry', `⏱️ Đã tạm dừng nghe. Bấm 🎙️ trên thẻ để đọc lại từ <strong>"${word.hanzi}"</strong> nhé!`);
+        }
+      }, 15000);
+
+      recognition.onstart = () => {
+        fcIsListening = true;
+        updateMicButtonsState(true);
+      };
 
       recognition.onresult = (event) => {
-        const results = event.results[0];
-        let isMatched = false;
-        let bestTranscript = '';
+        let bestCandidate = '';
+        let matched = false;
 
-        for (let i = 0; i < results.length; i++) {
-          const candidate = results[i].transcript.trim();
-          if (!bestTranscript) bestTranscript = candidate;
-          if (checkPronunciationMatch(candidate, word)) {
-            isMatched = true;
-            bestTranscript = candidate;
-            break;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          const text = (res[0]?.transcript || '').trim();
+          if (text) bestCandidate = text;
+
+          for (let j = 0; j < res.length; j++) {
+            const alt = (res[j]?.transcript || '').trim();
+            if (checkPronunciationMatch(alt, word)) {
+              matched = true;
+              bestCandidate = alt;
+              break;
+            }
           }
+          if (matched) break;
         }
 
-        if (isMatched) {
+        if (matched) {
+          // PHÁT ÂM ĐÚNG!
           stopVoiceRecognition();
           playSuccessChime();
           fcCard3d?.classList.add('speech-success');
@@ -1326,47 +1397,63 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
             fcCard3d?.classList.remove('speech-success');
             setVoiceFeedback('clear');
             goToNextCard();
-          }, 600);
-        } else {
-          setVoiceFeedback('retry', `❌ Chưa đúng: Nghe được <em>"${bestTranscript || '...'}"</em>. Hãy thử lại nhé!`);
-          if (fcVoiceModeActive) {
-            clearTimeout(fcVoiceRestartTimer);
-            fcVoiceRestartTimer = setTimeout(() => {
-              if (fcVoiceModeActive && activeMode === 'flashcard' && !fcIsListening && !isCardAnimating) {
+
+            if (fcVoiceModeActive) {
+              fcVoiceRestartTimer = setTimeout(() => {
                 startVoiceRecognition();
-              }
-            }, 1400);
-          }
+              }, 450);
+            }
+          }, 600);
+        } else if (bestCandidate) {
+          // HIỂN THỊ KẾT QUẢ ĐANG NGHE ĐƯỢC TRONG THỜI GIAN THỰC ĐỂ NGƯỜI DÙNG THẤY WEB ĐANG THU ÂM
+          setVoiceFeedback('listening', `🎙️ Đang nghe: <em>"${bestCandidate}"</em> • Cần đọc: <strong>"${word.hanzi}"</strong>`);
         }
       };
 
       recognition.onerror = (e) => {
-        if (e.error === 'no-speech' && fcVoiceModeActive) {
-          clearTimeout(fcVoiceRestartTimer);
-          fcVoiceRestartTimer = setTimeout(() => {
-            if (fcVoiceModeActive && activeMode === 'flashcard' && !isCardAnimating) {
-              startVoiceRecognition();
-            }
-          }, 400);
+        console.warn('[SpeechRecognition] error:', e.error);
+        if (e.error === 'no-speech') {
+          // Tạm thời chưa nghe thấy âm thanh, tiếp tục giữ micro mở
           return;
         }
         if (e.error === 'not-allowed') {
-          toast?.('Vui lòng cấp quyền truy cập Micro để luyện phát âm!');
+          toast?.('⚠️ Trình duyệt chưa được cấp quyền dùng Micro! Vui lòng bấm vào biểu tượng Micro trên thanh địa chỉ URL để Cho phép.');
           fcVoiceModeActive = false;
           fcVoiceModeBtn?.classList.remove('active');
           fcVoiceModeBtn?.setAttribute('aria-pressed', 'false');
+          stopVoiceRecognition();
+          return;
         }
-        stopVoiceRecognition();
+        if (e.error === 'network') {
+          toast?.('⚠️ Lỗi kết nối dịch vụ giọng nói. Vui lòng kiểm tra kết nối mạng Internet.');
+          stopVoiceRecognition();
+          return;
+        }
+        if (e.error === 'audio-capture') {
+          toast?.('⚠️ Không thu được tín hiệu từ Micro. Hãy kiểm tra Micro của thiết bị.');
+          stopVoiceRecognition();
+          return;
+        }
       };
 
       recognition.onend = () => {
-        fcIsListening = false;
-        updateMicButtonsState(false);
+        // Tự động duy trì thu âm nếu người dùng vẫn đang trong phiên luyện
+        if (fcIsListening && !fcIsStopping && activeMode === 'flashcard') {
+          try {
+            recognition.start();
+          } catch (_) {
+            fcIsListening = false;
+            updateMicButtonsState(false);
+          }
+        } else {
+          fcIsListening = false;
+          updateMicButtonsState(false);
+        }
       };
 
       recognition.start();
     } catch (err) {
-      console.warn('SpeechRecognition error:', err);
+      console.warn('[SpeechRecognition] start error:', err);
       stopVoiceRecognition();
     }
   };
