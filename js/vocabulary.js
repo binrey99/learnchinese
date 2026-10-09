@@ -1245,31 +1245,77 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     }
   };
 
+  // Nới lỏng các cặp âm dễ nhầm lẫn trong ngữ âm tiếng Trung (ch/c, zh/z, sh/s, ing/in, eng/en, ang/an, l/n)
+  const relaxAccents = (str) => {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .replace(/zh/g, 'z')
+      .replace(/ch/g, 'c')
+      .replace(/sh/g, 's')
+      .replace(/ing/g, 'in')
+      .replace(/eng/g, 'en')
+      .replace(/ang/g, 'an')
+      .replace(/l/g, 'n');
+  };
+
+  // Tính khoảng cách Levenshtein giữa 2 chuỗi ngữ âm
+  const levenshteinDist = (a, b) => {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+    const dp = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+    for (let j = 0; j <= a.length; j++) dp[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          dp[i][j] = dp[i - 1][j - 1];
+        } else {
+          dp[i][j] = Math.min(dp[i - 1][j - 1] + 1, dp[i][j - 1] + 1, dp[i - 1][j] + 1);
+        }
+      }
+    }
+    return dp[b.length][a.length];
+  };
+
   const checkPronunciationMatch = (transcript, targetWord) => {
     if (!transcript || !targetWord) return false;
     const cleanSpoken = cleanChineseText(transcript);
     const cleanTarget = cleanChineseText(targetWord.hanzi);
     if (!cleanSpoken || !cleanTarget) return false;
 
-    // 1. So khớp chữ Hán trực tiếp (Chính xác hoặc chuỗi con)
+    // 1. So khớp chữ Hán trực tiếp (Chính xác hoặc chuỗi con, kể cả Giản thể & Phồn thể)
     if (cleanSpoken.includes(cleanTarget) || (cleanTarget.length >= 2 && cleanTarget.includes(cleanSpoken))) {
       return true;
     }
 
-    // 2. So khớp theo âm đọc Pinyin không dấu (xử lý từ đồng âm chữ Hán: 他/它/她, 四/寺/似...)
     const targetPy = normalizePhonetic(cleanTarget);
     const spokenPy = normalizePhonetic(cleanSpoken);
 
     if (spokenPy && targetPy) {
-      if (spokenPy === targetPy) return true;
-      if (spokenPy.includes(targetPy)) return true;
+      // 2. So khớp Pinyin tuyệt đối hoặc chuỗi con
+      if (spokenPy === targetPy || spokenPy.includes(targetPy)) return true;
       if (cleanTarget.length >= 2 && targetPy.length >= 4 && targetPy.includes(spokenPy)) return true;
+
+      // 3. So khớp Pinyin nới lỏng (relaxed accents: zh/z, ch/c, sh/s, ing/in...)
+      const relTarget = relaxAccents(targetPy);
+      const relSpoken = relaxAccents(spokenPy);
+      if (relSpoken === relTarget || relSpoken.includes(relTarget)) return true;
+
+      // 4. So khớp gần đúng (Fuzzy phonetic distance) cho người học phát âm chưa chuẩn 100%
+      const dist = levenshteinDist(relSpoken, relTarget);
+      if (relTarget.length <= 4 && dist <= 1) return true;
+      if (relTarget.length > 4 && relTarget.length <= 8 && dist <= 2) return true;
+      if (relTarget.length > 8 && dist <= 3) return true;
     }
 
-    // 3. So khớp nếu kết quả nhận diện là chữ cái Latin/Pinyin (ví dụ thiết bị trả về "ni hao")
+    // 5. So khớp nếu kết quả nhận diện trả về chữ Latin/Pinyin (ví dụ "ni hao", "xue xi")
     const rawLatinSpoken = transcript.toLowerCase().replace(/[^a-z]/g, '');
     if (rawLatinSpoken && targetPy) {
       if (rawLatinSpoken === targetPy || rawLatinSpoken.includes(targetPy)) return true;
+      const relLatin = relaxAccents(rawLatinSpoken);
+      const relTarget = relaxAccents(targetPy);
+      if (relLatin === relTarget || relLatin.includes(relTarget)) return true;
     }
 
     return false;
@@ -1287,16 +1333,21 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     }).catch(() => {});
   }
 
-  // Gửi yêu cầu mở Micro cho trang web (Kích hoạt popup xin quyền của trình duyệt)
+  // Gửi yêu cầu mở Micro cho trang web với độ nhạy cao (Auto Gain Control khuếch đại âm thanh)
   const requestMicrophonePermission = async () => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       return true;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: false, // Không lọc quá mạnh để tránh nuốt âm tiết ngắn
+          autoGainControl: true    // Tự động khuếch đại âm lượng mic nhỏ
+        }
+      });
       micPermissionGranted = true;
       stream.getTracks().forEach((track) => track.stop());
-      // Nghỉ 120ms để phần cứng âm thanh hoàn tất việc nhả track
       await new Promise((r) => setTimeout(r, 120));
       return true;
     } catch (err) {
@@ -1356,19 +1407,16 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'zh-CN';
-      // Lưu ý quan trọng cho điện thoại (Android Chrome / iOS Safari):
-      // continuous = true thường khiến mobile không thu được tín hiệu âm thanh hoặc bị treo im lặng.
-      // Dùng continuous = false đảm bảo điện thoại bắt âm cực nhạy và ổn định 100%.
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 5;
+      recognition.continuous = false; // Tối ưu bắt âm trên điện thoại và máy tính
+      recognition.interimResults = true; // Bắt kết quả tức thì
+      recognition.maxAlternatives = 10; // Lấy tối đa 10 phương án nhận diện để tăng xác suất trúng
 
       fcSpeechInstance = recognition;
       fcIsListening = true;
       updateMicButtonsState(true);
-      setVoiceFeedback('listening', `🎙️ Đang nghe micro... Hãy đọc to: <strong>"${word.hanzi}"</strong>`);
+      setVoiceFeedback('listening', `🎙️ <span class="fc-speech-waves"><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span></span> Đang nghe... Hãy đọc: <strong>"${word.hanzi}"</strong>`);
 
-      // Tự động dừng sau 16 giây nếu người dùng không nói gì (tiết kiệm pin thiết bị)
+      // Tự động dừng sau 16 giây nếu người dùng không nói gì (tiết kiệm pin)
       clearTimeout(fcSpeechTimeout);
       fcSpeechTimeout = setTimeout(() => {
         if (fcIsListening && !fcVoiceModeActive) {
@@ -1380,6 +1428,15 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       recognition.onstart = () => {
         fcIsListening = true;
         updateMicButtonsState(true);
+      };
+
+      // Sự kiện khi phát hiện có âm thanh / tiếng nói cất lên
+      recognition.onsoundstart = () => {
+        setVoiceFeedback('listening', `🎙️ <span class="fc-speech-waves"><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span></span> Đang bắt giọng nói của bạn...`);
+      };
+
+      recognition.onspeechstart = () => {
+        setVoiceFeedback('listening', `🎙️ <span class="fc-speech-waves"><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span><span class="fc-speech-wave-bar"></span></span> Đang lắng nghe: <strong>"${word.hanzi}"</strong>`);
       };
 
       recognition.onresult = (event) => {
@@ -1421,7 +1478,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
             }
           }, 600);
         } else if (bestCandidate) {
-          // HIỂN THỊ KẾT QUẢ ĐANG NGHE ĐƯỢC TRỰC TIẾP
+          // HIỂN THỊ KẾT QUẢ ĐANG BẮT ĐƯỢC
           setVoiceFeedback('listening', `🎙️ Đang nghe: <em>"${bestCandidate}"</em> • Cần đọc: <strong>"${word.hanzi}"</strong>`);
         }
       };
