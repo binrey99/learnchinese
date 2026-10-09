@@ -1405,9 +1405,12 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     if (!word) return;
 
     try {
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const recognition = new SpeechRecognition();
       recognition.lang = 'zh-CN';
-      recognition.continuous = false; // Tối ưu bắt âm trên điện thoại và máy tính
+      // Trên máy tính (PC): continuous = true giúp giữ micro êm ái, KHÔNG BỊ NHẤP NHÁY chấm đỏ trên tab trình duyệt
+      // Trên điện thoại (Mobile): continuous = false giúp tương thích phần cứng audio của Android / iOS
+      recognition.continuous = !isMobileDevice;
       recognition.interimResults = true; // Bắt kết quả tức thì
       recognition.maxAlternatives = 10; // Lấy tối đa 10 phương án nhận diện để tăng xác suất trúng
 
@@ -1515,7 +1518,6 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       };
 
       recognition.onend = () => {
-        // Trên điện thoại (continuous = false), một phát ngôn kết thúc sẽ gọi onend.
         // Tự động duy trì thu âm lượt tiếp theo nếu người dùng vẫn đang trong phiên luyện và chưa dừng
         if (fcIsListening && !fcIsStopping && activeMode === 'flashcard') {
           clearTimeout(fcVoiceRestartTimer);
@@ -1528,7 +1530,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
                 updateMicButtonsState(false);
               }
             }
-          }, 250);
+          }, isMobileDevice ? 250 : 600);
         } else {
           fcIsListening = false;
           updateMicButtonsState(false);
