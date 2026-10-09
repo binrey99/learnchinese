@@ -353,6 +353,12 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   let fcIsFlipped = false;
   let fcFilter = 'all'; // 'all' | 'unlearned' | 'mastered'
   let fcAutoAudio = false;
+  let fcVoiceModeActive = false;
+  let fcIsListening = false;
+  let fcRecognition = null;
+  let fcVoiceRestartTimer = null;
+  let stopVoiceRecognition = () => {};
+  let startVoiceRecognition = () => {};
   let fcIsLoading = false;
 
   try {
@@ -459,6 +465,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
           </div>
           <button type="button" class="fc-action-chip" id="fcShuffleBtn" title="Xáo trộn ngẫu nhiên các thẻ trong bộ">🔀 Trộn thẻ</button>
           <button type="button" class="fc-action-chip" id="fcAutoSpeakBtn" aria-pressed="false" title="Tự động phát âm khi mở thẻ mới">🔊 Tự phát âm</button>
+          <button type="button" class="fc-action-chip fc-voice-chip" id="fcVoiceModeBtn" aria-pressed="false" title="Tự động lướt sang thẻ tiếp theo khi bạn phát âm đúng từ">🎙️ Đọc để lướt thẻ</button>
         </div>
       </div>
 
@@ -492,6 +499,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
                   <span class="fc-type-tag" id="fcFrontWordType" hidden></span>
                 </div>
                 <div class="fc-card-corner-btns">
+                  <button type="button" class="fc-corner-btn fc-corner-mic" id="fcFrontMicBtn" title="Luyện phát âm (Đọc đúng tự qua thẻ)" aria-label="Luyện phát âm">🎙️</button>
                   <button type="button" class="fc-corner-btn" id="fcFrontSpeakBtn" title="Nghe phát âm" aria-label="Nghe phát âm">🔊</button>
                   <button type="button" class="fc-corner-btn fc-corner-star" id="fcFrontStarBtn" title="Đánh dấu thuộc từ" aria-label="Đánh dấu thuộc từ">☆</button>
                 </div>
@@ -500,6 +508,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
               <div class="fc-front-body">
                 <span class="fc-front-pinyin vocabulary-pinyin" id="fcFrontPinyin">nǐ hǎo</span>
                 <h2 class="fc-front-hanzi" id="fcFrontHanzi">你好</h2>
+                <div class="fc-speech-badge" id="fcFrontSpeechBadge" hidden></div>
               </div>
 
               <div class="fc-card-footer">
@@ -516,12 +525,14 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
                   <span class="fc-type-tag" id="fcBackWordType" hidden></span>
                 </div>
                 <div class="fc-card-corner-btns">
+                  <button type="button" class="fc-corner-btn fc-corner-mic" id="fcBackMicBtn" title="Luyện phát âm (Đọc đúng tự qua thẻ)" aria-label="Luyện phát âm">🎙️</button>
                   <button type="button" class="fc-corner-btn" id="fcBackSpeakBtn" title="Nghe phát âm" aria-label="Nghe phát âm">🔊</button>
                   <button type="button" class="fc-corner-btn fc-corner-star" id="fcBackStarBtn" title="Đánh dấu thuộc từ" aria-label="Đánh dấu thuộc từ">☆</button>
                 </div>
               </div>
 
               <div class="fc-back-body">
+                <div class="fc-speech-badge" id="fcBackSpeechBadge" hidden></div>
                 <div class="fc-meaning-card">
                   <span class="fc-field-label">NGHĨA TIẾNG VIỆT</span>
                   <h3 class="fc-meaning-vi" id="fcBackMeaning">xin chào</h3>
@@ -712,6 +723,9 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     if (mistakesPanel) mistakesPanel.hidden = activeMode !== 'mistakes';
 
     if (activeMode !== 'list') closeDetail();
+    if (activeMode !== 'flashcard' && typeof stopVoiceRecognition === 'function') {
+      stopVoiceRecognition();
+    }
 
     if (activeMode === 'list') {
       renderWordsList(currentWords);
@@ -1125,6 +1139,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   const fcNextSetBtn = container.querySelector('#fcNextSetBtn');
   const fcShuffleBtn = container.querySelector('#fcShuffleBtn');
   const fcAutoSpeakBtn = container.querySelector('#fcAutoSpeakBtn');
+  const fcVoiceModeBtn = container.querySelector('#fcVoiceModeBtn');
   const fcResetFilterBtn = container.querySelector('#fcResetFilterBtn');
 
   const fcCardPosition = container.querySelector('#fcCardPosition');
@@ -1135,14 +1150,18 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   const fcFrontWordType = container.querySelector('#fcFrontWordType');
   const fcFrontPinyin = container.querySelector('#fcFrontPinyin');
   const fcFrontHanzi = container.querySelector('#fcFrontHanzi');
+  const fcFrontMicBtn = container.querySelector('#fcFrontMicBtn');
   const fcFrontSpeakBtn = container.querySelector('#fcFrontSpeakBtn');
   const fcFrontStarBtn = container.querySelector('#fcFrontStarBtn');
+  const fcFrontSpeechBadge = container.querySelector('#fcFrontSpeechBadge');
 
   const fcBackHanzi = container.querySelector('#fcBackHanzi');
   const fcBackPinyin = container.querySelector('#fcBackPinyin');
   const fcBackWordType = container.querySelector('#fcBackWordType');
+  const fcBackMicBtn = container.querySelector('#fcBackMicBtn');
   const fcBackSpeakBtn = container.querySelector('#fcBackSpeakBtn');
   const fcBackStarBtn = container.querySelector('#fcBackStarBtn');
+  const fcBackSpeechBadge = container.querySelector('#fcBackSpeechBadge');
   const fcBackMeaning = container.querySelector('#fcBackMeaning');
   const fcBackEnglish = container.querySelector('#fcBackEnglish');
   const fcBackExampleBox = container.querySelector('#fcBackExampleBox');
@@ -1157,6 +1176,201 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   const fcNextBtn = container.querySelector('#fcNextBtn');
   const fcMiniGrid = container.querySelector('#fcMiniGrid');
 
+  // =========================================================================
+  // XỬ LÝ NHẬN DIỆN GIỌNG NÓI & LUYỆN PHÁT ÂM (WEB SPEECH RECOGNITION)
+  // =========================================================================
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  const playSuccessChime = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
+      const freqs = [523.25, 659.25, 783.99, 1046.5]; // Nốt C5 -> E5 -> G5 -> C6
+      freqs.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        const start = ctx.currentTime + idx * 0.07;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.25);
+      });
+    } catch (_) {}
+  };
+
+  const setVoiceFeedback = (type, message = '') => {
+    [fcFrontSpeechBadge, fcBackSpeechBadge].forEach((b) => {
+      if (!b) return;
+      if (type === 'clear') {
+        b.hidden = true;
+        b.className = 'fc-speech-badge';
+        b.innerHTML = '';
+      } else {
+        b.hidden = false;
+        b.className = `fc-speech-badge ${type}`;
+        b.innerHTML = message;
+      }
+    });
+  };
+
+  const updateMicButtonsState = (listening) => {
+    [fcFrontMicBtn, fcBackMicBtn].forEach((btn) => {
+      if (!btn) return;
+      btn.classList.toggle('is-listening', listening);
+      btn.setAttribute('aria-pressed', String(listening));
+      btn.title = listening ? 'Đang lắng nghe... Bấm để dừng' : 'Luyện phát âm (Đọc đúng tự qua thẻ)';
+    });
+  };
+
+  const cleanChineseText = (text) => {
+    if (!text) return '';
+    return text.replace(/[\s\p{P}\p{S}]/gu, '').trim();
+  };
+
+  const checkPronunciationMatch = (transcript, targetWord) => {
+    if (!transcript || !targetWord) return false;
+    const cleanSpoken = cleanChineseText(transcript);
+    const cleanTarget = cleanChineseText(targetWord.hanzi);
+    if (!cleanSpoken || !cleanTarget) return false;
+
+    // 1. So khớp chữ Hán trực tiếp
+    if (cleanSpoken.includes(cleanTarget) || (cleanTarget.length >= 2 && cleanTarget.includes(cleanSpoken))) {
+      return true;
+    }
+
+    // 2. So khớp theo âm đọc Pinyin không dấu (xử lý từ đồng âm chữ Hán: 他/它/她, 四/寺/似...)
+    try {
+      const spokenPy = pinyin(cleanSpoken, { toneType: 'none' }).toLowerCase().replace(/[^a-z]/g, '');
+      const targetPy = pinyin(cleanTarget, { toneType: 'none' }).toLowerCase().replace(/[^a-z]/g, '');
+      if (spokenPy && targetPy) {
+        if (spokenPy.includes(targetPy) || (targetPy.length >= 4 && targetPy.includes(spokenPy))) {
+          return true;
+        }
+        if (cleanTarget.length === 1 && (spokenPy.endsWith(targetPy) || spokenPy.startsWith(targetPy) || spokenPy === targetPy)) {
+          return true;
+        }
+      }
+    } catch (_) {}
+
+    return false;
+  };
+
+  stopVoiceRecognition = () => {
+    clearTimeout(fcVoiceRestartTimer);
+    if (fcRecognition) {
+      try {
+        fcRecognition.onresult = null;
+        fcRecognition.onerror = null;
+        fcRecognition.onend = null;
+        fcRecognition.abort();
+      } catch (_) {}
+      fcRecognition = null;
+    }
+    fcIsListening = false;
+    updateMicButtonsState(false);
+  };
+
+  startVoiceRecognition = () => {
+    if (activeMode !== 'flashcard' || !fcFilteredWords.length) return;
+    if (!SpeechRecognition) {
+      toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói (Web Speech API). Hãy dùng Google Chrome hoặc Edge nhé!');
+      return;
+    }
+
+    stopVoiceRecognition();
+
+    const word = fcFilteredWords[fcCurrentIndex];
+    if (!word) return;
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 4;
+
+      fcRecognition = recognition;
+      fcIsListening = true;
+      updateMicButtonsState(true);
+      setVoiceFeedback('listening', `🎙️ Đang nghe... Hãy đọc: <strong>"${word.hanzi}"</strong>`);
+
+      recognition.onresult = (event) => {
+        const results = event.results[0];
+        let isMatched = false;
+        let bestTranscript = '';
+
+        for (let i = 0; i < results.length; i++) {
+          const candidate = results[i].transcript.trim();
+          if (!bestTranscript) bestTranscript = candidate;
+          if (checkPronunciationMatch(candidate, word)) {
+            isMatched = true;
+            bestTranscript = candidate;
+            break;
+          }
+        }
+
+        if (isMatched) {
+          stopVoiceRecognition();
+          playSuccessChime();
+          fcCard3d?.classList.add('speech-success');
+          setVoiceFeedback('success', `✓ Phát âm chuẩn: <strong>${word.hanzi}</strong>! 🎉 Đang chuyển thẻ...`);
+
+          setTimeout(() => {
+            fcCard3d?.classList.remove('speech-success');
+            setVoiceFeedback('clear');
+            goToNextCard();
+          }, 600);
+        } else {
+          setVoiceFeedback('retry', `❌ Chưa đúng: Nghe được <em>"${bestTranscript || '...'}"</em>. Hãy thử lại nhé!`);
+          if (fcVoiceModeActive) {
+            clearTimeout(fcVoiceRestartTimer);
+            fcVoiceRestartTimer = setTimeout(() => {
+              if (fcVoiceModeActive && activeMode === 'flashcard' && !fcIsListening && !isCardAnimating) {
+                startVoiceRecognition();
+              }
+            }, 1400);
+          }
+        }
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === 'no-speech' && fcVoiceModeActive) {
+          clearTimeout(fcVoiceRestartTimer);
+          fcVoiceRestartTimer = setTimeout(() => {
+            if (fcVoiceModeActive && activeMode === 'flashcard' && !isCardAnimating) {
+              startVoiceRecognition();
+            }
+          }, 400);
+          return;
+        }
+        if (e.error === 'not-allowed') {
+          toast?.('Vui lòng cấp quyền truy cập Micro để luyện phát âm!');
+          fcVoiceModeActive = false;
+          fcVoiceModeBtn?.classList.remove('active');
+          fcVoiceModeBtn?.setAttribute('aria-pressed', 'false');
+        }
+        stopVoiceRecognition();
+      };
+
+      recognition.onend = () => {
+        fcIsListening = false;
+        updateMicButtonsState(false);
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.warn('SpeechRecognition error:', err);
+      stopVoiceRecognition();
+    }
+  };
+
   const updateFlashcardView = (triggerAudio = false) => {
     const masteredInRaw = fcRawWords.filter((w) => masteredVocabularyIds.has(String(w.id))).length;
     if (fcDeckMasteredInfo) {
@@ -1169,6 +1383,8 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     if (fcNextSetBtn) fcNextSetBtn.disabled = fcPage >= fcTotalPages || fcIsLoading;
 
     if (!fcFilteredWords.length) {
+      stopVoiceRecognition();
+      setVoiceFeedback('clear');
       if (fcScene) fcScene.hidden = true;
       if (fcMainControls) fcMainControls.hidden = true;
       if (fcEmptyState) fcEmptyState.hidden = false;
@@ -1269,6 +1485,20 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
           </button>
         `;
       }).join('');
+    }
+
+    setVoiceFeedback('clear');
+    if (!fcVoiceModeActive) {
+      stopVoiceRecognition();
+    } else {
+      stopVoiceRecognition();
+      const delay = (triggerAudio && fcAutoAudio) ? 950 : 350;
+      clearTimeout(fcVoiceRestartTimer);
+      fcVoiceRestartTimer = setTimeout(() => {
+        if (fcVoiceModeActive && activeMode === 'flashcard' && !isCardAnimating) {
+          startVoiceRecognition();
+        }
+      }, delay);
     }
 
     if (triggerAudio && fcAutoAudio) {
@@ -1491,6 +1721,20 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     toggleFlipCard();
   });
 
+  // Sự kiện luyện phát âm micro trên góc thẻ (Bấm để luyện thẻ hiện tại)
+  [fcFrontMicBtn, fcBackMicBtn].forEach((btn) => {
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (fcIsListening) {
+        stopVoiceRecognition();
+        setVoiceFeedback('clear');
+        toast?.('Đã dừng nhận diện giọng nói ⏹️');
+      } else {
+        startVoiceRecognition();
+      }
+    });
+  });
+
   // Sự kiện phát âm mặt trước & mặt sau
   [fcFrontSpeakBtn, fcBackSpeakBtn].forEach((btn) => {
     btn?.addEventListener('click', (e) => {
@@ -1581,6 +1825,25 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     fcAutoSpeakBtn.classList.toggle('active', fcAutoAudio);
     fcAutoSpeakBtn.setAttribute('aria-pressed', String(fcAutoAudio));
     toast?.(fcAutoAudio ? 'Đã bật tự động phát âm 🔊' : 'Đã tắt tự động phát âm 🔇');
+  });
+
+  // Bật/tắt chế độ Đọc để lướt thẻ (Luyện phát âm tự động qua thẻ khi đọc đúng)
+  fcVoiceModeBtn?.addEventListener('click', () => {
+    if (!SpeechRecognition) {
+      toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Edge nhé!');
+      return;
+    }
+    fcVoiceModeActive = !fcVoiceModeActive;
+    fcVoiceModeBtn.classList.toggle('active', fcVoiceModeActive);
+    fcVoiceModeBtn.setAttribute('aria-pressed', String(fcVoiceModeActive));
+    if (fcVoiceModeActive) {
+      toast?.('🎙️ Đã bật chế độ Luyện phát âm: Đọc đúng từ thì flashcard sẽ tự động lướt qua!');
+      startVoiceRecognition();
+    } else {
+      stopVoiceRecognition();
+      setVoiceFeedback('clear');
+      toast?.('Đã tắt chế độ luyện phát âm');
+    }
   });
 
   // Nhảy nhanh đến thẻ bất kỳ từ lưới thu nhỏ

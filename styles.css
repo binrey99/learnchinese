@@ -8818,6 +8818,112 @@ body.show-pinyin .speed-pinyin{display:block!important}
   color: #d97706;
 }
 
+.fc-corner-mic {
+  color: #0f766e;
+}
+
+.fc-corner-mic:hover {
+  border-color: #0d9488;
+  background: #f0fdfa;
+  color: #0f766e;
+}
+
+.fc-corner-mic.is-listening {
+  background: #fee2e2 !important;
+  border-color: #ef4444 !important;
+  color: #dc2626 !important;
+  animation: fcMicPulse 1.25s infinite ease-in-out;
+}
+
+@keyframes fcMicPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);
+    transform: scale(1.03);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(239, 68, 68, 0);
+    transform: scale(1.08);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    transform: scale(1.03);
+  }
+}
+
+.fc-voice-chip {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
+  transition: all 0.2s ease;
+}
+
+.fc-voice-chip:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.fc-voice-chip.active {
+  background: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+}
+
+.fc-speech-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 6px auto;
+  animation: fcBadgeFadeIn 0.22s ease-out;
+  max-width: 90%;
+  text-align: center;
+  line-height: 1.35;
+}
+
+@keyframes fcBadgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fc-speech-badge.listening {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.fc-speech-badge.success {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.fc-speech-badge.retry {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #c2410c;
+}
+
+.fc-card-3d.speech-success {
+  box-shadow: 0 0 0 3px #10b981, 0 20px 35px rgba(16, 185, 129, 0.28) !important;
+  transform: scale(1.02);
+  transition: all 0.25s ease;
+}
+
 .fc-front-body {
   display: flex;
   flex-direction: column;
