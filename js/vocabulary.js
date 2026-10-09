@@ -1275,6 +1275,43 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     return false;
   };
 
+  let micPermissionGranted = false;
+
+  // Kiểm tra trước quyền Micro nếu trình duyệt hỗ trợ Permissions API
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'microphone' }).then((status) => {
+      if (status.state === 'granted') micPermissionGranted = true;
+      status.onchange = () => {
+        micPermissionGranted = (status.state === 'granted');
+      };
+    }).catch(() => {});
+  }
+
+  // Gửi yêu cầu mở Micro cho trang web (Kích hoạt popup xin quyền của trình duyệt)
+  const requestMicrophonePermission = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return true;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micPermissionGranted = true;
+      stream.getTracks().forEach((track) => track.stop());
+      // Nghỉ 120ms để phần cứng âm thanh hoàn tất việc nhả track
+      await new Promise((r) => setTimeout(r, 120));
+      return true;
+    } catch (err) {
+      console.warn('[Microphone] Quyền micro bị từ chối hoặc lỗi:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        toast?.('⚠️ Bạn chưa cấp quyền Micro cho trang web! Vui lòng bấm vào biểu tượng Micro/Ổ khóa trên thanh địa chỉ để Cho phép (Allow).');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        toast?.('⚠️ Không tìm thấy thiết bị Micro trên máy của bạn.');
+      } else {
+        toast?.('⚠️ Không thể bật Micro: ' + (err.message || 'Lỗi không xác định'));
+      }
+      return false;
+    }
+  };
+
   let fcSpeechInstance = null;
   let fcSpeechTimeout = null;
   let fcIsStopping = false;
@@ -1801,13 +1838,19 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // Sự kiện luyện phát âm micro trên góc thẻ (Bấm để luyện thẻ hiện tại)
   [fcFrontMicBtn, fcBackMicBtn].forEach((btn) => {
-    btn?.addEventListener('click', (e) => {
+    btn?.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (fcIsListening) {
         stopVoiceRecognition();
         setVoiceFeedback('clear');
         toast?.('Đã dừng nhận diện giọng nói ⏹️');
       } else {
+        // Gửi yêu cầu mở micro cho trang web nếu chưa có quyền
+        if (!micPermissionGranted) {
+          toast?.('🎙️ Đang gửi yêu cầu mở Micro... Vui lòng chọn "Cho phép" (Allow) trên thông báo!');
+          const ok = await requestMicrophonePermission();
+          if (!ok) return;
+        }
         startVoiceRecognition();
       }
     });
@@ -1906,7 +1949,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
   });
 
   // Bật/tắt chế độ Đọc để lướt thẻ (Luyện phát âm tự động qua thẻ khi đọc đúng)
-  fcVoiceModeBtn?.addEventListener('click', () => {
+  fcVoiceModeBtn?.addEventListener('click', async () => {
     if (!SpeechRecognition) {
       toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Edge nhé!');
       return;
@@ -1915,6 +1958,16 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     fcVoiceModeBtn.classList.toggle('active', fcVoiceModeActive);
     fcVoiceModeBtn.setAttribute('aria-pressed', String(fcVoiceModeActive));
     if (fcVoiceModeActive) {
+      if (!micPermissionGranted) {
+        toast?.('🎙️ Đang gửi yêu cầu mở Micro... Vui lòng chọn "Cho phép" (Allow) trên thông báo!');
+        const ok = await requestMicrophonePermission();
+        if (!ok) {
+          fcVoiceModeActive = false;
+          fcVoiceModeBtn.classList.remove('active');
+          fcVoiceModeBtn.setAttribute('aria-pressed', 'false');
+          return;
+        }
+      }
       toast?.('🎙️ Đã bật chế độ Luyện phát âm: Đọc đúng từ thì flashcard sẽ tự động lướt qua!');
       startVoiceRecognition();
     } else {
