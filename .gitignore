@@ -2,3 +2,13 @@
 .env.*
 !.env.example
 *.msi
+*.apk
+
+# Flutter mobile app build artifacts
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/android/.gradle/
+**/android/local.properties
+

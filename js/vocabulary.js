@@ -1178,8 +1178,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // =========================================================================
   // XỬ LÝ NHẬN DIỆN GIỌNG NÓI & LUYỆN PHÁT ÂM (WEB SPEECH RECOGNITION)
-  // =========================================================================
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const getSpeechRecognition = () => window.SpeechRecognition || window.webkitSpeechRecognition;
 
   const playSuccessChime = () => {
     try {
@@ -1335,7 +1334,13 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // Gửi yêu cầu mở Micro cho trang web với độ nhạy cao (Auto Gain Control khuếch đại âm thanh)
   const requestMicrophonePermission = async () => {
+    // Luôn cho phép nếu đang chạy trên ứng dụng Android
+    if (window.FlutterSpeechChannel || window._flutterSpeechPolyfillLoaded || typeof window.FlutterSpeechChannel !== 'undefined') {
+      micPermissionGranted = true;
+      return true;
+    }
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      micPermissionGranted = true;
       return true;
     }
     try {
@@ -1352,8 +1357,13 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       return true;
     } catch (err) {
       console.warn('[Microphone] Quyền micro bị từ chối hoặc lỗi:', err);
+      // Trên app mobile thì không chặn, vì app đã có quyền native
+      if (window.FlutterSpeechChannel || window._flutterSpeechPolyfillLoaded) {
+        micPermissionGranted = true;
+        return true;
+      }
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        toast?.('⚠️ Bạn chưa cấp quyền Micro cho trang web! Vui lòng bấm vào biểu tượng Micro/Ổ khóa trên thanh địa chỉ để Cho phép (Allow).');
+        toast?.('⚠️ Bạn chưa cấp quyền Micro! Vui lòng cho phép quyền Micro để luyện phát âm.');
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         toast?.('⚠️ Không tìm thấy thiết bị Micro trên máy của bạn.');
       } else {
@@ -1386,9 +1396,51 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     }
   };
 
+  const markWordAsMastered = async (word) => {
+    if (!word) return;
+    const vocabId = String(word.id);
+    if (!masteredVocabularyIds.has(vocabId)) {
+      masteredVocabularyIds.add(vocabId);
+      if (typeof updateFlashcardView === 'function') {
+        updateFlashcardView(false);
+      }
+
+      if (!user) {
+        try {
+          const { data } = await supabase.auth.getUser();
+          if (data?.user) user = data.user;
+        } catch (_) {}
+      }
+
+      if (user && user.id) {
+        try {
+          await saveMasteredVocabulary(user.id, word.id, true);
+        } catch (err) {
+          console.warn('Lỗi lưu thuộc từ lên Supabase:', err.message);
+          try {
+            await supabase.from('vocabulary_mastery').upsert({
+              user_id: user.id,
+              vocabulary_id: word.id,
+              mastered_at: new Date().toISOString()
+            }, { onConflict: 'user_id,vocabulary_id' });
+          } catch (_) {}
+        }
+      } else {
+        try {
+          const local = JSON.parse(localStorage.getItem('mandarinly_local_mastered') || '[]');
+          if (!local.includes(vocabId)) {
+            local.push(vocabId);
+            localStorage.setItem('mandarinly_local_mastered', JSON.stringify(local));
+          }
+        } catch (_) {}
+      }
+    }
+  };
+
   startVoiceRecognition = () => {
     if (activeMode !== 'flashcard' || !fcFilteredWords.length) return;
-    if (!SpeechRecognition) {
+    const SR = getSpeechRecognition();
+    if (!SR) {
       toast?.('Trình duyệt trên thiết bị này chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Safari trên iOS 14.5+ nhé!');
       return;
     }
@@ -1406,7 +1458,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
     try {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const recognition = new SpeechRecognition();
+      const recognition = new SR();
       recognition.lang = 'zh-CN';
       // Trên máy tính (PC): continuous = true giúp giữ micro êm ái, KHÔNG BỊ NHẤP NHÁY chấm đỏ trên tab trình duyệt
       // Trên điện thoại (Mobile): continuous = false giúp tương thích phần cứng audio của Android / iOS
@@ -1467,7 +1519,10 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
           stopVoiceRecognition();
           playSuccessChime();
           fcCard3d?.classList.add('speech-success');
-          setVoiceFeedback('success', `✓ Phát âm chuẩn: <strong>${word.hanzi}</strong>! 🎉 Đang chuyển thẻ...`);
+          setVoiceFeedback('success', `✓ Phát âm chuẩn: <strong>${word.hanzi}</strong>! ⭐ Đã thuộc & Lưu vào Supabase! Đang chuyển thẻ...`);
+
+          // Tự động đánh dấu sao từ đã thuộc và lưu trực tiếp lên Supabase
+          markWordAsMastered(word);
 
           setTimeout(() => {
             fcCard3d?.classList.remove('speech-success');
@@ -1479,7 +1534,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
                 startVoiceRecognition();
               }, 450);
             }
-          }, 600);
+          }, 700);
         } else if (bestCandidate) {
           // HIỂN THỊ KẾT QUẢ ĐANG BẮT ĐƯỢC
           setVoiceFeedback('listening', `🎙️ Đang nghe: <em>"${bestCandidate}"</em> • Cần đọc: <strong>"${word.hanzi}"</strong>`);
@@ -1902,15 +1957,38 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       if (fcIsListening) {
         stopVoiceRecognition();
         setVoiceFeedback('clear');
-        toast?.('Đã dừng nhận diện giọng nói ⏹️');
       } else {
-        // Gửi yêu cầu mở micro cho trang web nếu chưa có quyền
-        if (!micPermissionGranted) {
+        if (window.FlutterSpeechChannel || window._flutterSpeechPolyfillLoaded) {
+          micPermissionGranted = true;
+        } else if (!micPermissionGranted) {
           toast?.('🎙️ Đang gửi yêu cầu mở Micro... Vui lòng chọn "Cho phép" (Allow) trên thông báo!');
           const ok = await requestMicrophonePermission();
           if (!ok) return;
         }
         startVoiceRecognition();
+      }
+    });
+  });
+
+  // Bấm vào bong bóng trạng thái nhận diện để xác nhận nhanh từ vựng
+  [fcFrontSpeechBadge, fcBackSpeechBadge].forEach((b) => {
+    b?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const word = fcFilteredWords[fcCurrentIndex];
+      if (word && (fcIsListening || b.classList.contains('listening') || b.classList.contains('retry'))) {
+        stopVoiceRecognition();
+        playSuccessChime();
+        fcCard3d?.classList.add('speech-success');
+        setVoiceFeedback('success', `✓ Đã xác nhận: <strong>${word.hanzi}</strong>! ⭐ Đã thuộc & Lưu vào Supabase!`);
+        markWordAsMastered(word);
+        setTimeout(() => {
+          fcCard3d?.classList.remove('speech-success');
+          setVoiceFeedback('clear');
+          goToNextCard();
+          if (fcVoiceModeActive) {
+            fcVoiceRestartTimer = setTimeout(() => { startVoiceRecognition(); }, 450);
+          }
+        }, 600);
       }
     });
   });
@@ -2009,7 +2087,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // Bật/tắt chế độ Đọc để lướt thẻ (Luyện phát âm tự động qua thẻ khi đọc đúng)
   fcVoiceModeBtn?.addEventListener('click', async () => {
-    if (!SpeechRecognition) {
+    if (!getSpeechRecognition()) {
       toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Edge nhé!');
       return;
     }
@@ -2017,7 +2095,9 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     fcVoiceModeBtn.classList.toggle('active', fcVoiceModeActive);
     fcVoiceModeBtn.setAttribute('aria-pressed', String(fcVoiceModeActive));
     if (fcVoiceModeActive) {
-      if (!micPermissionGranted) {
+      if (window.FlutterSpeechChannel || window._flutterSpeechPolyfillLoaded) {
+        micPermissionGranted = true;
+      } else if (!micPermissionGranted) {
         toast?.('🎙️ Đang gửi yêu cầu mở Micro... Vui lòng chọn "Cho phép" (Allow) trên thông báo!');
         const ok = await requestMicrophonePermission();
         if (!ok) {
