@@ -327,7 +327,12 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
       if (forgotStep2) forgotStep2.hidden = false;
       setTimeout(() => forgotOtpInput?.focus(), 150);
     } catch (err) {
-      if (forgotError1) forgotError1.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+      const msg = err.message?.toLowerCase() || '';
+      if (msg.includes('failed to fetch') || msg.includes('networkerror')) {
+        if (forgotError1) forgotError1.textContent = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng Internet hoặc mở web qua Live Server / localhost.';
+      } else {
+        if (forgotError1) forgotError1.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+      }
     } finally {
       sendForgotCodeBtn.disabled = false;
       sendForgotCodeBtn.textContent = 'Gửi mã xác nhận';
@@ -396,7 +401,12 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
         window.location.reload();
       }, 500);
     } catch (err) {
-      if (forgotError2) forgotError2.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+      const msg = err.message?.toLowerCase() || '';
+      if (msg.includes('failed to fetch') || msg.includes('networkerror')) {
+        if (forgotError2) forgotError2.textContent = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại mạng Internet.';
+      } else {
+        if (forgotError2) forgotError2.textContent = err.message || 'Có lỗi xảy ra, vui lòng thử lại.';
+      }
     } finally {
       if (submitResetPwdBtn) {
         submitResetPwdBtn.disabled = false;
@@ -584,6 +594,8 @@ export function initLogin({ triggerSelector = '#loginTrigger', modalSelector = '
         errorMessage.textContent = 'Email hoặc mật khẩu không chính xác.';
       } else if (msg.includes('user already registered')) {
         errorMessage.textContent = 'Email này đã được đăng ký. Vui lòng chuyển sang Đăng nhập.';
+      } else if (msg.includes('failed to fetch') || msg.includes('networkerror') || msg.includes('load failed')) {
+        errorMessage.textContent = 'Lỗi kết nối máy chủ (Failed to fetch). Vui lòng kiểm tra lại mạng Internet hoặc không mở trực tiếp bằng file:/// (cần dùng Live Server / localhost).';
       } else {
         errorMessage.textContent = error.message || 'Không thể thực hiện yêu cầu. Vui lòng thử lại.';
       }

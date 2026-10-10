@@ -1178,8 +1178,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // =========================================================================
   // XỬ LÝ NHẬN DIỆN GIỌNG NÓI & LUYỆN PHÁT ÂM (WEB SPEECH RECOGNITION)
-  // =========================================================================
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const getSpeechRecognition = () => window.SpeechRecognition || window.webkitSpeechRecognition;
 
   const playSuccessChime = () => {
     try {
@@ -1229,9 +1228,114 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     });
   };
 
+  // Bảng ánh xạ số và ký hiệu toán học thường bị nhận diện nhầm sang chữ Hán & Pinyin
+  const DIGIT_AND_SYMBOL_MAP = {
+    '+': { hanzi: '十', pinyin: 'shi' },
+    '-': { hanzi: '一', pinyin: 'yi' },
+    '0': { hanzi: '零', pinyin: 'ling' },
+    '1': { hanzi: '一', pinyin: 'yi' },
+    '2': { hanzi: '二', pinyin: 'er' },
+    '3': { hanzi: '三', pinyin: 'san' },
+    '4': { hanzi: '四', pinyin: 'si' },
+    '5': { hanzi: '五', pinyin: 'wu' },
+    '6': { hanzi: '六', pinyin: 'liu' },
+    '7': { hanzi: '七', pinyin: 'qi' },
+    '8': { hanzi: '八', pinyin: 'ba' },
+    '9': { hanzi: '九', pinyin: 'jiu' },
+    '10': { hanzi: '十', pinyin: 'shi' },
+    '100': { hanzi: '百', pinyin: 'bai' },
+    '1000': { hanzi: '千', pinyin: 'qian' },
+    '10000': { hanzi: '万', pinyin: 'wan' },
+    '两': { hanzi: '二', pinyin: 'er' },
+    '俩': { hanzi: '两', pinyin: 'liang' }
+  };
+
+  // Từ điển đa âm tự & các biến thể ngữ âm phổ biến của từ đơn HSK
+  const POLYPHONE_EXTRA_MAP = {
+    '谁': ['shei', 'shui'],
+    '十': ['shi'],
+    '是': ['shi', 'si'],
+    '四': ['si', 'shi'],
+    '去': ['qu'],
+    '热': ['re', 'le'],
+    '人': ['ren', 'len'],
+    '日': ['ri', 'li'],
+    '三': ['san'],
+    '上': ['shang'],
+    '少': ['shao'],
+    '书': ['shu'],
+    '水': ['shui'],
+    '请': ['qing'],
+    '好': ['hao'],
+    '了': ['le', 'liao'],
+    '着': ['zhe', 'zhao', 'zhuo'],
+    '长': ['chang', 'zhang'],
+    '得': ['de', 'dei', 'dao'],
+    '会': ['hui', 'kuai'],
+    '还': ['hai', 'huan'],
+    '都': ['dou', 'du'],
+    '和': ['he', 'huo', 'han'],
+    '地': ['de', 'di'],
+    '行': ['xing', 'hang'],
+    '没': ['mei', 'mo'],
+    '过': ['guo'],
+    '看': ['kan'],
+    '觉': ['jue', 'jiao'],
+    '重': ['zhong', 'chong'],
+    '分': ['fen'],
+    '倒': ['dao'],
+    '便': ['bian', 'pian'],
+    '干': ['gan'],
+    '只': ['zhi'],
+    '差': ['cha', 'chai'],
+    '量': ['liang']
+  };
+
+  // Tiền xử lý văn bản nhận diện (chuyển dấu +, -, chữ số thành chữ Hán tương ứng)
+  const preprocessSpokenTranscript = (text) => {
+    if (!text) return '';
+    let processed = String(text).trim();
+
+    // Khớp chính xác ký hiệu đơn lẻ
+    if (DIGIT_AND_SYMBOL_MAP[processed]) {
+      return DIGIT_AND_SYMBOL_MAP[processed].hanzi;
+    }
+
+    // Thay thế các số và dấu toán học phổ biến trong chuỗi
+    processed = processed
+      .replace(/\+/g, '十')
+      .replace(/\b10\b/g, '十')
+      .replace(/\b100\b/g, '百')
+      .replace(/\b1000\b/g, '千')
+      .replace(/\b10000\b/g, '万')
+      .replace(/\b0\b/g, '零')
+      .replace(/\b1\b/g, '一')
+      .replace(/\b2\b/g, '二')
+      .replace(/\b3\b/g, '三')
+      .replace(/\b4\b/g, '四')
+      .replace(/\b5\b/g, '五')
+      .replace(/\b6\b/g, '六')
+      .replace(/\b7\b/g, '七')
+      .replace(/\b8\b/g, '八')
+      .replace(/\b9\b/g, '九');
+
+    return processed;
+  };
+
   const cleanChineseText = (text) => {
     if (!text) return '';
-    return text.replace(/[\s\p{P}\p{S}]/gu, '').trim();
+    const pre = preprocessSpokenTranscript(text);
+    return pre.replace(/[\s\p{P}\p{S}]/gu, '').trim();
+  };
+
+  const cleanPinyinString = (py) => {
+    if (!py) return '';
+    return py
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .replace(/[0-9]/g, '');
   };
 
   const normalizePhonetic = (str) => {
@@ -1245,7 +1349,8 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     }
   };
 
-  // Nới lỏng các cặp âm dễ nhầm lẫn trong ngữ âm tiếng Trung (ch/c, zh/z, sh/s, ing/in, eng/en, ang/an, l/n)
+  // Nới lỏng các cặp âm dễ nhầm lẫn trong ngữ âm tiếng Trung
+  // Đặc biệt phù hợp cho người học Việt Nam (zh/z, ch/c, sh/s, r/l, in/ing, en/eng, an/ang...)
   const relaxAccents = (str) => {
     if (!str) return '';
     return str
@@ -1256,7 +1361,10 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       .replace(/ing/g, 'in')
       .replace(/eng/g, 'en')
       .replace(/ang/g, 'an')
-      .replace(/l/g, 'n');
+      .replace(/ong/g, 'on')
+      .replace(/iong/g, 'ion')
+      .replace(/r/g, 'l') // Âm uốn lưỡi r (re, ri, ren) thường bị người Việt đọc l hoặc d
+      .replace(/v/g, 'u');
   };
 
   // Tính khoảng cách Levenshtein giữa 2 chuỗi ngữ âm
@@ -1278,44 +1386,131 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
     return dp[b.length][a.length];
   };
 
+  // Thu thập danh sách Pinyin hợp lệ của từ mục tiêu
+  const getAllTargetPinyins = (targetWord) => {
+    const list = new Set();
+    const cleanHanzi = (targetWord.hanzi || '').trim();
+    if (!cleanHanzi) return [];
+
+    // 1. Pinyin sinh tự động qua thư viện
+    const libPy = normalizePhonetic(cleanHanzi);
+    if (libPy) list.add(libPy);
+
+    // 2. Pinyin có sẵn trong đối tượng từ vựng (ví dụ "shí", "shui2", "shei2")
+    if (targetWord.pinyin) {
+      const dbPy = cleanPinyinString(targetWord.pinyin);
+      if (dbPy) list.add(dbPy);
+    }
+
+    // 3. Pinyin từ từ điển đa âm tự POLYPHONE_EXTRA_MAP
+    if (POLYPHONE_EXTRA_MAP[cleanHanzi]) {
+      POLYPHONE_EXTRA_MAP[cleanHanzi].forEach((p) => {
+        const cleaned = cleanPinyinString(p);
+        if (cleaned) list.add(cleaned);
+      });
+    }
+
+    // 4. Nếu là số hoặc ký hiệu
+    for (const [sym, info] of Object.entries(DIGIT_AND_SYMBOL_MAP)) {
+      if (cleanHanzi === info.hanzi || cleanHanzi === sym) {
+        list.add(info.pinyin);
+      }
+    }
+
+    return Array.from(list).filter(Boolean);
+  };
+
   const checkPronunciationMatch = (transcript, targetWord) => {
     if (!transcript || !targetWord) return false;
-    const cleanSpoken = cleanChineseText(transcript);
+    const rawTrimmed = String(transcript).trim();
+    const cleanSpoken = cleanChineseText(rawTrimmed);
     const cleanTarget = cleanChineseText(targetWord.hanzi);
     if (!cleanSpoken || !cleanTarget) return false;
 
-    // 1. So khớp chữ Hán trực tiếp (Chính xác hoặc chuỗi con, kể cả Giản thể & Phồn thể)
-    if (cleanSpoken.includes(cleanTarget) || (cleanTarget.length >= 2 && cleanTarget.includes(cleanSpoken))) {
+    const isSingleChar = cleanTarget.length === 1;
+
+    // 1. So khớp chữ Hán trực tiếp (Chính xác hoặc chuỗi con, kể cả người dùng đọc kèm từ đệm)
+    if (cleanSpoken === cleanTarget || cleanSpoken.includes(cleanTarget)) {
+      return true;
+    }
+    // Đối với từ ghép: nếu chuỗi nhận diện là một phần của từ ghép
+    if (!isSingleChar && cleanTarget.includes(cleanSpoken) && cleanSpoken.length >= 2) {
       return true;
     }
 
-    const targetPy = normalizePhonetic(cleanTarget);
+    // 2. Lấy tất cả các Pinyin hợp lệ của từ mục tiêu
+    const targetPinyins = getAllTargetPinyins(targetWord);
+    if (!targetPinyins.length) return false;
+
+    // 3. Phân tích Pinyin của toàn bộ chuỗi thu được
     const spokenPy = normalizePhonetic(cleanSpoken);
+    const rawLatinSpoken = rawTrimmed.toLowerCase().replace(/[^a-z]/g, '');
 
-    if (spokenPy && targetPy) {
-      // 2. So khớp Pinyin tuyệt đối hoặc chuỗi con
-      if (spokenPy === targetPy || spokenPy.includes(targetPy)) return true;
-      if (cleanTarget.length >= 2 && targetPy.length >= 4 && targetPy.includes(spokenPy)) return true;
+    for (const targetPy of targetPinyins) {
+      if (!targetPy) continue;
 
-      // 3. So khớp Pinyin nới lỏng (relaxed accents: zh/z, ch/c, sh/s, ing/in...)
+      // 3.1 So khớp Pinyin trực tiếp toàn chuỗi
+      if (spokenPy && (spokenPy === targetPy || spokenPy.includes(targetPy))) {
+        return true;
+      }
+      if (rawLatinSpoken && (rawLatinSpoken === targetPy || rawLatinSpoken.includes(targetPy))) {
+        return true;
+      }
+
+      // 3.2 So khớp Pinyin nới lỏng (Relaxed Accents: zh/z, ch/c, sh/s, r/l...)
       const relTarget = relaxAccents(targetPy);
       const relSpoken = relaxAccents(spokenPy);
-      if (relSpoken === relTarget || relSpoken.includes(relTarget)) return true;
-
-      // 4. So khớp gần đúng (Fuzzy phonetic distance) cho người học phát âm chưa chuẩn 100%
-      const dist = levenshteinDist(relSpoken, relTarget);
-      if (relTarget.length <= 4 && dist <= 1) return true;
-      if (relTarget.length > 4 && relTarget.length <= 8 && dist <= 2) return true;
-      if (relTarget.length > 8 && dist <= 3) return true;
-    }
-
-    // 5. So khớp nếu kết quả nhận diện trả về chữ Latin/Pinyin (ví dụ "ni hao", "xue xi")
-    const rawLatinSpoken = transcript.toLowerCase().replace(/[^a-z]/g, '');
-    if (rawLatinSpoken && targetPy) {
-      if (rawLatinSpoken === targetPy || rawLatinSpoken.includes(targetPy)) return true;
       const relLatin = relaxAccents(rawLatinSpoken);
-      const relTarget = relaxAccents(targetPy);
-      if (relLatin === relTarget || relLatin.includes(relTarget)) return true;
+
+      if (relSpoken && (relSpoken === relTarget || relSpoken.includes(relTarget))) {
+        return true;
+      }
+      if (relLatin && (relLatin === relTarget || relLatin.includes(relTarget))) {
+        return true;
+      }
+
+      // 3.3 THUẬT TOÁN ĐẶC BIỆT CHO TỪ ĐƠN (Single Character Word):
+      // Khi phát âm từ đơn, Google STT thiếu ngữ cảnh nên thường trả về chữ đồng âm khác
+      // (ví dụ 十 -> 时, 是 -> 事, 去 -> 娶, 水 -> 谁...) hoặc từ ghép (ví dụ 十 -> 时间, 是 -> 是的).
+      // Ta duyệt qua TỪNG KÝ TỰ trong kết quả nhận diện để so khớp ngữ âm!
+      if (isSingleChar) {
+        for (const char of cleanSpoken) {
+          const charPy = normalizePhonetic(char);
+          if (!charPy) continue;
+
+          // Chữ đồng âm hoàn toàn
+          if (charPy === targetPy) return true;
+
+          // Chữ gần âm sau khi nới lỏng
+          const relChar = relaxAccents(charPy);
+          if (relChar === relTarget) return true;
+
+          // Cho phép sai số ngữ âm Levenshtein 1 ký tự
+          if (levenshteinDist(relChar, relTarget) <= 1) return true;
+        }
+
+        // Nếu Google trả về âm tiết Latin đơn lẻ (ví dụ "shi", "qu", "re")
+        if (relLatin && levenshteinDist(relLatin, relTarget) <= 1) {
+          return true;
+        }
+
+        // Loại bỏ các trợ từ tiếng Trung hay bị micro bắt lẫn ở đầu/cuối
+        const strippedSpoken = cleanSpoken.replace(/^[的一了个啊吧呢吗呀哦]+|[的一了个啊吧呢吗呀哦]+$/g, '');
+        if (strippedSpoken && strippedSpoken.length === 1) {
+          const strippedPy = normalizePhonetic(strippedSpoken);
+          if (strippedPy === targetPy || relaxAccents(strippedPy) === relTarget) {
+            return true;
+          }
+        }
+      }
+
+      // 3.4 So khớp khoảng cách Levenshtein cho từ ghép
+      if (!isSingleChar && relSpoken) {
+        const dist = levenshteinDist(relSpoken, relTarget);
+        if (relTarget.length <= 4 && dist <= 1) return true;
+        if (relTarget.length > 4 && relTarget.length <= 8 && dist <= 2) return true;
+        if (relTarget.length > 8 && dist <= 3) return true;
+      }
     }
 
     return false;
@@ -1440,7 +1635,8 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   startVoiceRecognition = () => {
     if (activeMode !== 'flashcard' || !fcFilteredWords.length) return;
-    if (!SpeechRecognition) {
+    const SR = getSpeechRecognition();
+    if (!SR) {
       toast?.('Trình duyệt trên thiết bị này chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Safari trên iOS 14.5+ nhé!');
       return;
     }
@@ -1458,7 +1654,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
     try {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const recognition = new SpeechRecognition();
+      const recognition = new SR();
       recognition.lang = 'zh-CN';
       // Trên máy tính (PC): continuous = true giúp giữ micro êm ái, KHÔNG BỊ NHẤP NHÁY chấm đỏ trên tab trình duyệt
       // Trên điện thoại (Mobile): continuous = false giúp tương thích phần cứng audio của Android / iOS
@@ -1992,7 +2188,6 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
       }
     });
   });
-  });
 
   // Sự kiện phát âm mặt trước & mặt sau
   [fcFrontSpeakBtn, fcBackSpeakBtn].forEach((btn) => {
@@ -2088,7 +2283,7 @@ export async function initVocabulary({ selector = '[data-vocabulary]', toast } =
 
   // Bật/tắt chế độ Đọc để lướt thẻ (Luyện phát âm tự động qua thẻ khi đọc đúng)
   fcVoiceModeBtn?.addEventListener('click', async () => {
-    if (!SpeechRecognition) {
+    if (!getSpeechRecognition()) {
       toast?.('Trình duyệt chưa hỗ trợ nhận diện giọng nói. Hãy dùng Google Chrome hoặc Edge nhé!');
       return;
     }
