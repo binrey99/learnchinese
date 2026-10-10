@@ -3000,13 +3000,44 @@ body.show-pinyin .speed-pinyin{display:block!important}
 .catch-prompt-box strong{font-size:18px;color:#1e4630}
 .catch-board{position:relative;width:100%;height:440px;background:linear-gradient(180deg,#f3faf5 0%,#e4f5ea 100%);border:2px solid #bce1ca;border-radius:14px;overflow:hidden;cursor:default;user-select:none;touch-action:manipulation}
 .falling-items-wrap{position:absolute;inset:0;pointer-events:auto}
-.falling-item{position:absolute;transform:translateX(-50%);background:#fff;border:2px solid #6abf88;border-radius:12px;padding:8px 16px;box-shadow:0 4px 14px #28543b1a;text-align:center;white-space:nowrap;pointer-events:auto;cursor:pointer;touch-action:manipulation;user-select:none;transition:transform .12s cubic-bezier(0.16,1,0.3,1),box-shadow .12s,background-color .15s,border-color .15s}
-.falling-item:hover{transform:translateX(-50%) scale(1.08);background:#f0fbf3;border-color:#28543b;box-shadow:0 6px 18px #28543b2a;z-index:2}
-.falling-item:active{transform:translateX(-50%) scale(0.96)}
-.falling-item strong{display:block;font-size:22px;color:#28543b;line-height:1.2;font-weight:700}
-.falling-item .game-pinyin{margin-bottom:2px;font-size:12px;color:#527066}
-.falling-item.pop-correct{animation:catch-pop .3s ease-out forwards;background:#e8f8ee!important;border-color:#34b76a!important;pointer-events:none}
-.falling-item.pop-wrong{animation:shake .35s ease-in-out forwards;background:#ffebeb!important;border-color:#e46a6a!important;color:#cc3e3e!important;pointer-events:none}
+.falling-item{position:absolute;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:104px;min-height:98px;padding:10px 16px;box-sizing:border-box;text-align:center;white-space:nowrap;pointer-events:auto;cursor:pointer;touch-action:manipulation;user-select:none;background:#fff;border:3px solid #10b981;border-radius:18px;box-shadow:0 8px 24px rgba(40,84,59,0.18);transition:transform .14s cubic-bezier(0.16,1,0.3,1),box-shadow .14s,background-color .15s,border-color .15s}
+.falling-item:hover{transform:translateX(-50%) scale(1.1);box-shadow:0 12px 28px rgba(40,84,59,0.28);z-index:4}
+.falling-item:active{transform:translateX(-50%) scale(0.95)}
+.falling-item .drop-hanzi{display:block;font-size:28px;color:#1e4630;line-height:1.15;font-weight:800;letter-spacing:0.5px}
+.falling-item .game-pinyin{display:block;margin-bottom:3px;font-size:14px;font-weight:700;color:#4a6358;line-height:1.2}
+
+/* Shapes phong phú cho khối từ rơi */
+/* 1. Hình tròn bong bóng (Circle) */
+.falling-item.shape-circle{border-radius:50%;width:112px;height:112px;min-width:112px;min-height:112px;background:radial-gradient(circle at 35% 30%,#fff 0%,#edfcf2 75%,#dbf8e3 100%);border:3.5px solid #10b981;box-shadow:0 8px 24px rgba(16,185,129,0.24)}
+
+/* 2. Hình ngôi sao hoàng gia (Star Badge 8 cánh) */
+.falling-item.shape-star{width:106px;height:106px;min-width:106px;min-height:106px;border-radius:20px;background:linear-gradient(135deg,#fffef0 0%,#fef3c7 100%);border:3.5px solid #f59e0b;box-shadow:0 8px 24px rgba(245,158,11,0.28)}
+.falling-item.shape-star::before{content:"";position:absolute;inset:-3.5px;background:inherit;border:inherit;border-radius:20px;transform:rotate(45deg);z-index:-1;box-shadow:inherit}
+.falling-item.shape-star .drop-hanzi{color:#78350f}
+.falling-item.shape-star .game-pinyin{color:#b45309}
+
+/* 3. Hình tam giác / Khiên bo góc (Triangle Shield) */
+.falling-item.shape-triangle{width:114px;height:104px;min-width:114px;min-height:104px;border-radius:24px 24px 50px 50px;background:linear-gradient(180deg,#fff 0%,#ffedd5 100%);border:3.5px solid #f97316;box-shadow:0 8px 24px rgba(249,115,22,0.25)}
+.falling-item.shape-triangle .drop-hanzi{color:#9a3412}
+.falling-item.shape-triangle .game-pinyin{color:#c2410c}
+
+/* 4. Hình đám mây dễ thương (Cloud) */
+.falling-item.shape-cloud{width:122px;height:98px;min-width:122px;min-height:98px;border-radius:40px 40px 28px 28px;background:linear-gradient(180deg,#fff 0%,#e0f2fe 100%);border:3.5px solid #0284c7;box-shadow:0 8px 24px rgba(2,132,199,0.25)}
+.falling-item.shape-cloud .drop-hanzi{color:#0369a1}
+.falling-item.shape-cloud .game-pinyin{color:#0284c7}
+
+/* 5. Hình thoi kim cương (Diamond) */
+.falling-item.shape-diamond{width:110px;height:104px;min-width:110px;min-height:104px;border-radius:36px 8px 36px 8px;background:linear-gradient(135deg,#fff 0%,#f3e8ff 100%);border:3.5px solid #9333ea;box-shadow:0 8px 24px rgba(147,51,234,0.25)}
+.falling-item.shape-diamond .drop-hanzi{color:#6b21a8}
+.falling-item.shape-diamond .game-pinyin{color:#9333ea}
+
+/* 6. Hình lục giác viên kẹo (Hexagon) */
+.falling-item.shape-hexagon{width:116px;height:100px;min-width:116px;min-height:100px;border-radius:28px;background:linear-gradient(135deg,#fff 0%,#ffe4e6 100%);border:3.5px solid #e11d48;box-shadow:0 8px 24px rgba(225,29,72,0.25)}
+.falling-item.shape-hexagon .drop-hanzi{color:#9f1239}
+.falling-item.shape-hexagon .game-pinyin{color:#be123c}
+
+.falling-item.pop-correct{animation:catch-pop .35s ease-out forwards;background:#dcfce7!important;border-color:#22c55e!important;pointer-events:none}
+.falling-item.pop-wrong{animation:shake .35s ease-in-out forwards;background:#fee2e2!important;border-color:#ef4444!important;color:#b91c1c!important;pointer-events:none}
 @keyframes catch-pop{0%{transform:translateX(-50%) scale(1)}40%{transform:translateX(-50%) scale(1.35)}100%{transform:translateX(-50%) scale(0);opacity:0}}
 .catcher-basket{display:none!important}
 .catch-touch-controls{display:none!important}

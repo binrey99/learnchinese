@@ -1227,21 +1227,25 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         ...distractors.map((w) => ({ word: w, isCorrect: false }))
       ]);
 
+      const SHAPES = ['shape-circle', 'shape-star', 'shape-triangle', 'shape-cloud', 'shape-diamond', 'shape-hexagon'];
+      const waveShapes = shuffle([...SHAPES]).slice(0, waveWords.length);
+
       const currentWidth = catchBoard.clientWidth || 600;
       const colWidth = currentWidth / waveWords.length;
       const { speed } = getCurrentSpeed();
 
       waveWords.forEach((entry, idx) => {
+        const shapeClass = waveShapes[idx] || 'shape-circle';
         const itemEl = document.createElement('div');
-        itemEl.className = 'falling-item';
+        itemEl.className = `falling-item ${shapeClass}`;
         itemEl.innerHTML = `
           <span class="game-pinyin">${escapeHtml(entry.word.pinyin || toPinyin(entry.word.hanzi))}</span>
           <strong class="drop-hanzi">${escapeHtml(entry.word.hanzi)}</strong>
         `;
 
         const colCenter = idx * colWidth + colWidth / 2;
-        const xPos = Math.max(60, Math.min(currentWidth - 60, colCenter + (Math.random() - 0.5) * (colWidth * 0.3)));
-        const yPos = -50 - Math.random() * 40;
+        const xPos = Math.max(70, Math.min(currentWidth - 70, colCenter + (Math.random() - 0.5) * (colWidth * 0.22)));
+        const yPos = -110 - Math.random() * 30;
 
         itemEl.style.left = `${xPos}px`;
         itemEl.style.top = `${yPos}px`;
@@ -1292,7 +1296,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         item.el.style.top = `${item.y}px`;
 
         // Rơi khỏi đáy màn hình
-        if (item.y > currentHeight + 10) {
+        if (item.y > currentHeight + 20) {
           if (item.isCorrect) {
             // Bỏ lỡ từ đúng mục tiêu!
             item.handled = true;
@@ -1303,7 +1307,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
             sounds.playWrong();
 
-            showPopupText('Bỏ lỡ! -1 ❤️', false, Math.max(50, Math.min((catchBoard.clientWidth || 600) - 90, item.x)), currentHeight - 40);
+            showPopupText('Bỏ lỡ! -1 ❤️', false, Math.max(70, Math.min((catchBoard.clientWidth || 600) - 70, item.x)), currentHeight - 40);
 
             if (lives <= 0) {
               triggerGameOver();
