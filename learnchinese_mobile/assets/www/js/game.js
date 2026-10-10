@@ -1012,7 +1012,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     let isTransitioningWave = false;
     let maxSpeedMultiplier = 1.0;
 
-    const baseSpeed = 0.85; // Tốc độ cơ bản ban đầu (~51px/s, rơi qua bảng mất ~8.6s)
+    const baseSpeed = 0.75; // Tốc độ cơ bản êm ái, dễ nhìn (~45px/s, rơi qua bảng mất ~9.8s)
 
     function formatTime(sec) {
       const m = Math.floor(sec / 60);
@@ -1020,10 +1020,18 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       return m > 0 ? `${m}m ${s < 10 ? '0' : ''}${s}s` : `${s}s`;
     }
 
+    function formatSpeed(m) {
+      const rounded = Math.round(m * 100) / 100;
+      return (rounded % 0.1 === 0) ? `${rounded.toFixed(1)}x` : `${rounded.toFixed(2)}x`;
+    }
+
     function getCurrentSpeed() {
-      // Tốc độ tăng dần theo số từ chạm đúng và thời gian sống sót
-      const multiplier = 1 + (caughtCount * 0.065) + (elapsedSeconds * 0.012);
-      const cappedMultiplier = Math.min(3.8, multiplier);
+      // Tăng tốc độ rất từ từ theo từng nấc 0.05 (1.0x -> 1.05x -> 1.1x -> 1.15x -> 1.2x...)
+      const wordSteps = Math.floor(caughtCount / 2); // Cứ mỗi 2 từ chạm đúng tăng 0.05
+      const timeSteps = Math.floor(elapsedSeconds / 25); // Cứ mỗi 25 giây sống sót tăng 0.05
+      const steps = wordSteps + timeSteps;
+      const rawMultiplier = 1.0 + (steps * 0.05);
+      const cappedMultiplier = Math.min(2.5, rawMultiplier);
       if (cappedMultiplier > maxSpeedMultiplier) {
         maxSpeedMultiplier = cappedMultiplier;
       }
@@ -1085,10 +1093,10 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     function updateSpeedDisplay() {
       if (!speedEl) return;
       const { multiplier } = getCurrentSpeed();
-      speedEl.textContent = `${multiplier.toFixed(1)}x`;
-      if (multiplier >= 2.6) {
+      speedEl.textContent = formatSpeed(multiplier);
+      if (multiplier >= 1.8) {
         speedEl.style.color = '#e74c3c';
-      } else if (multiplier >= 1.8) {
+      } else if (multiplier >= 1.3) {
         speedEl.style.color = '#e67e22';
       } else {
         speedEl.style.color = '#27ae60';
@@ -1127,7 +1135,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         stats: [
           { label: 'Thời gian sống sót', value: formatTime(elapsedSeconds) },
           { label: 'Số từ chạm đúng', value: `${caughtCount} từ` },
-          { label: 'Tốc độ tối đa', value: `${maxSpeedMultiplier.toFixed(1)}x ⚡` },
+          { label: 'Tốc độ tối đa', value: `${formatSpeed(maxSpeedMultiplier)} ⚡` },
           { label: 'Combo lớn nhất', value: `${maxStreak}x 🔥` },
           { label: 'Độ chính xác', value: attemptsCount ? `${Math.round((caughtCount / attemptsCount) * 100)}%` : '0%' }
         ],
