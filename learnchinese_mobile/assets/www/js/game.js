@@ -374,7 +374,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                 ? 'Chọn đúng nghĩa trong 60 giây. Chuỗi đúng càng dài điểm càng cao!'
                 : currentGameMode === 'match'
                 ? 'Nối từng cặp chữ Hán và tiếng Việt để ghi điểm.'
-                : 'Chạm nhanh vào chữ Hán rơi xuống khớp với nghĩa mục tiêu!'
+                : 'Chạm nhanh vào chữ Hán rơi xuống khớp với nghĩa mục tiêu! Tốc độ rơi tăng dần theo thời gian.'
             }
           </div>
         </div>
@@ -1004,19 +1004,45 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     let maxStreak = 0;
     let caughtCount = 0;
     let attemptsCount = 0;
-    let timeLeft = 60;
+    let elapsedSeconds = 0;
     let lives = 3;
     let isGameOver = false;
     let currentTarget = null;
     let fallingWords = [];
     let isTransitioningWave = false;
+    let maxSpeedMultiplier = 1.0;
+
+    const baseSpeed = 0.85; // Tốc độ cơ bản ban đầu (~51px/s, rơi qua bảng mất ~8.6s)
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return m > 0 ? `${m}m ${s < 10 ? '0' : ''}${s}s` : `${s}s`;
+    }
+
+    function getCurrentSpeed() {
+      // Tốc độ tăng dần theo số từ chạm đúng và thời gian sống sót
+      const multiplier = 1 + (caughtCount * 0.065) + (elapsedSeconds * 0.012);
+      const cappedMultiplier = Math.min(3.8, multiplier);
+      if (cappedMultiplier > maxSpeedMultiplier) {
+        maxSpeedMultiplier = cappedMultiplier;
+      }
+      return {
+        speed: baseSpeed * cappedMultiplier,
+        multiplier: cappedMultiplier
+      };
+    }
 
     arena.innerHTML = `
       <div class="catch-game-panel">
         <div class="catch-hud">
           <div class="hud-item">
-            <span>⏳ Thời gian:</span>
-            <strong id="catchSeconds">60s</strong>
+            <span>⏱️ Sống sót:</span>
+            <strong id="catchSeconds">0s</strong>
+          </div>
+          <div class="hud-item">
+            <span>⚡ Tốc độ:</span>
+            <strong id="catchSpeed" style="color:#27ae60;">1.0x</strong>
           </div>
           <div class="hud-item">
             <span>❤️ Mạng:</span>
@@ -1050,10 +1076,24 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const targetTextEl = arena.querySelector('#catchTargetText');
     const speakBtn = arena.querySelector('#catchSpeakBtn');
     const secondsEl = arena.querySelector('#catchSeconds');
+    const speedEl = arena.querySelector('#catchSpeed');
     const livesEl = arena.querySelector('#catchLives');
     const scoreEl = arena.querySelector('#catchScore');
     const streakEl = arena.querySelector('#catchStreak');
     const restartBtn = arena.querySelector('#catchRestart');
+
+    function updateSpeedDisplay() {
+      if (!speedEl) return;
+      const { multiplier } = getCurrentSpeed();
+      speedEl.textContent = `${multiplier.toFixed(1)}x`;
+      if (multiplier >= 2.6) {
+        speedEl.style.color = '#e74c3c';
+      } else if (multiplier >= 1.8) {
+        speedEl.style.color = '#e67e22';
+      } else {
+        speedEl.style.color = '#27ae60';
+      }
+    }
 
     restartBtn.addEventListener('click', () => startCatchGame(arena));
 
@@ -1073,8 +1113,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       clearActiveGame();
       sounds.playVictory();
 
-      const earnedPoints = Math.min(100, Math.max(15, Math.round(score * 0.1)));
-      recordScore({ category: 'game', points: earnedPoints, description: `Chạm từ rơi (${score}đ)` });
+      const earnedPoints = Math.min(100, Math.max(15, Math.round(score * 0.08)));
+      recordScore({ category: 'game', points: earnedPoints, description: `Chạm từ rơi (${score}đ - ${formatTime(elapsedSeconds)})` });
 
       const bestScore = Number(localStorage.getItem('mandarinly_game_best_catch') || 0);
       if (score > bestScore) {
@@ -1082,10 +1122,12 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       }
 
       showVictoryModal(arena, {
-        title: lives <= 0 ? 'Hết mạng! Cố gắng lần sau nhé 🎯' : 'Hoàn thành lượt chơi! Xuất sắc 🌟',
+        title: 'Hết mạng! Trò chơi kết thúc 🎯',
         score: score,
         stats: [
+          { label: 'Thời gian sống sót', value: formatTime(elapsedSeconds) },
           { label: 'Số từ chạm đúng', value: `${caughtCount} từ` },
+          { label: 'Tốc độ tối đa', value: `${maxSpeedMultiplier.toFixed(1)}x ⚡` },
           { label: 'Combo lớn nhất', value: `${maxStreak}x 🔥` },
           { label: 'Độ chính xác', value: attemptsCount ? `${Math.round((caughtCount / attemptsCount) * 100)}%` : '0%' }
         ],
@@ -1114,6 +1156,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
         scoreEl.textContent = score;
         streakEl.textContent = `${streak}x 🔥`;
+        updateSpeedDisplay();
 
         item.el.classList.add('pop-correct');
         showPopupText(`+${addedScore} ${multiplier > 1 ? `(${multiplier}x)` : ''}`, true, item.x, Math.max(20, item.y - 15));
@@ -1178,6 +1221,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
       const currentWidth = catchBoard.clientWidth || 600;
       const colWidth = currentWidth / waveWords.length;
+      const { speed } = getCurrentSpeed();
 
       waveWords.forEach((entry, idx) => {
         const itemEl = document.createElement('div');
@@ -1201,7 +1245,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           isCorrect: entry.isCorrect,
           x: xPos,
           y: yPos,
-          speed: 0.2,
+          speed: speed,
           handled: false
         };
 
@@ -1229,10 +1273,13 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         return;
       }
 
+      const { speed } = getCurrentSpeed();
+
       for (let i = fallingWords.length - 1; i >= 0; i--) {
         const item = fallingWords[i];
         if (item.handled) continue;
 
+        item.speed = speed;
         item.y += item.speed;
         item.el.style.top = `${item.y}px`;
 
@@ -1272,13 +1319,11 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       activeAnimFrame = requestAnimationFrame(gameLoop);
     }
 
-    // Timer countdown
+    // Bộ đếm thời gian sinh tồn (không giới hạn 60s)
     activeInterval = setInterval(() => {
-      timeLeft--;
-      if (secondsEl) secondsEl.textContent = `${timeLeft}s`;
-      if (timeLeft <= 0) {
-        triggerGameOver();
-      }
+      elapsedSeconds++;
+      if (secondsEl) secondsEl.textContent = formatTime(elapsedSeconds);
+      updateSpeedDisplay();
     }, 1000);
 
     spawnNextWave();
