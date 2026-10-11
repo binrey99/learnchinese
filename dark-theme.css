@@ -1,0 +1,1710 @@
+/* ==========================================================================
+   LULU CHINESE - DARK MODE THEME SYSTEM (GIAO DIỆN TỐI)
+   ========================================================================== */
+
+/* 1. Theme Variables & Base Settings */
+:root[data-theme="dark"],
+[data-theme="dark"],
+body.dark-mode {
+  /* Brand accents tuned for contrast on dark canvas */
+  --primary: #10b981;
+  --primary-dark: #34d399;
+  --primary-deep: #6ee7b7;
+  --primary-light: #064e3b;
+  --primary-surface: rgba(16, 185, 129, 0.15);
+
+  --accent-orange: #fb923c;
+  --accent-orange-dark: #f97316;
+  --accent-orange-light: rgba(249, 115, 22, 0.18);
+
+  --accent-amber: #fbbf24;
+  --accent-amber-light: rgba(245, 158, 11, 0.18);
+
+  --accent-blue: #60a5fa;
+  --accent-blue-light: rgba(59, 130, 246, 0.18);
+
+  --accent-indigo: #818cf8;
+  --accent-indigo-light: rgba(99, 102, 241, 0.18);
+
+  --accent-purple: #a78bfa;
+  --accent-purple-light: rgba(139, 92, 246, 0.18);
+
+  --accent-rose: #fb7185;
+  --accent-rose-light: rgba(244, 63, 94, 0.18);
+
+  /* Dark Canvas & Neutrals */
+  --ink: #f8fafc;
+  --ink-secondary: #cbd5e1;
+  --muted: #94a3b8;
+  --line: #334155;
+  --line-soft: #1e293b;
+  --card-bg: #1e293b;
+  --canvas: #0b1120;
+
+  /* Shadows for Dark Mode */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px -4px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 36px -6px rgba(0, 0, 0, 0.65);
+  --shadow-cute: 0 6px 20px rgba(16, 185, 129, 0.2);
+}
+
+/* Base Body Transition & Scrollbars */
+[data-theme="dark"] body,
+body.dark-mode {
+  background: #0b1120 !important;
+  color: #f1f5f9 !important;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+[data-theme="dark"] ::selection {
+  background: #059669;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   2. TOPBAR & ACTIONS
+   ========================================================================== */
+[data-theme="dark"] .topbar,
+body.dark-mode .topbar {
+  background-color: rgba(15, 23, 42, 0.88) !important;
+  background-image: none !important;
+  border-bottom: 1.5px solid rgba(51, 65, 85, 0.8) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+[data-theme="dark"] .topbar-brand strong,
+body.dark-mode .topbar-brand strong {
+  color: #34d399 !important;
+  text-shadow: 0 0 16px rgba(16, 185, 129, 0.4), 0 0 2px rgba(255, 255, 255, 0.2) !important;
+}
+
+[data-theme="dark"] .brand-avatar-box .topbar-brand-video,
+body.dark-mode .brand-avatar-box .topbar-brand-video {
+  background: #1e293b !important;
+  border-color: #059669 !important;
+  box-shadow: 0 3px 14px rgba(16, 185, 129, 0.35), 0 0 0 2px rgba(51, 65, 85, 0.9) !important;
+}
+
+/* Streak in Topbar */
+[data-theme="dark"] .topbar-streak,
+body.dark-mode .topbar-streak {
+  background: #1e293b !important;
+  border-color: #7c2d12 !important;
+  color: #fdba74 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="dark"] .topbar-streak:hover,
+body.dark-mode .topbar-streak:hover {
+  border-color: #ea580c !important;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.25) !important;
+}
+[data-theme="dark"] .topbar-streak.is-active,
+body.dark-mode .topbar-streak.is-active {
+  background: linear-gradient(135deg, #2d1c16 0%, #1e293b 100%) !important;
+  border-color: #ea580c !important;
+  color: #fb923c !important;
+}
+[data-theme="dark"] .topbar-streak.is-pending,
+body.dark-mode .topbar-streak.is-pending {
+  background: linear-gradient(135deg, #2e220a 0%, #1e293b 100%) !important;
+  border-color: #d97706 !important;
+  color: #fcd34d !important;
+}
+[data-theme="dark"] .topbar-streak.is-zero,
+body.dark-mode .topbar-streak.is-zero {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+/* Streak Popover Modal */
+[data-theme="dark"] .streak-popover,
+body.dark-mode .streak-popover {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6) !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .streak-popover-header,
+body.dark-mode .streak-popover-header {
+  border-bottom: 1px solid #334155 !important;
+}
+[data-theme="dark"] .streak-popover-title-wrap strong,
+body.dark-mode .streak-popover-title-wrap strong {
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .streak-popover-title-wrap span,
+body.dark-mode .streak-popover-title-wrap span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .streak-popover-stats,
+body.dark-mode .streak-popover-stats {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .streak-stat-item span,
+body.dark-mode .streak-stat-item span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .streak-stat-item strong,
+body.dark-mode .streak-stat-item strong {
+  color: #fb923c !important;
+}
+[data-theme="dark"] .streak-popover-hint,
+body.dark-mode .streak-popover-hint {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Pinyin Toggle */
+[data-theme="dark"] .pinyin-toggle,
+body.dark-mode .pinyin-toggle {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+}
+[data-theme="dark"] .pinyin-toggle:hover,
+body.dark-mode .pinyin-toggle:hover {
+  border-color: #10b981 !important;
+  background: #243447 !important;
+}
+[data-theme="dark"] .pinyin-toggle input,
+body.dark-mode .pinyin-toggle input {
+  background: #475569 !important;
+}
+[data-theme="dark"] .pinyin-toggle input:after,
+body.dark-mode .pinyin-toggle input:after {
+  background: #f8fafc !important;
+}
+[data-theme="dark"] .pinyin-toggle input:checked,
+body.dark-mode .pinyin-toggle input:checked {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid #d1fae5;
+  color: #065f46;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.theme-toggle-btn:hover {
+  transform: scale(1.08) rotate(10deg);
+  border-color: #10b981;
+  background: #f0fdf4;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+
+.theme-toggle-btn svg {
+  width: 19px;
+  height: 19px;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+  flex-shrink: 0;
+}
+
+/* Light mode icon display: show Moon */
+.theme-toggle-btn .theme-icon-moon {
+  display: block;
+  color: #475569;
+}
+.theme-toggle-btn .theme-icon-sun {
+  display: none;
+}
+
+/* Dark mode styling for button */
+[data-theme="dark"] .theme-toggle-btn,
+body.dark-mode .theme-toggle-btn {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .theme-toggle-btn:hover,
+body.dark-mode .theme-toggle-btn:hover {
+  border-color: #fbbf24 !important;
+  background: #334155 !important;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.3) !important;
+  transform: scale(1.08) rotate(-10deg);
+}
+
+[data-theme="dark"] .theme-toggle-btn .theme-icon-moon,
+body.dark-mode .theme-toggle-btn .theme-icon-moon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle-btn .theme-icon-sun,
+body.dark-mode .theme-toggle-btn .theme-icon-sun {
+  display: block;
+  color: #fbbf24;
+}
+
+/* Profile / Login Avatar Button */
+[data-theme="dark"] .login-avatar,
+body.dark-mode .login-avatar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .login-avatar:hover,
+body.dark-mode .login-avatar:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .login-avatar-icon,
+body.dark-mode .login-avatar-icon {
+  stroke: #34d399 !important;
+}
+
+/* Account Dropdown Menu */
+[data-theme="dark"] .account-menu,
+body.dark-mode .account-menu {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .account-menu strong,
+body.dark-mode .account-menu strong {
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+}
+[data-theme="dark"] .account-menu a,
+[data-theme="dark"] .account-menu button,
+body.dark-mode .account-menu a,
+body.dark-mode .account-menu button {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .account-menu a:hover,
+[data-theme="dark"] .account-menu button:hover,
+body.dark-mode .account-menu a:hover,
+body.dark-mode .account-menu button:hover {
+  background: #334155 !important;
+  color: #34d399 !important;
+}
+
+/* ==========================================================================
+   3. QUICK ACCESS CARDS (KHÁM PHÁ BÀI HỌC)
+   ========================================================================== */
+[data-theme="dark"] .quick-heading h2 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .quick-heading p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .quick-hint {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #059669 !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .quick-card {
+  background: #1e293b;
+  border: 1.5px solid #334155;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .quick-card:hover {
+  border-color: #475569;
+  box-shadow: 0 10px 26px -4px rgba(0, 0, 0, 0.55);
+}
+[data-theme="dark"] .quick-card strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .quick-card small {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .card-thumb {
+  background: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="dark"] .card-arrow,
+[data-theme="dark"] .quick-card>b {
+  background: #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .quick-card:hover .card-arrow,
+[data-theme="dark"] .quick-card:hover>b {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Thematic Color Accents for Quick Cards in Dark Mode */
+[data-theme="dark"] .card-vocab,
+[data-theme="dark"] .quick-card[href="#vocabulary"] {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(5, 150, 105, 0.16) 100%) !important;
+  border-color: rgba(5, 150, 105, 0.35) !important;
+}
+[data-theme="dark"] .card-vocab:hover,
+[data-theme="dark"] .quick-card[href="#vocabulary"]:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 12px 28px -4px rgba(16, 185, 129, 0.25) !important;
+}
+
+[data-theme="dark"] .card-writing,
+[data-theme="dark"] .quick-card[href="#writing"] {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(217, 119, 6, 0.16) 100%) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+}
+[data-theme="dark"] .card-writing:hover,
+[data-theme="dark"] .quick-card[href="#writing"]:hover {
+  border-color: #f59e0b !important;
+  box-shadow: 0 12px 28px -4px rgba(245, 158, 11, 0.25) !important;
+}
+
+[data-theme="dark"] .card-practice,
+[data-theme="dark"] .quick-card[href="#practice"] {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(2, 132, 199, 0.16) 100%) !important;
+  border-color: rgba(2, 132, 199, 0.35) !important;
+}
+[data-theme="dark"] .card-practice:hover,
+[data-theme="dark"] .quick-card[href="#practice"]:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 12px 28px -4px rgba(56, 189, 248, 0.25) !important;
+}
+
+[data-theme="dark"] .card-mock,
+[data-theme="dark"] .quick-card[href="#mock-exam"] {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(147, 51, 234, 0.16) 100%) !important;
+  border-color: rgba(147, 51, 234, 0.35) !important;
+}
+[data-theme="dark"] .card-mock:hover,
+[data-theme="dark"] .quick-card[href="#mock-exam"]:hover {
+  border-color: #c084fc !important;
+  box-shadow: 0 12px 28px -4px rgba(168, 85, 247, 0.25) !important;
+}
+
+[data-theme="dark"] .card-materials,
+[data-theme="dark"] .quick-card[href="#materials"] {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(225, 29, 72, 0.16) 100%) !important;
+  border-color: rgba(225, 29, 72, 0.35) !important;
+}
+[data-theme="dark"] .card-materials:hover,
+[data-theme="dark"] .quick-card[href="#materials"]:hover {
+  border-color: #fb7185 !important;
+  box-shadow: 0 12px 28px -4px rgba(244, 63, 94, 0.25) !important;
+}
+
+[data-theme="dark"] .card-leaderboard,
+[data-theme="dark"] .leaderboard-card {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(202, 138, 4, 0.16) 100%) !important;
+  border-color: rgba(202, 138, 4, 0.35) !important;
+}
+[data-theme="dark"] .card-leaderboard:hover,
+[data-theme="dark"] .leaderboard-card:hover {
+  border-color: #facc15 !important;
+  box-shadow: 0 12px 28px -4px rgba(234, 179, 8, 0.25) !important;
+}
+
+[data-theme="dark"] .card-game,
+[data-theme="dark"] .game-card {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(79, 70, 229, 0.16) 100%) !important;
+  border-color: rgba(79, 70, 229, 0.35) !important;
+}
+[data-theme="dark"] .card-game:hover,
+[data-theme="dark"] .game-card:hover {
+  border-color: #818cf8 !important;
+  box-shadow: 0 12px 28px -4px rgba(99, 102, 241, 0.25) !important;
+}
+
+[data-theme="dark"] .card-battle,
+[data-theme="dark"] .battle-card {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(219, 39, 119, 0.16) 100%) !important;
+  border-color: rgba(219, 39, 119, 0.35) !important;
+}
+[data-theme="dark"] .card-battle:hover,
+[data-theme="dark"] .battle-card:hover {
+  border-color: #f43f5e !important;
+  box-shadow: 0 12px 28px -4px rgba(225, 29, 72, 0.25) !important;
+}
+
+[data-theme="dark"] .card-lulu,
+[data-theme="dark"] .lulu-card {
+  background: linear-gradient(145deg, #1e293b 0%, rgba(234, 88, 12, 0.16) 100%) !important;
+  border-color: rgba(234, 88, 12, 0.35) !important;
+}
+[data-theme="dark"] .card-lulu:hover,
+[data-theme="dark"] .lulu-card:hover {
+  border-color: #fb923c !important;
+  box-shadow: 0 12px 28px -4px rgba(249, 115, 22, 0.25) !important;
+}
+
+/* ==========================================================================
+   4. DASHBOARD PANELS (CHART & CALENDAR)
+   ========================================================================== */
+[data-theme="dark"] .panel {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="dark"] .panel:hover {
+  border-color: #475569 !important;
+  box-shadow: var(--shadow-md);
+}
+[data-theme="dark"] .panel-heading h2 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .panel-heading p {
+  color: #94a3b8 !important;
+}
+
+/* Chart */
+[data-theme="dark"] .activity-legend span {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .real-chart {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .real-chart-day span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .chart-bar-wrap {
+  background: #0f172a !important;
+}
+
+/* Calendar Panel */
+[data-theme="dark"] .calendar-arrows button {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .calendar-arrows button:hover:not(:disabled) {
+  background: #334155 !important;
+  color: #34d399 !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .calendar-week {
+  color: #64748b !important;
+}
+[data-theme="dark"] .calendar-days span {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .calendar-days span:hover:not(.muted) {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .calendar-days span.muted {
+  color: #475569 !important;
+}
+[data-theme="dark"] .calendar-days span.done {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+  border: 1.5px solid rgba(16, 185, 129, 0.4) !important;
+}
+[data-theme="dark"] .calendar-summary,
+[data-theme="dark"] .calendar-legend {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .calendar-legend i {
+  border: 1px solid #059669;
+}
+
+/* ==========================================================================
+   5. SRS (SPACED REPETITION) BANNER & MISTAKE NOTEBOOK
+   ========================================================================== */
+[data-theme="dark"] .srs-dashboard-banner {
+  background: linear-gradient(135deg, #1e293b 0%, rgba(5, 150, 105, 0.18) 100%) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="dark"] .srs-dashboard-banner.has-due {
+  background: linear-gradient(135deg, #1e293b 0%, rgba(217, 119, 6, 0.22) 100%) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
+}
+[data-theme="dark"] .srs-banner-icon {
+  background: #0f172a !important;
+  border: 1.5px solid #334155;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="dark"] .srs-banner-title-row strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .srs-banner-text p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .srs-banner-btn.secondary {
+  background: #334155 !important;
+  color: #f1f5f9 !important;
+  border: 1.5px solid #475569 !important;
+}
+[data-theme="dark"] .srs-banner-btn.secondary:hover {
+  background: #475569 !important;
+  border-color: #64748b !important;
+}
+
+/* ==========================================================================
+   6. RECENT ACTIVITY & BADGES
+   ========================================================================== */
+[data-theme="dark"] .activity-view-all-link {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .activity-view-all-link:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="dark"] .activity-filter-chip {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .activity-filter-chip:hover {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .activity-filter-chip.active {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .activity-item,
+[data-theme="dark"] .activity-row {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+}
+[data-theme="dark"] .activity-row:hover {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .activity-title {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .activity-desc {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .activity-time {
+  color: #64748b !important;
+}
+[data-theme="dark"] .badge-card,
+[data-theme="dark"] .badge-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .badge-card strong,
+[data-theme="dark"] .badge-item strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .badge-card p,
+[data-theme="dark"] .badge-item p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .badge-action-link {
+  color: #34d399 !important;
+}
+
+/* ==========================================================================
+   7. VOCABULARY & FLASHCARDS 3D
+   ========================================================================== */
+[data-theme="dark"] .page-header h1 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .page-header p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .back-link {
+  background: rgba(249, 115, 22, 0.18) !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .back-link:hover {
+  background: rgba(249, 115, 22, 0.28) !important;
+  color: #ffedd5 !important;
+}
+
+/* HSK Pills & Tabs */
+[data-theme="dark"] .vocabulary-tab,
+[data-theme="dark"] .writing-level-tab,
+[data-theme="dark"] .practice-tab {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .vocabulary-tab:hover,
+[data-theme="dark"] .writing-level-tab:hover,
+[data-theme="dark"] .practice-tab:hover {
+  border-color: #34d399 !important;
+  color: #34d399 !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .vocabulary-tab.active,
+[data-theme="dark"] .writing-level-tab.active,
+[data-theme="dark"] .practice-tab.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+}
+
+/* Vocabulary Items & List */
+[data-theme="dark"] .vocabulary-item {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .vocabulary-item:hover,
+[data-theme="dark"] .vocabulary-item:focus {
+  border-color: #059669 !important;
+  background: #243447 !important;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2) !important;
+}
+[data-theme="dark"] .vocabulary-item strong,
+[data-theme="dark"] .vocabulary-hanzi strong {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .vocabulary-pinyin {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-item span,
+[data-theme="dark"] .vocabulary-meanings {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .vocabulary-item small,
+[data-theme="dark"] .vocabulary-english {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .vocabulary-audio-btn,
+[data-theme="dark"] .audio-button,
+[data-theme="dark"] .speak-btn {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-audio-btn:hover,
+[data-theme="dark"] .audio-button:hover,
+[data-theme="dark"] .speak-btn:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* Vocabulary Pagination */
+[data-theme="dark"] .vocabulary-pagination {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="dark"] .vocabulary-pagination-info strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocab-page-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .vocab-page-btn:hover:not(:disabled) {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .vocab-page-btn.active {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* Flashcard Mode Tabs */
+[data-theme="dark"] .vocab-mode-tabs {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .vocab-mode-tab:hover {
+  background: rgba(30, 41, 59, 0.7) !important;
+}
+[data-theme="dark"] .vocab-mode-tab.active {
+  background: #1e293b !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+}
+[data-theme="dark"] .mode-tab-icon {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .vocab-mode-tab.active .mode-tab-icon {
+  background: rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="dark"] .mode-tab-text strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .vocab-mode-tab.active .mode-tab-text strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .mode-tab-text small {
+  color: #94a3b8 !important;
+}
+
+/* Flashcard 3D Stage & Toolbar */
+[data-theme="dark"] .fc-toolbar,
+[data-theme="dark"] .fc-progress-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="dark"] .fc-filter-pill {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .fc-filter-pill:hover {
+  border-color: #34d399 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .fc-filter-pill.active {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .fc-set-selector {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .fc-set-nav-btn {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .fc-set-badge {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .fc-action-chip {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .fc-action-chip:hover {
+  background: #1e293b !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .fc-action-chip.active {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #059669 !important;
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .fc-empty-state {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .fc-corner-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .fc-progress-meta {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .fc-progress-bar-track {
+  background: #0f172a !important;
+}
+
+/* 3D Flashcard Faces */
+[data-theme="dark"] .fc-card-front {
+  background: linear-gradient(160deg, #1e293b 0%, rgba(5, 150, 105, 0.2) 100%) !important;
+  border-color: #059669 !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55) !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .fc-card-back {
+  background: linear-gradient(160deg, #1e293b 0%, rgba(217, 119, 6, 0.2) 100%) !important;
+  border-color: #d97706 !important;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55) !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .fc-card-chinese {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .fc-card-pinyin {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .fc-meaning-vi {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .fc-example-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .fc-level-tag {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+[data-theme="dark"] .fc-type-tag {
+  background: rgba(2, 132, 199, 0.2) !important;
+  color: #7dd3fc !important;
+  border-color: rgba(2, 132, 199, 0.4) !important;
+}
+
+/* ==========================================================================
+   8. WRITING STUDIO (TẬP VIẾT CHỮ HÁN & MI ZI GE)
+   ========================================================================== */
+[data-theme="dark"] .writing-studio-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="dark"] .writing-header {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .writing-word-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .writing-word-pinyin {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .writing-word-meaning {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .writing-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .writing-btn:hover {
+  background: #334155 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .writing-speak-btn {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .writing-speak-btn:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .writing-chars-bar {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .writing-chars-label {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .writing-char-tab {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .writing-char-tab:hover {
+  background: #1e293b !important;
+  border-color: #34d399 !important;
+}
+[data-theme="dark"] .writing-char-tab.active {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .writing-char-tab .char-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .writing-char-tab.active .char-hanzi {
+  color: #ffffff !important;
+}
+[data-theme="dark"] .writing-char-tab .char-pinyin-small {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .writing-board-column {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .writing-mode-switcher {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+[data-theme="dark"] .mode-tab {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .mode-tab.active {
+  background: #0f172a !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .mizige-outer-frame {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+}
+[data-theme="dark"] .writing-status-bar {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .writing-detail-card,
+[data-theme="dark"] .strokes-list-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .stroke-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .stroke-item:hover {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   9. PRACTICE, TRANSLATION & SENTENCE ORDER
+   ========================================================================== */
+[data-theme="dark"] .practice-item,
+[data-theme="dark"] .mock-exam-item,
+[data-theme="dark"] .material-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .practice-item strong,
+[data-theme="dark"] .mock-exam-item strong,
+[data-theme="dark"] .material-item strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .practice-item span,
+[data-theme="dark"] .mock-exam-item span,
+[data-theme="dark"] .material-item span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .translation-level {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .translation-summary article {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .translation-summary strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .translation-lesson {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  border-left: 5px solid #059669 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .translation-lesson:hover {
+  background: #334155 !important;
+}
+[data-theme="dark"] .translation-question,
+[data-theme="dark"] .sentence-order-session {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .translation-prompt {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .translation-question input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .order-answer {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+[data-theme="dark"] .order-words button {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .order-words button:hover {
+  border-color: #10b981 !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .order-answer button {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #059669 !important;
+  color: #6ee7b7 !important;
+}
+
+/* ==========================================================================
+   10. MOCK EXAM (THI THỬ HSK)
+   ========================================================================== */
+[data-theme="dark"] .mock-cover-card,
+[data-theme="dark"] .mock-exam-container,
+[data-theme="dark"] .mock-section-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .mock-cover-header {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .mock-cover-title {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .mock-cover-sub {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .mock-cover-sec-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .sec-card-title {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .sec-card-desc {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .sec-card-step {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .mock-choice-item,
+[data-theme="dark"] .mock-question-opt {
+  background: #0f172a !important;
+  border: 1.5px solid #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .mock-choice-item:hover,
+[data-theme="dark"] .mock-question-opt:hover {
+  border-color: #10b981 !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .mock-nav-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .mock-nav-item.current {
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+}
+
+/* ==========================================================================
+   11. GAME CENTER (4 MINI-GAMES & HUBS)
+   ========================================================================== */
+[data-theme="dark"] .game-toolbar,
+[data-theme="dark"] .game-loading-state,
+[data-theme="dark"] .speed-hud,
+[data-theme="dark"] .match-hud,
+[data-theme="dark"] .catch-hud {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .game-mode-tab {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .game-mode-tab:hover {
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .game-mode-tab.active {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .game-level-select select {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #34d399 !important;
+}
+
+/* Game 1: Memory Cards */
+[data-theme="dark"] .card-back {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .card-back.hanzi {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #059669 !important;
+}
+[data-theme="dark"] .card-back.meaning {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: #d97706 !important;
+}
+[data-theme="dark"] .card-main-text {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .card-sub-text {
+  color: #34d399 !important;
+}
+
+/* Game 2: Speed Blitz */
+[data-theme="dark"] .speed-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="dark"] .speed-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .speed-pinyin {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .speed-opt-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .speed-opt-btn:hover:not(:disabled) {
+  border-color: #10b981 !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .speed-speak-btn {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+}
+
+/* Game 3: Word Match */
+[data-theme="dark"] .match-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .match-card:hover:not(.is-done) {
+  border-color: #10b981 !important;
+  background: #1e293b !important;
+}
+[data-theme="dark"] .match-card strong {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .match-card span {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .match-card.is-selected {
+  border-color: #10b981 !important;
+  background: rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Game 4: Word Fall Tap */
+[data-theme="dark"] .catch-prompt-box {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #059669 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .catch-prompt-box strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .catch-board {
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%) !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .falling-item {
+  background: #1e293b !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .falling-item .drop-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .falling-item .game-pinyin {
+  color: #34d399 !important;
+}
+
+/* Victory Modal */
+[data-theme="dark"] .victory-modal-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ==========================================================================
+   12. LEADERBOARD & LEARNER PROFILE MODAL
+   ========================================================================== */
+[data-theme="dark"] .leaderboard-loading,
+[data-theme="dark"] .leaderboard-header-bar,
+[data-theme="dark"] .leaderboard-list-card,
+[data-theme="dark"] .scoring-rules-banner {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .lb-tab {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .lb-tab:hover {
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .lb-tab.active {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .leaderboard-summary-pill {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .leaderboard-summary-pill strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .podium-name,
+[data-theme="dark"] .podium-points {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .podium-view-hint {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .lb-table-head {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .lb-row {
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .lb-row:hover,
+[data-theme="dark"] .lb-row.clickable:hover {
+  background: #334155 !important;
+}
+[data-theme="dark"] .lb-row.is-me {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-left: 4px solid #10b981 !important;
+}
+[data-theme="dark"] .lb-user-info strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .col-score strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .lb-view-arrow {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .rule-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .rule-item span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .rule-item strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .my-rank-banner {
+  background: #064e3b !important;
+  border: 1.5px solid #059669 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .learner-modal-card {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+[data-theme="dark"] .learner-stat-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   13. BATTLE 1V1 REALTIME
+   ========================================================================== */
+[data-theme="dark"] .battle-hero h1 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-hero p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .battle-mode-card,
+[data-theme="dark"] .battle-rules-strip,
+[data-theme="dark"] .battle-duel-header,
+[data-theme="dark"] .battle-question-card,
+[data-theme="dark"] .battle-matchmaking-screen,
+[data-theme="dark"] .battle-victory-screen {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-mode-card h3,
+[data-theme="dark"] .rule-col strong,
+[data-theme="dark"] .battle-q-header h2 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-mode-card p,
+[data-theme="dark"] .rule-col span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .mode-icon-wrap {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .room-input-group input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-btn-secondary {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-btn-outline {
+  border-color: #475569 !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .battle-choice-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-choice-btn strong,
+[data-theme="dark"] .battle-choice-btn.meaning-btn span {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .battle-choice-btn:hover:not(:disabled) {
+  border-color: #ef4444 !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .battle-order-answer-slot {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .battle-word-token {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .match-token-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .match-token-btn strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .match-token-btn span {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .duel-final-scorecard {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .scorecard-player .pts {
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   14. LULU PET COMPANION
+   ========================================================================== */
+[data-theme="dark"] .lulu-hero-card,
+[data-theme="dark"] .lulu-action-card,
+[data-theme="dark"] .lulu-study-panel {
+  background: #1e293b !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .lulu-name {
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .lulu-speech-bubble {
+  background: #1e293b !important;
+  border-color: #ea580c !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .lulu-speech-bubble::after {
+  border-color: #ea580c transparent !important;
+}
+[data-theme="dark"] .lulu-speech-zh {
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .lulu-speech-py {
+  color: #fb923c !important;
+}
+[data-theme="dark"] .lulu-speech-vi {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .lulu-speech-audio {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .lulu-vitals-grid {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .lulu-vital-item .vital-label {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .lulu-vital-item .vital-label strong {
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .vital-track {
+  background: #1e293b !important;
+}
+[data-theme="dark"] .lulu-pending-exp-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .lulu-pending-labels {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .lulu-pending-labels strong {
+  color: #fbbf24 !important;
+}
+[data-theme="dark"] .lulu-pending-bar {
+  background: #1e293b !important;
+}
+[data-theme="dark"] .card-head h3 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .card-head p,
+[data-theme="dark"] .card-desc {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .card-head .card-icon {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .lulu-food-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .lulu-food-btn:hover:not(:disabled) {
+  border-color: #ea580c !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .food-info strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .food-info small {
+  color: #fb923c !important;
+}
+[data-theme="dark"] .lulu-btn-secondary {
+  background: #0f172a !important;
+  border-color: rgba(249, 115, 22, 0.4) !important;
+  color: #fdba74 !important;
+}
+[data-theme="dark"] .study-head {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .study-title h3 {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .study-title p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .study-icon {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .quiz-question-row {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .quiz-zh {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .quiz-py {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .quiz-listen-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .quiz-opt-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .quiz-opt-btn:hover:not(:disabled) {
+  border-color: #10b981 !important;
+  background: #334155 !important;
+}
+[data-theme="dark"] .victory-food-drop {
+  background: #0f172a !important;
+  border-color: rgba(249, 115, 22, 0.35) !important;
+}
+[data-theme="dark"] .food-drop-icon {
+  background: #1e293b !important;
+}
+[data-theme="dark"] .food-drop-desc strong {
+  color: #fdba74 !important;
+}
+
+/* ==========================================================================
+   15. PROFILE & MASTERED VOCABULARY MODAL
+   ========================================================================= */
+[data-theme="dark"] .profile-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .profile-details h2 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .profile-stat-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .profile-stat-box.clickable:hover {
+  background: #334155 !important;
+  border-color: #60a5fa !important;
+}
+[data-theme="dark"] .mastered-vocab-card {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+[data-theme="dark"] .mastered-vocab-header {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .mastered-vocab-title-box h3 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .mastered-vocab-subtitle {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .mastered-vocab-title-box .title-icon {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .mastered-vocab-item {
+  background: #0f172a !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   16. LOGIN MODAL & FORMS
+   ========================================================================== */
+[data-theme="dark"] .login-card {
+  background: #1e293b !important;
+  border: 1.5px solid #334155 !important;
+  color: #f8fafc !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+[data-theme="dark"] .login-close {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .login-close:hover {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .login-card h2 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .login-card>p,
+[data-theme="dark"] .auth-switch {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .login-card label {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .login-card input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .login-card input:focus {
+  background: #0f172a !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="dark"] .oauth-divider::before,
+[data-theme="dark"] .oauth-divider::after {
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .google-login-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .google-login-btn:hover {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .otp-notice {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .otp-notice p {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .otp-notice strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .otp-notice small {
+  color: #a7f3d0 !important;
+}
+[data-theme="dark"] .otp-input-wrap input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   17. TOAST & MOBILE SIDEBAR
+   ========================================================================== */
+[data-theme="dark"] .toast {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1.5px solid #10b981 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .sidebar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .nav-link {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .nav-link:hover,
+[data-theme="dark"] .nav-link.active {
+  background: #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .menu-button {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .menu-button:hover {
+  background: #334155 !important;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 440px) {
+  .theme-toggle-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .theme-toggle-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+

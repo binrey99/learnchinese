@@ -8,7 +8,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="dark-theme.css" />
   <script src="js/speech_bridge.js"></script>
+  <script>
+    (function() {
+      try {
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && prefersDark)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          document.documentElement.classList.add('dark-mode');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <style>
     :root {
       --font-main: 'Plus Jakarta Sans', 'Nunito', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
@@ -22,6 +35,17 @@
         radial-gradient(at 90% 85%, rgba(255, 237, 213, 0.5) 0px, transparent 40%) !important;
       background-attachment: fixed !important;
       font-family: var(--font-main) !important;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    html[data-theme="dark"] body,
+    body.dark-mode {
+      background: #0b1120 !important;
+      background-image: 
+        radial-gradient(at 5% 5%, rgba(16, 185, 129, 0.14) 0px, transparent 45%),
+        radial-gradient(at 95% 8%, rgba(245, 158, 11, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 95%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+        radial-gradient(at 90% 85%, rgba(139, 92, 246, 0.1) 0px, transparent 40%) !important;
+      color: #f1f5f9 !important;
     }
     .main-content { background: transparent !important; }
   </style>
@@ -49,6 +73,22 @@
             <span class="pinyin-toggle-slider"></span>
             <span class="pinyin-toggle-text">Hiện Pinyin</span>
           </label>
+          <button class="theme-toggle-btn" id="themeToggleBtn" type="button" aria-label="Chuyển chế độ Giao diện Sáng / Tối" title="Chuyển chế độ Giao diện Sáng / Tối (Alt+T)">
+            <svg class="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg class="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
           <button class="login-trigger login-avatar" id="loginTrigger" aria-label="Hồ sơ học viên" title="Hồ sơ học viên">
             <svg class="login-avatar-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5.5 20c.7-3.5 2.9-5.3 6.5-5.3s5.8 1.8 6.5 5.3"></path></svg>
           </button>

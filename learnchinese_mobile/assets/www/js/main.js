@@ -7,6 +7,7 @@ import { renderDashboardProgress } from './dashboard-progress.js';
 import { initStreak } from './streak.js';
 import { renderDashboardActivityAndBadges } from './recent-activity.js';
 import { renderDashboardSrsBanner } from './srs-service.js';
+import { initTheme } from './theme.js';
 
 function initPinyinToggle() {
   const toggle = document.querySelector('#pinyinToggle');
@@ -32,6 +33,7 @@ function initDashboard() {
   try { renderDashboardSrsBanner('#dashboardSrsWidget'); } catch (err) { console.error(err); }
   try { initNavigation(); } catch (err) { console.error(err); }
   try { initPinyinToggle(); } catch (err) { console.error(err); }
+  try { initTheme({ toast: showToast }); } catch (err) { console.error(err); }
 
   // Đăng nhập / đăng xuất phải làm mới cả biểu đồ hoạt động, lịch học, hoạt động gần đây, huy hiệu và chuỗi ngày học
   try {
