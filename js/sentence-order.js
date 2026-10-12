@@ -69,27 +69,64 @@ export function initSentenceOrder({ selector = '[data-sentence-order]', toast } 
       const available = shuffle(parseWords(exercise.words)).map((word, wordIndex) => ({ word, wordIndex }));
       const selected = [];
       const draw = () => {
-        container.innerHTML = `<section class="sentence-order-session"><div class="translation-session-head"><button type="button" data-back-order>← Danh sách bài</button><span>${selectedLevel} · Bài ${lesson}</span></div><nav class="translation-question-nav" aria-label="Danh sách câu hỏi"><div><strong>Câu ${index + 1}/${exercises.length}</strong><span>Việt → Trung</span></div><section>${exercises.map((_, questionIndex) => `<button type="button" class="translation-question-number${questionIndex === index ? ' active' : ''}${answerStates.has(questionIndex) ? (answerStates.get(questionIndex) ? ' correct' : ' incorrect') : ''}" data-go-order-question="${questionIndex}">${questionIndex + 1}</button>`).join('')}</section></nav><h2>Sắp xếp câu tiếng Trung</h2><p class="translation-prompt">${escapeHtml(exercise.question_vi)}</p><p class="quiz-instruction">Kéo thả các từ theo đúng thứ tự</p><div class="order-answer" data-drop-zone="answer">${selected.length ? selected.map((item, position) => `<button type="button" draggable="true" data-selected-index="${position}">${escapeHtml(item.word)}</button>`).join('') : '<span>Kéo các từ vào đây để tạo thành câu</span>'}</div><div class="order-words" data-drop-zone="words">${available.map((item) => `<button type="button" draggable="true" data-source-index="${item.wordIndex}" ${selected.some((chosen) => chosen.wordIndex === item.wordIndex) ? 'disabled' : ''}>${escapeHtml(item.word)}</button>`).join('')}</div><button type="button" class="translation-check" data-check-order ${selected.length ? '' : 'disabled'}>Kiểm tra</button><div class="translation-feedback" data-order-feedback></div></section>`;
+        const remaining = available.filter((item) => !selected.some((chosen) => chosen.wordIndex === item.wordIndex));
+        container.innerHTML = `<section class="sentence-order-session"><div class="translation-session-head"><button type="button" data-back-order>← Danh sách bài</button><span>${selectedLevel} · Bài ${lesson}</span></div><nav class="translation-question-nav" aria-label="Danh sách câu hỏi"><div><strong>Câu ${index + 1}/${exercises.length}</strong><span>Việt → Trung</span></div><section>${exercises.map((_, questionIndex) => `<button type="button" class="translation-question-number${questionIndex === index ? ' active' : ''}${answerStates.has(questionIndex) ? (answerStates.get(questionIndex) ? ' correct' : ' incorrect') : ''}" data-go-order-question="${questionIndex}">${questionIndex + 1}</button>`).join('')}</section></nav><h2>Sắp xếp câu tiếng Trung</h2><p class="translation-prompt">${escapeHtml(exercise.question_vi)}</p><p class="quiz-instruction">Kéo thả các từ theo đúng thứ tự (hoặc bấm vào từ)</p><div class="order-answer" data-drop-zone="answer">${selected.length ? selected.map((item, position) => `<button type="button" draggable="true" data-selected-index="${position}">${escapeHtml(item.word)}</button>`).join('') : '<span class="order-placeholder">Kéo hoặc bấm các từ vào đây để tạo thành câu</span>'}</div><div class="order-words" data-drop-zone="words">${remaining.length ? remaining.map((item) => `<button type="button" draggable="true" data-source-index="${item.wordIndex}">${escapeHtml(item.word)}</button>`).join('') : '<span class="order-words-empty">Đã chọn hết các từ (bấm từ ở trên để bỏ chọn)</span>'}</div><button type="button" class="translation-check" data-check-order ${selected.length ? '' : 'disabled'}>Kiểm tra</button><div class="translation-feedback" data-order-feedback></div></section>`;
         container.querySelector('[data-back-order]').addEventListener('click', renderOverview);
         container.querySelectorAll('[data-go-order-question]').forEach((button) => button.addEventListener('click', () => { index = Number(button.dataset.goOrderQuestion); renderQuestion(); }));
         let dragging = null;
         container.querySelectorAll('[data-source-index], [data-selected-index]').forEach((button) => {
-          button.addEventListener('dragstart', (event) => { dragging = button.dataset.sourceIndex !== undefined ? { from: 'words', index: Number(button.dataset.sourceIndex) } : { from: 'answer', index: Number(button.dataset.selectedIndex) }; event.dataTransfer.effectAllowed = 'move'; button.classList.add('dragging'); });
+          button.addEventListener('dragstart', (event) => {
+            dragging = button.dataset.sourceIndex !== undefined ? { from: 'words', index: Number(button.dataset.sourceIndex) } : { from: 'answer', index: Number(button.dataset.selectedIndex) };
+            event.dataTransfer.effectAllowed = 'move';
+            button.classList.add('dragging');
+          });
           button.addEventListener('dragend', () => button.classList.remove('dragging'));
         });
         // Tap support keeps the exercise usable on touch-only phones.
-        container.querySelectorAll('[data-source-index]').forEach((button) => button.addEventListener('click', () => { const item = available.find((word) => word.wordIndex === Number(button.dataset.sourceIndex)); if (item && !selected.some((chosen) => chosen.wordIndex === item.wordIndex)) { selected.push(item); draw(); } }));
-        container.querySelectorAll('[data-selected-index]').forEach((button) => button.addEventListener('click', () => { selected.splice(Number(button.dataset.selectedIndex), 1); draw(); }));
+        container.querySelectorAll('[data-source-index]').forEach((button) => button.addEventListener('click', () => {
+          const item = available.find((word) => word.wordIndex === Number(button.dataset.sourceIndex));
+          if (item && !selected.some((chosen) => chosen.wordIndex === item.wordIndex)) {
+            selected.push(item);
+            draw();
+          }
+        }));
+        container.querySelectorAll('[data-selected-index]').forEach((button) => button.addEventListener('click', () => {
+          selected.splice(Number(button.dataset.selectedIndex), 1);
+          draw();
+        }));
         container.querySelectorAll('[data-drop-zone]').forEach((zone) => {
           zone.addEventListener('dragover', (event) => { event.preventDefault(); zone.classList.add('drag-over'); });
           zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
           zone.addEventListener('drop', (event) => {
-            event.preventDefault(); zone.classList.remove('drag-over'); if (!dragging) return;
+            event.preventDefault();
+            zone.classList.remove('drag-over');
+            if (!dragging) return;
             const destination = zone.dataset.dropZone;
-            if (dragging.from === 'words' && destination === 'answer') { const item = available.find((word) => word.wordIndex === dragging.index); if (item && !selected.some((chosen) => chosen.wordIndex === item.wordIndex)) selected.push(item); }
-            else if (dragging.from === 'answer' && destination === 'words') selected.splice(dragging.index, 1);
-            else if (dragging.from === 'answer' && destination === 'answer') { const [item] = selected.splice(dragging.index, 1); selected.push(item); }
-            dragging = null; draw();
+            if (dragging.from === 'words' && destination === 'answer') {
+              const item = available.find((word) => word.wordIndex === dragging.index);
+              if (item && !selected.some((chosen) => chosen.wordIndex === item.wordIndex)) {
+                const targetBtn = event.target.closest('[data-selected-index]');
+                if (targetBtn && targetBtn.dataset.selectedIndex !== undefined) {
+                  const targetPos = Number(targetBtn.dataset.selectedIndex);
+                  selected.splice(targetPos, 0, item);
+                } else {
+                  selected.push(item);
+                }
+              }
+            } else if (dragging.from === 'answer' && destination === 'words') {
+              selected.splice(dragging.index, 1);
+            } else if (dragging.from === 'answer' && destination === 'answer') {
+              const targetBtn = event.target.closest('[data-selected-index]');
+              const [item] = selected.splice(dragging.index, 1);
+              if (targetBtn && targetBtn.dataset.selectedIndex !== undefined) {
+                const targetPos = Number(targetBtn.dataset.selectedIndex);
+                selected.splice(targetPos, 0, item);
+              } else {
+                selected.push(item);
+              }
+            }
+            dragging = null;
+            draw();
           });
         });
         container.querySelector('[data-check-order]').addEventListener('click', async () => {

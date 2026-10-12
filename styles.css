@@ -3122,34 +3122,101 @@ html.show-pinyin .quiz-feedback-pinyin {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
   gap: 10px;
-  padding: 16px;
+  padding: 18px;
   margin: 16px 0;
   border-radius: var(--radius-md);
+  min-height: 76px;
+  transition: all 0.2s ease;
 }
 
 .order-answer {
-  min-height: 72px;
   border: 2px dashed #86efac;
   background: #f0fdf4;
 }
 
+.order-words {
+  border: 1.5px dashed var(--line);
+  background: #f8fafc;
+}
+
+.order-answer.drag-over {
+  border-color: #10b981;
+  background: #ecfdf5;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.order-words.drag-over {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.order-words-empty,
+.order-placeholder {
+  font-size: 13.5px;
+  color: var(--muted);
+  font-weight: 600;
+  user-select: none;
+}
+
 .order-answer button, .order-words button {
   border: 1.5px solid var(--line);
+  border-bottom: 3.5px solid #cbd5e1;
   border-radius: var(--radius-sm);
-  padding: 10px 16px;
+  padding: 10px 18px;
   background: #ffffff;
   color: var(--ink);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 800;
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
-  transition: all 0.15s ease;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'Noto Sans SC', 'Noto Sans', sans-serif;
+}
+
+.order-words button:hover {
+  border-color: #10b981;
+  border-bottom-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.15);
+}
+
+.order-words button:active {
+  transform: translateY(2px);
+  border-bottom-width: 1.5px;
 }
 
 .order-answer button {
-  background: #dcfce7;
+  background: #ecfdf5;
   border-color: #86efac;
-  color: #15803d;
+  border-bottom-color: #10b981;
+  color: #065f46;
+}
+
+.order-answer button:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  border-bottom-color: #ef4444;
+  color: #991b1b;
+  transform: translateY(-2px);
+}
+
+.order-answer button:active {
+  transform: translateY(2px);
+  border-bottom-width: 1.5px;
+}
+
+.order-answer button.dragging,
+.order-words button.dragging {
+  opacity: 0.35;
+  transform: scale(0.95);
+}
+
+.order-words button[disabled],
+.order-words button.is-used {
+  display: none !important;
 }
 
 /* ==========================================================================

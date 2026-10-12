@@ -1564,19 +1564,44 @@ body.dark-mode .mistake-source-chip {
   background: rgba(16, 185, 129, 0.12) !important;
   border-color: rgba(16, 185, 129, 0.4) !important;
 }
-[data-theme="dark"] .order-words button {
+[data-theme="dark"] .order-words {
   background: #0f172a !important;
   border-color: #334155 !important;
+}
+[data-theme="dark"] .order-answer.drag-over {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .order-words.drag-over {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+}
+[data-theme="dark"] .order-words-empty,
+[data-theme="dark"] .order-placeholder {
+  color: #64748b !important;
+}
+[data-theme="dark"] .order-words button {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  border-bottom-color: #0f172a !important;
   color: #f8fafc !important;
 }
 [data-theme="dark"] .order-words button:hover {
   border-color: #10b981 !important;
+  border-bottom-color: #059669 !important;
   background: #334155 !important;
 }
 [data-theme="dark"] .order-answer button {
   background: rgba(16, 185, 129, 0.25) !important;
   border-color: #059669 !important;
+  border-bottom-color: #047857 !important;
   color: #6ee7b7 !important;
+}
+[data-theme="dark"] .order-answer button:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: #dc2626 !important;
+  border-bottom-color: #b91c1c !important;
+  color: #fca5a5 !important;
 }
 
 /* ==========================================================================
