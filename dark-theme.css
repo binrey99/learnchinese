@@ -1367,6 +1367,163 @@ body.dark-mode .mistake-source-chip {
 [data-theme="dark"] .material-item span {
   color: #94a3b8 !important;
 }
+
+/* Mastered Vocabulary Quiz */
+[data-theme="dark"] .quiz-back {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .quiz-back:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .quiz-progress-badge,
+[data-theme="dark"] .quiz-progress {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.25) 100%) !important;
+  border-color: #059669 !important;
+  color: #6ee7b7 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .quiz-progress-badge strong {
+  color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .quiz-progress-bar-wrap {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .quiz-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .quiz-badge {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #6ee7b7 !important;
+}
+
+[data-theme="dark"] .quiz-prompt {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quiz-instruction {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .quiz-mastery-tag {
+  background: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #fcd34d !important;
+}
+
+[data-theme="dark"] .quiz-option-btn,
+[data-theme="dark"] .quiz-options button {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  border-bottom: 4px solid #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .quiz-option-btn:hover:not(:disabled),
+[data-theme="dark"] .quiz-options button:hover:not(:disabled) {
+  border-color: #10b981 !important;
+  border-bottom-color: #059669 !important;
+  background: #1e293b !important;
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.18) !important;
+}
+
+[data-theme="dark"] .quiz-option-pinyin {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .quiz-option-hanzi,
+[data-theme="dark"] .quiz-options button strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .quiz-option-btn.correct,
+[data-theme="dark"] .quiz-options button.correct {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #10b981 !important;
+  border-bottom-color: #059669 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35) !important;
+}
+
+[data-theme="dark"] .quiz-option-btn.correct .quiz-option-hanzi,
+[data-theme="dark"] .quiz-options button.correct strong {
+  color: #a7f3d0 !important;
+}
+
+[data-theme="dark"] .quiz-option-btn.incorrect,
+[data-theme="dark"] .quiz-options button.incorrect {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: #ef4444 !important;
+  border-bottom-color: #b91c1c !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+}
+
+[data-theme="dark"] .quiz-option-btn.incorrect .quiz-option-hanzi,
+[data-theme="dark"] .quiz-options button.incorrect strong {
+  color: #fca5a5 !important;
+}
+
+[data-theme="dark"] .quiz-feedback.feedback-correct {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.3) 100%) !important;
+  border-color: #059669 !important;
+  color: #ecfdf5 !important;
+}
+
+[data-theme="dark"] .quiz-feedback.feedback-wrong {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(185, 28, 28, 0.3) 100%) !important;
+  border-color: #b91c1c !important;
+  color: #fee2e2 !important;
+}
+
+[data-theme="dark"] .mastered-quiz-empty {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme="dark"] .mastered-quiz-empty h2 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mastered-quiz-empty p,
+[data-theme="dark"] .quiz-result-score {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .quiz-result-score strong {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .quiz-btn-secondary {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .quiz-btn-secondary:hover {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .quiz-loading-spinner {
+  border-color: #334155 !important;
+  border-top-color: #10b981 !important;
+}
+
 [data-theme="dark"] .translation-level {
   background: #1e293b !important;
   border-color: #334155 !important;

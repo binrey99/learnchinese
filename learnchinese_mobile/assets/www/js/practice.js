@@ -60,18 +60,38 @@ async function recordCorrectAnswer(userId, word) {
 }
 
 async function renderMasteredVocabularyQuiz(container, onStart) {
-  container.innerHTML = '<p class="practice-loading">Đang tải các từ đã đánh dấu...</p>';
+  container.innerHTML = `
+    <div class="mastered-quiz-empty">
+      <div class="quiz-loading-spinner"></div>
+      <p class="practice-loading">Đang tải các từ đã đánh dấu...</p>
+    </div>
+  `;
   let quiz;
   try {
     quiz = await loadMasteredWords();
   } catch (error) {
     console.error('Unable to load mastered vocabulary:', error);
-    container.innerHTML = '<p class="practice-loading">Không thể tải dữ liệu từ đã thuộc. Hãy kiểm tra bảng vocabulary_mastery trên Supabase.</p>';
+    container.innerHTML = `
+      <div class="mastered-quiz-empty">
+        <div class="quiz-empty-icon">⚠️</div>
+        <h2>Không thể tải dữ liệu</h2>
+        <p>Đã xảy ra lỗi khi tải từ đã thuộc. Hãy kiểm tra kết nối và thử lại nhé.</p>
+        <button type="button" class="quiz-btn-primary" data-back-practice>← Quay lại bài luyện tập</button>
+      </div>
+    `;
+    container.querySelector('[data-back-practice]').addEventListener('click', () => renderPracticeList(container, onStart));
     return;
   }
 
   if (!quiz.words.length) {
-    container.innerHTML = `<div class="mastered-quiz-empty"><h2>Kiểm tra từ đã thuộc</h2><p>${quiz.reason}</p><button type="button" data-back-practice>← Quay lại bài luyện tập</button></div>`;
+    container.innerHTML = `
+      <div class="mastered-quiz-empty">
+        <div class="quiz-empty-icon">⭐</div>
+        <h2>Kiểm tra từ đã thuộc</h2>
+        <p>${escapeHtml(quiz.reason)}</p>
+        <button type="button" class="quiz-btn-primary" data-back-practice>← Quay lại bài luyện tập</button>
+      </div>
+    `;
     container.querySelector('[data-back-practice]').addEventListener('click', () => renderPracticeList(container, onStart));
     return;
   }
@@ -79,12 +99,54 @@ async function renderMasteredVocabularyQuiz(container, onStart) {
   let index = 0;
   let score = 0;
   const { data: { user } } = await supabase.auth.getUser();
+
   const renderQuestion = () => {
     const word = quiz.words[index];
     const distractors = shuffle(quiz.candidates.filter((item) => String(item.id) !== String(word.id))).slice(0, 3);
     const options = shuffle([word, ...distractors]);
-    container.innerHTML = `<section class="mastered-quiz"><button type="button" class="quiz-back" data-back-practice>← Quay lại</button><p class="quiz-progress">Câu ${index + 1}/${quiz.words.length} · Đúng: ${score}</p><h2>Nghĩa tiếng Việt</h2><p class="quiz-prompt">${escapeHtml(word.vietnamese_meaning)}</p><p class="quiz-instruction">Chọn từ tiếng Trung đúng · ${word.correctAnswers}/5 lần</p><div class="quiz-options">${options.map((option) => `<button type="button" data-option-id="${option.id}"><span class="quiz-option-pinyin">${escapeHtml(pinyin(option.vocab, { toneType: 'symbol' }))}</span><strong>${escapeHtml(option.vocab)}</strong></button>`).join('')}</div><p class="quiz-feedback" aria-live="polite"></p></section>`;
+    const progressPercent = Math.round((index / quiz.words.length) * 100);
+
+    container.innerHTML = `
+      <section class="mastered-quiz">
+        <div class="quiz-header">
+          <button type="button" class="quiz-back" data-back-practice>
+            <span class="quiz-back-icon">←</span> Quay lại
+          </button>
+          <div class="quiz-progress-badge">
+            <span class="quiz-step-count">Câu <strong>${index + 1}</strong>/${quiz.words.length}</span>
+            <span class="quiz-divider">·</span>
+            <span class="quiz-score-count">Đúng: <strong>${score}</strong></span>
+          </div>
+        </div>
+
+        <div class="quiz-progress-bar-wrap">
+          <div class="quiz-progress-bar" style="width: ${progressPercent}%"></div>
+        </div>
+
+        <div class="quiz-card">
+          <span class="quiz-badge">Nghĩa tiếng Việt</span>
+          <h2 class="quiz-prompt">${escapeHtml(word.vietnamese_meaning)}</h2>
+          <div class="quiz-instruction">
+            <span>Chọn từ tiếng Trung đúng</span>
+            <span class="quiz-mastery-tag">Đã thuộc ${word.correctAnswers}/5 lần</span>
+          </div>
+
+          <div class="quiz-options">
+            ${options.map((option) => `
+              <button type="button" class="quiz-option-btn" data-option-id="${option.id}">
+                <span class="quiz-option-pinyin">${escapeHtml(pinyin(option.vocab, { toneType: 'symbol' }))}</span>
+                <strong class="quiz-option-hanzi">${escapeHtml(option.vocab)}</strong>
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="quiz-feedback" aria-live="polite"></div>
+        </div>
+      </section>
+    `;
+
     container.querySelector('[data-back-practice]').addEventListener('click', () => renderPracticeList(container, onStart));
+    
     container.querySelectorAll('[data-option-id]').forEach((button) => button.addEventListener('click', () => {
       const correct = String(button.dataset.optionId) === String(word.id);
       container.querySelectorAll('[data-option-id]').forEach((item) => {
@@ -92,20 +154,56 @@ async function renderMasteredVocabularyQuiz(container, onStart) {
         if (String(item.dataset.optionId) === String(word.id)) item.classList.add('correct');
       });
       if (!correct) button.classList.add('incorrect'); else score += 1;
+
+      // Update progress bar to include this answered question
+      const pBar = container.querySelector('.quiz-progress-bar');
+      if (pBar) pBar.style.width = `${Math.round(((index + 1) / quiz.words.length) * 100)}%`;
+
       const feedback = container.querySelector('.quiz-feedback');
+      feedback.className = `quiz-feedback active ${correct ? 'feedback-correct' : 'feedback-wrong'}`;
+
       if (correct && user) {
         awardLuluExp(10, { source: 'Kiểm tra từ đã thuộc' });
         recordCorrectAnswer(user.id, word).then((count) => {
-          feedback.firstChild.textContent = count === 5 ? 'Đã chinh phục từ này! 🏆 ' : `Chính xác! ${count}/5 ✓ `;
+          const statusText = feedback.querySelector('.feedback-title');
+          if (statusText) {
+            statusText.textContent = count === 5 ? 'Đã chinh phục từ này! 🏆' : `Chính xác! ${count}/5 ✓`;
+          }
         }).catch((error) => console.warn('Unable to save correct answer:', error.message));
       }
-      feedback.innerHTML = `${correct ? 'Chính xác! ✓ ' : `Đáp án đúng: <b>${escapeHtml(word.vocab)}</b>`}<button type="button" data-next-quiz>${index === quiz.words.length - 1 ? 'Xem kết quả' : 'Câu tiếp theo →'}</button>`;
+
+      feedback.innerHTML = `
+        <div class="feedback-info">
+          <div class="feedback-icon">${correct ? '🎉' : '💡'}</div>
+          <div class="feedback-text">
+            <span class="feedback-title">${correct ? 'Chính xác! Tuyệt vời!' : 'Chưa chính xác!'}</span>
+            ${!correct ? `<span class="feedback-answer">Đáp án đúng: <b>${escapeHtml(word.vocab)}</b> (${escapeHtml(pinyin(word.vocab, { toneType: 'symbol' }))})</span>` : ''}
+          </div>
+        </div>
+        <button type="button" class="quiz-next-btn" data-next-quiz>
+          ${index === quiz.words.length - 1 ? 'Xem kết quả' : 'Câu tiếp theo →'}
+        </button>
+      `;
+
       feedback.querySelector('[data-next-quiz]').addEventListener('click', () => {
         if (index === quiz.words.length - 1) {
-          container.innerHTML = `<div class="mastered-quiz-empty"><h2>Hoàn thành!</h2><p>Bạn trả lời đúng ${score}/${quiz.words.length} từ đã đánh dấu.</p><button type="button" data-restart-quiz>Làm lại</button><button type="button" data-back-practice>Quay lại bài luyện tập</button></div>`;
+          container.innerHTML = `
+            <div class="mastered-quiz-empty mastered-quiz-result">
+              <div class="quiz-result-icon">${score === quiz.words.length ? '🌟' : (score >= Math.ceil(quiz.words.length / 2) ? '🎉' : '💪')}</div>
+              <h2>${score === quiz.words.length ? 'Tuyệt đỉnh!' : 'Hoàn thành bài kiểm tra!'}</h2>
+              <p class="quiz-result-score">Bạn đã trả lời đúng <strong>${score}</strong> / <strong>${quiz.words.length}</strong> từ đã đánh dấu.</p>
+              <div class="quiz-result-actions">
+                <button type="button" class="quiz-btn-primary" data-restart-quiz>🔄 Làm lại</button>
+                <button type="button" class="quiz-btn-secondary" data-back-practice>Quay lại bài luyện tập</button>
+              </div>
+            </div>
+          `;
           container.querySelector('[data-restart-quiz]').addEventListener('click', () => { index = 0; score = 0; renderQuestion(); });
           container.querySelector('[data-back-practice]').addEventListener('click', () => renderPracticeList(container, onStart));
-        } else { index += 1; renderQuestion(); }
+        } else {
+          index += 1;
+          renderQuestion();
+        }
       });
     }));
   };
