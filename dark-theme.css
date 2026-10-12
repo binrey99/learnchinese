@@ -669,34 +669,233 @@ body.dark-mode .account-menu button:hover {
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35) !important;
 }
 
+/* Vocabulary Search Bar */
+[data-theme="dark"] .vocabulary-search-box,
+body.dark-mode .vocabulary-search-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+[data-theme="dark"] .vocabulary-search-box:focus-within,
+body.dark-mode .vocabulary-search-box:focus-within {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="dark"] .vocabulary-search-input,
+body.dark-mode .vocabulary-search-input {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .vocabulary-search-input::placeholder,
+body.dark-mode .vocabulary-search-input::placeholder {
+  color: #64748b !important;
+}
+[data-theme="dark"] .vocabulary-search-icon,
+body.dark-mode .vocabulary-search-icon {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-search-clear,
+body.dark-mode .vocabulary-search-clear {
+  background: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .vocabulary-search-clear:hover,
+body.dark-mode .vocabulary-search-clear:hover {
+  background: #475569 !important;
+  color: #ffffff !important;
+}
+
 /* Vocabulary Items & List */
-[data-theme="dark"] .vocabulary-item {
+[data-theme="dark"] .vocabulary-item,
+body.dark-mode .vocabulary-item {
   background: #1e293b !important;
   border: 1.5px solid #334155 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
   color: #cbd5e1 !important;
 }
 [data-theme="dark"] .vocabulary-item:hover,
-[data-theme="dark"] .vocabulary-item:focus {
+[data-theme="dark"] .vocabulary-item:focus,
+body.dark-mode .vocabulary-item:hover,
+body.dark-mode .vocabulary-item:focus {
   border-color: #059669 !important;
   background: #243447 !important;
   box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2) !important;
 }
 [data-theme="dark"] .vocabulary-item strong,
-[data-theme="dark"] .vocabulary-hanzi strong {
+[data-theme="dark"] .vocabulary-hanzi strong,
+body.dark-mode .vocabulary-item strong,
+body.dark-mode .vocabulary-hanzi strong {
   color: #6ee7b7 !important;
 }
-[data-theme="dark"] .vocabulary-pinyin {
+[data-theme="dark"] .vocabulary-pinyin,
+body.dark-mode .vocabulary-pinyin {
   color: #34d399 !important;
 }
 [data-theme="dark"] .vocabulary-item span,
-[data-theme="dark"] .vocabulary-meanings {
+[data-theme="dark"] .vocabulary-meanings,
+[data-theme="dark"] .vocabulary-vietnamese,
+body.dark-mode .vocabulary-item span,
+body.dark-mode .vocabulary-meanings,
+body.dark-mode .vocabulary-vietnamese {
   color: #f1f5f9 !important;
 }
 [data-theme="dark"] .vocabulary-item small,
-[data-theme="dark"] .vocabulary-english {
+[data-theme="dark"] .vocabulary-english,
+body.dark-mode .vocabulary-item small,
+body.dark-mode .vocabulary-english {
   color: #94a3b8 !important;
 }
+[data-theme="dark"] .vocabulary-tag,
+body.dark-mode .vocabulary-tag {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Vocabulary Example Box (Khung Ví dụ câu) - High contrast & readable in Dark Mode */
+[data-theme="dark"] .vocabulary-component,
+body.dark-mode .vocabulary-component {
+  background: #0f172a !important;
+  border: 1px dashed #334155 !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+[data-theme="dark"] .vocabulary-component:hover,
+body.dark-mode .vocabulary-component:hover {
+  background: #142236 !important;
+  border-color: #10b981 !important;
+  border-style: solid !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.18) !important;
+}
+[data-theme="dark"] .vocabulary-component.is-speaking,
+body.dark-mode .vocabulary-component.is-speaking {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: #059669 !important;
+  border-style: solid !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
+}
+[data-theme="dark"] .vocabulary-component span,
+body.dark-mode .vocabulary-component span {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .vocabulary-component-label,
+body.dark-mode .vocabulary-component-label {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-component-label::after,
+body.dark-mode .vocabulary-component-label::after {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #6ee7b7 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .vocabulary-component:hover .vocabulary-component-label::after,
+body.dark-mode .vocabulary-component:hover .vocabulary-component-label::after {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* Vocabulary Action Buttons (Pin SRS, Speak, Mastered Star) */
+[data-theme="dark"] .vocabulary-row-srs,
+body.dark-mode .vocabulary-row-srs {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .vocabulary-row-srs:hover,
+body.dark-mode .vocabulary-row-srs:hover {
+  background: #334155 !important;
+  border-color: #f59e0b !important;
+}
+[data-theme="dark"] .vocabulary-row-srs.is-pinned,
+body.dark-mode .vocabulary-row-srs.is-pinned {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: #f59e0b !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25) !important;
+}
+
+[data-theme="dark"] .vocabulary-row-speak,
+body.dark-mode .vocabulary-row-speak {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-row-speak:hover,
+body.dark-mode .vocabulary-row-speak:hover {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
+}
+
+[data-theme="dark"] .vocabulary-row-mastered,
+body.dark-mode .vocabulary-row-mastered {
+  background: #0f172a !important;
+  border-color: #475569 !important;
+  color: #fbbf24 !important;
+}
+[data-theme="dark"] .vocabulary-row-mastered:hover,
+[data-theme="dark"] .vocabulary-row-mastered.is-mastered,
+body.dark-mode .vocabulary-row-mastered:hover,
+body.dark-mode .vocabulary-row-mastered.is-mastered {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  border-color: #d97706 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(217, 119, 6, 0.4) !important;
+}
+
+/* Vocabulary Detail Modal */
+[data-theme="dark"] .vocabulary-detail-card,
+body.dark-mode .vocabulary-detail-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .vocabulary-detail-header h2,
+body.dark-mode .vocabulary-detail-header h2 {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .vocabulary-detail-close,
+body.dark-mode .vocabulary-detail-close {
+  background: #0f172a !important;
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .vocabulary-detail-close:hover,
+body.dark-mode .vocabulary-detail-close:hover {
+  background: #334155 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .vocabulary-speak,
+body.dark-mode .vocabulary-speak {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-speak:hover,
+body.dark-mode .vocabulary-speak:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .vocabulary-detail-card th,
+body.dark-mode .vocabulary-detail-card th {
+  color: #94a3b8 !important;
+  border-top-color: #334155 !important;
+}
+[data-theme="dark"] .vocabulary-detail-card td,
+body.dark-mode .vocabulary-detail-card td {
+  color: #f1f5f9 !important;
+  border-top-color: #334155 !important;
+}
+[data-theme="dark"] .vocabulary-example-speak-btn,
+body.dark-mode .vocabulary-example-speak-btn {
+  background: rgba(16, 185, 129, 0.18) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .vocabulary-example-speak-btn:hover,
+body.dark-mode .vocabulary-example-speak-btn:hover {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
 [data-theme="dark"] .vocabulary-audio-btn,
 [data-theme="dark"] .audio-button,
 [data-theme="dark"] .speak-btn {
@@ -829,42 +1028,215 @@ body.dark-mode .account-menu button:hover {
   background: #0f172a !important;
 }
 
-/* 3D Flashcard Faces */
-[data-theme="dark"] .fc-card-front {
+/* 3D Flashcard Faces & Content */
+[data-theme="dark"] .fc-card-front,
+body.dark-mode .fc-card-front {
   background: linear-gradient(160deg, #1e293b 0%, rgba(5, 150, 105, 0.2) 100%) !important;
   border-color: #059669 !important;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55) !important;
   color: #f1f5f9 !important;
 }
-[data-theme="dark"] .fc-card-back {
+[data-theme="dark"] .fc-card-back,
+body.dark-mode .fc-card-back {
   background: linear-gradient(160deg, #1e293b 0%, rgba(217, 119, 6, 0.2) 100%) !important;
   border-color: #d97706 !important;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55) !important;
   color: #f1f5f9 !important;
 }
-[data-theme="dark"] .fc-card-chinese {
-  color: #6ee7b7 !important;
-}
-[data-theme="dark"] .fc-card-pinyin {
-  color: #34d399 !important;
-}
-[data-theme="dark"] .fc-meaning-vi {
+[data-theme="dark"] .fc-front-hanzi,
+[data-theme="dark"] .fc-back-hanzi,
+body.dark-mode .fc-front-hanzi,
+body.dark-mode .fc-back-hanzi {
   color: #f8fafc !important;
 }
-[data-theme="dark"] .fc-example-box {
-  background: #0f172a !important;
-  border-color: #334155 !important;
+[data-theme="dark"] .fc-card-chinese,
+body.dark-mode .fc-card-chinese {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .fc-card-pinyin,
+[data-theme="dark"] .fc-front-pinyin,
+[data-theme="dark"] .fc-back-pinyin,
+body.dark-mode .fc-card-pinyin,
+body.dark-mode .fc-front-pinyin,
+body.dark-mode .fc-back-pinyin {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .fc-meaning-card,
+body.dark-mode .fc-meaning-card {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+[data-theme="dark"] .fc-meaning-vi,
+body.dark-mode .fc-meaning-vi {
+  color: #fbbf24 !important;
+}
+[data-theme="dark"] .fc-meaning-en,
+body.dark-mode .fc-meaning-en {
   color: #cbd5e1 !important;
 }
-[data-theme="dark"] .fc-level-tag {
+[data-theme="dark"] .fc-example-card,
+[data-theme="dark"] .fc-example-box,
+body.dark-mode .fc-example-card,
+body.dark-mode .fc-example-box {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .fc-example-content,
+body.dark-mode .fc-example-content {
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .fc-example-audio-btn,
+body.dark-mode .fc-example-audio-btn {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .fc-flip-guide,
+body.dark-mode .fc-flip-guide {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .fc-level-tag,
+body.dark-mode .fc-level-tag {
   background: rgba(16, 185, 129, 0.2) !important;
   color: #6ee7b7 !important;
   border-color: rgba(16, 185, 129, 0.4) !important;
 }
-[data-theme="dark"] .fc-type-tag {
+[data-theme="dark"] .fc-type-tag,
+body.dark-mode .fc-type-tag {
   background: rgba(2, 132, 199, 0.2) !important;
   color: #7dd3fc !important;
   border-color: rgba(2, 132, 199, 0.4) !important;
+}
+
+/* Flashcard Main Controls & Overview Deck */
+[data-theme="dark"] .fc-ctrl-btn,
+body.dark-mode .fc-ctrl-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .fc-ctrl-btn:hover,
+body.dark-mode .fc-ctrl-btn:hover {
+  background: #1e293b !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .fc-deck-overview,
+body.dark-mode .fc-deck-overview {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .fc-deck-overview-head h4,
+body.dark-mode .fc-deck-overview-head h4 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .fc-mini-item,
+body.dark-mode .fc-mini-item {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .fc-mini-hanzi,
+body.dark-mode .fc-mini-hanzi {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .fc-mini-num,
+body.dark-mode .fc-mini-num {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .fc-mini-item:hover,
+body.dark-mode .fc-mini-item:hover {
+  background: #1e293b !important;
+  border-color: #10b981 !important;
+}
+
+/* Quick SRS Rating Bar & Workspace */
+[data-theme="dark"] .fc-srs-quick-bar,
+body.dark-mode .fc-srs-quick-bar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .fc-srs-bar-label,
+body.dark-mode .fc-srs-bar-label {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .srs-stat-pill,
+body.dark-mode .srs-stat-pill {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .srs-stat-pill strong,
+body.dark-mode .srs-stat-pill strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .srs-stat-pill small,
+body.dark-mode .srs-stat-pill small {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .srs-stage-card,
+body.dark-mode .srs-stage-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .srs-card-main,
+body.dark-mode .srs-card-main {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .srs-card-hanzi,
+body.dark-mode .srs-card-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .srs-answer-box,
+body.dark-mode .srs-answer-box {
+  background: #0f172a !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+[data-theme="dark"] .srs-meaning-block h3,
+body.dark-mode .srs-meaning-block h3 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .srs-english,
+body.dark-mode .srs-english {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .srs-example-block,
+body.dark-mode .srs-example-block {
+  color: #e2e8f0 !important;
+  border-top-color: #334155 !important;
+}
+[data-theme="dark"] .srs-quiz-opt,
+body.dark-mode .srs-quiz-opt {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .srs-quiz-opt:hover:not(:disabled),
+body.dark-mode .srs-quiz-opt:hover:not(:disabled) {
+  background: #1e293b !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .mistake-item-card,
+body.dark-mode .mistake-item-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .mistake-hanzi,
+body.dark-mode .mistake-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .mistake-meaning-row strong,
+body.dark-mode .mistake-meaning-row strong {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .mistake-meaning-row small,
+body.dark-mode .mistake-meaning-row small {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .mistake-source-chip,
+body.dark-mode .mistake-source-chip {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
 }
 
 /* ==========================================================================
