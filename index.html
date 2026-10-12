@@ -19,6 +19,10 @@
           document.documentElement.setAttribute('data-theme', 'dark');
           document.documentElement.classList.add('dark-mode');
         }
+        var savedPinyin = localStorage.getItem('showPinyin');
+        if (savedPinyin === 'true') {
+          document.documentElement.classList.add('show-pinyin');
+        }
       } catch (e) {}
     })();
   </script>

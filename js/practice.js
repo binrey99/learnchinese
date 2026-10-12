@@ -177,7 +177,7 @@ async function renderMasteredVocabularyQuiz(container, onStart) {
           <div class="feedback-icon">${correct ? '🎉' : '💡'}</div>
           <div class="feedback-text">
             <span class="feedback-title">${correct ? 'Chính xác! Tuyệt vời!' : 'Chưa chính xác!'}</span>
-            ${!correct ? `<span class="feedback-answer">Đáp án đúng: <b>${escapeHtml(word.vocab)}</b> (${escapeHtml(pinyin(word.vocab, { toneType: 'symbol' }))})</span>` : ''}
+            ${!correct ? `<span class="feedback-answer">Đáp án đúng: <b>${escapeHtml(word.vocab)}</b> <span class="quiz-feedback-pinyin">(${escapeHtml(pinyin(word.vocab, { toneType: 'symbol' }))})</span></span>` : ''}
           </div>
         </div>
         <button type="button" class="quiz-next-btn" data-next-quiz>

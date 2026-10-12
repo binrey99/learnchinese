@@ -16,11 +16,13 @@ function initPinyinToggle() {
   const isShow = localStorage.getItem('showPinyin') === 'true';
   toggle.checked = isShow;
   document.body.classList.toggle('show-pinyin', isShow);
+  document.documentElement.classList.toggle('show-pinyin', isShow);
 
   toggle.addEventListener('change', () => {
     const checked = toggle.checked;
     localStorage.setItem('showPinyin', String(checked));
     document.body.classList.toggle('show-pinyin', checked);
+    document.documentElement.classList.toggle('show-pinyin', checked);
     window.dispatchEvent(new CustomEvent('pinyin-toggle-change', { detail: { showPinyin: checked } }));
   });
 }

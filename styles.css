@@ -2665,13 +2665,27 @@ body.show-pinyin .vocabulary-detail-pinyin {
 }
 
 .quiz-option-pinyin {
-  display: block;
+  display: none !important;
   font-size: 13.5px;
   font-weight: 700;
   color: #059669;
   letter-spacing: 0.3px;
   line-height: 1.2;
   margin-bottom: 4px;
+}
+
+body.show-pinyin .quiz-option-pinyin,
+html.show-pinyin .quiz-option-pinyin {
+  display: block !important;
+}
+
+.quiz-feedback-pinyin {
+  display: none !important;
+}
+
+body.show-pinyin .quiz-feedback-pinyin,
+html.show-pinyin .quiz-feedback-pinyin {
+  display: inline !important;
 }
 
 .quiz-option-hanzi,
