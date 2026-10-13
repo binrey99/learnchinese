@@ -3611,6 +3611,366 @@ body.show-pinyin .speed-pinyin{display:block!important}
 }
 
 /* ==========================================
+   GAME 5: BẮN TỪ VỰNG (BUBBLE / EGG SHOOTER)
+   ========================================== */
+.shooter-game-panel {
+  max-width: 680px;
+  margin: 0 auto;
+  user-select: none;
+}
+
+.shooter-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #f7faf8;
+  border: 1px solid #e6eee8;
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+}
+
+.shooter-next-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shooter-next-pill {
+  display: inline-block;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shooter-board {
+  position: relative;
+  width: 100%;
+  height: 520px;
+  background: radial-gradient(circle at 50% 15%, #ffffff 0%, #f0fdf4 65%, #dcfce7 100%);
+  border: 2px solid #a7f3d0;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: crosshair;
+  user-select: none;
+  touch-action: none;
+  box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.15);
+}
+
+.shooter-board.board-shake {
+  animation: shooter-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shooter-shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(3px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+.shooter-danger-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-top: 2px dashed #f87171;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.shooter-danger-line span {
+  font-size: 10px;
+  font-weight: 800;
+  color: #ef4444;
+  background: #fef2f2;
+  padding: 1px 8px;
+  border-radius: 9999px;
+  border: 1px solid #fca5a5;
+  transform: translateY(-50%);
+  letter-spacing: 1px;
+}
+
+.shooter-danger-line.pulse-danger {
+  border-top-color: #dc2626;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+  animation: danger-pulse 0.4s ease 2;
+}
+
+@keyframes danger-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.shooter-blocks-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.shooter-block {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1), inset 0 2px 4px rgba(255, 255, 255, 0.8), inset 0 -3px 4px rgba(0, 0, 0, 0.08);
+  border: 2.5px solid #10b981;
+  transition: top 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s ease;
+  user-select: none;
+}
+
+.shooter-block .block-hanzi {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  font-family: 'Noto Sans SC', 'Noto Sans', sans-serif;
+}
+
+.shooter-block .block-pinyin {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.shooter-block.color-0 {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #ecfdf5 60%, #a7f3d0 100%);
+  border-color: #10b981;
+  color: #065f46;
+}
+.shooter-block.color-1 {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #fff7ed 60%, #fed7aa 100%);
+  border-color: #f97316;
+  color: #9a3412;
+}
+.shooter-block.color-2 {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #eff6ff 60%, #bfdbfe 100%);
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+.shooter-block.color-3 {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #fdf4ff 60%, #f5d0fe 100%);
+  border-color: #d946ef;
+  color: #86198f;
+}
+.shooter-block.color-4 {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #fefce8 60%, #fef08a 100%);
+  border-color: #eab308;
+  color: #854d0e;
+}
+.shooter-block.color-5 {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #ffe4e6 60%, #fecdd3 100%);
+  border-color: #f43f5e;
+  color: #9f1239;
+}
+
+.shooter-block.is-dropping {
+  z-index: 10;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.shooter-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.shooter-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.shooter-aim-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.shooter-aim-line {
+  fill: none;
+  stroke: #10b981;
+  stroke-width: 3.5;
+  stroke-dasharray: 6 6;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.4));
+}
+
+.shooter-slingshot-zone {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 6;
+}
+
+.shooter-slingshot-fork {
+  position: absolute;
+  bottom: 8px;
+  width: 100px;
+  height: 80px;
+  pointer-events: none;
+}
+
+.shooter-loaded-bullet {
+  position: absolute;
+  bottom: 35px;
+  min-width: 120px;
+  max-width: 190px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 2.5px solid #ffffff;
+  border-bottom: 4px solid #047857;
+  border-radius: 9999px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  z-index: 7;
+  transition: transform 0.05s ease-out;
+}
+
+.shooter-loaded-bullet:active {
+  cursor: grabbing;
+}
+
+.shooter-loaded-bullet .bullet-tag {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.85;
+  font-weight: 800;
+}
+
+.shooter-loaded-bullet .bullet-meaning-text {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.shooter-flying-bullet {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 100px;
+  max-width: 160px;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 2px solid #ffffff;
+  border-radius: 9999px;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 8;
+}
+
+.shooter-hint-arrow {
+  position: absolute;
+  bottom: 95px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  border: 1px solid #a7f3d0;
+  animation: shooter-pulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+@keyframes shooter-pulse {
+  0%, 100% { transform: translateY(0); opacity: 0.9; }
+  50% { transform: translateY(-4px); opacity: 1; }
+}
+
+.shooter-popup {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  font-weight: 800;
+  pointer-events: none;
+  animation: delta-float 0.8s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.shooter-popup.plus { color: #158047; text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8); }
+.shooter-popup.minus { color: #dc2626; text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8); }
+
+.shooter-wave-banner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(4px);
+  z-index: 12;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.shooter-wave-banner h3 {
+  font-size: 26px;
+  font-weight: 900;
+  color: #059669;
+  margin: 0 0 6px;
+}
+
+.shooter-wave-banner p {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* ==========================================
    VICTORY MODAL OVERLAY
    ========================================== */
 .game-victory-modal{position:absolute;inset:0;background:#202b3670;display:grid;place-items:center;padding:20px;border-radius:14px;z-index:10;animation:fadeIn .25s ease-out}

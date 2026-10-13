@@ -1666,7 +1666,8 @@ body.dark-mode .mistake-source-chip {
 [data-theme="dark"] .game-loading-state,
 [data-theme="dark"] .speed-hud,
 [data-theme="dark"] .match-hud,
-[data-theme="dark"] .catch-hud {
+[data-theme="dark"] .catch-hud,
+[data-theme="dark"] .shooter-hud {
   background: #1e293b !important;
   border-color: #334155 !important;
   color: #cbd5e1 !important;
@@ -1782,6 +1783,96 @@ body.dark-mode .mistake-source-chip {
 }
 [data-theme="dark"] .falling-item .game-pinyin {
   color: #34d399 !important;
+}
+
+/* Game 5: Bubble / Egg Shooter (Bắn từ vựng) */
+[data-theme="dark"] .shooter-hud {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .shooter-next-pill {
+  background: rgba(16, 185, 129, 0.2) !important;
+  border-color: #059669 !important;
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .shooter-board {
+  background: radial-gradient(circle at 50% 15%, #1e293b 0%, #0f172a 70%, #020617 100%) !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .shooter-danger-line span {
+  background: #450a0a !important;
+  color: #f87171 !important;
+  border-color: #991b1b !important;
+}
+[data-theme="dark"] .shooter-block {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.15), inset 0 -3px 4px rgba(0, 0, 0, 0.4) !important;
+}
+[data-theme="dark"] .shooter-block .block-hanzi {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .shooter-block .block-pinyin {
+  color: #a7f3d0 !important;
+}
+[data-theme="dark"] .shooter-block.color-0 {
+  background: radial-gradient(circle at 35% 30%, #064e3b 0%, #065f46 60%, #022c22 100%) !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .shooter-block.color-1 {
+  background: radial-gradient(circle at 35% 30%, #7c2d12 0%, #9a3412 60%, #431407 100%) !important;
+  border-color: #f97316 !important;
+}
+[data-theme="dark"] .shooter-block.color-2 {
+  background: radial-gradient(circle at 35% 30%, #1e3a8a 0%, #1e40af 60%, #172554 100%) !important;
+  border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .shooter-block.color-3 {
+  background: radial-gradient(circle at 35% 30%, #701a75 0%, #86198f 60%, #4a044e 100%) !important;
+  border-color: #d946ef !important;
+}
+[data-theme="dark"] .shooter-block.color-4 {
+  background: radial-gradient(circle at 35% 30%, #713f12 0%, #854d0e 60%, #422006 100%) !important;
+  border-color: #eab308 !important;
+}
+[data-theme="dark"] .shooter-block.color-5 {
+  background: radial-gradient(circle at 35% 30%, #881337 0%, #9f1239 60%, #4c0519 100%) !important;
+  border-color: #f43f5e !important;
+}
+[data-theme="dark"] .shooter-loaded-bullet {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border-color: #475569 !important;
+  border-bottom-color: #064e3b !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+}
+[data-theme="dark"] .shooter-flying-bullet {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  border-color: #475569 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6) !important;
+}
+[data-theme="dark"] .shooter-hint-arrow {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .shooter-wave-banner {
+  background: rgba(15, 23, 42, 0.92) !important;
+}
+[data-theme="dark"] .shooter-wave-banner h3 {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .shooter-wave-banner p {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .shooter-popup.plus {
+  color: #34d399 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+[data-theme="dark"] .shooter-popup.minus {
+  color: #f87171 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* Victory Modal */
