@@ -586,181 +586,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   }
 
   // ==========================================
-  // GAME 1: LẬT THẺ TRÍ NHỚ (MEMORY CARDS)
+  // DỮ LIỆU TỪ VỰNG & CẤU TRÚC NGỮ PHÁP GHÉP CÂU / CỤM TỪ
   // ==========================================
-  function startMemoryGame(arena) {
-    const wordsPool = getFilteredWords();
-    if (wordsPool.length < 4) {
-      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
-      bindGoToVocab(arena);
-      return;
-    }
-
-    const pairCount = Math.min(6, wordsPool.length);
-    const selectedWords = shuffle(wordsPool).slice(0, pairCount);
-
-    // Create pairs: 1 Hanzi card, 1 Meaning card for each word
-    const cards = [];
-    selectedWords.forEach((word, index) => {
-      cards.push({
-        id: `h_${index}`,
-        pairId: index,
-        type: 'hanzi',
-        text: word.hanzi,
-        pinyin: word.pinyin || toPinyin(word.hanzi),
-        sub: word.pinyin || toPinyin(word.hanzi),
-        speakText: word.hanzi
-      });
-      cards.push({
-        id: `m_${index}`,
-        pairId: index,
-        type: 'meaning',
-        text: word.meaning,
-        sub: 'Nghĩa',
-        speakText: word.hanzi
-      });
-    });
-
-    const shuffledCards = shuffle(cards);
-    let flippedCards = [];
-    let matchedPairs = 0;
-    let moves = 0;
-    let seconds = 0;
-    let isLocked = false;
-
-    arena.innerHTML = `
-      <div class="memory-game-panel">
-        <div class="game-hud">
-          <div class="hud-item"><span>⏱️ Thời gian:</span> <strong id="memoryTimer">00:00</strong></div>
-          <div class="hud-item"><span>🔄 Lượt lật:</span> <strong id="memoryMoves">0</strong></div>
-          <div class="hud-item"><span>✨ Tiến độ:</span> <strong id="memoryMatches">0 / ${pairCount}</strong></div>
-          <button type="button" class="game-btn-secondary" id="memoryRestart">Chơi lại ↺</button>
-        </div>
-
-        <div class="memory-board grid-${pairCount * 2}">
-          ${shuffledCards
-            .map(
-              (card, idx) => `
-            <div class="memory-card" data-card-idx="${idx}" data-pair="${card.pairId}">
-              <div class="card-inner">
-                <div class="card-front">
-                  <img src="picture/card_back.jpg" class="card-cover-img" alt="Mặt sau thẻ bài LuLu" loading="lazy">
-                </div>
-                <div class="card-back ${card.type}">
-                  ${card.type === 'hanzi' ? `<span class="game-pinyin">${escapeHtml(card.pinyin || toPinyin(card.text))}</span>` : ''}
-                  <strong class="card-main-text">${escapeHtml(card.text)}</strong>
-                  ${card.type === 'meaning' ? `<small class="card-sub-text">Nghĩa</small>` : '<span class="card-speaker-icon" title="Nghe phát âm">🔊</span>'}
-                </div>
-              </div>
-            </div>
-          `
-            )
-            .join('')}
-        </div>
-      </div>
-    `;
-
-    const timerEl = arena.querySelector('#memoryTimer');
-    const movesEl = arena.querySelector('#memoryMoves');
-    const matchesEl = arena.querySelector('#memoryMatches');
-    const restartBtn = arena.querySelector('#memoryRestart');
-    const cardEls = arena.querySelectorAll('.memory-card');
-
-    restartBtn.addEventListener('click', () => startMemoryGame(arena));
-
-    activeInterval = setInterval(() => {
-      seconds++;
-      const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-      const ss = String(seconds % 60).padStart(2, '0');
-      if (timerEl) timerEl.textContent = `${mm}:${ss}`;
-    }, 1000);
-
-    cardEls.forEach((cardEl) => {
-      cardEl.addEventListener('click', () => {
-        if (isLocked) return;
-        const cardIdx = Number(cardEl.dataset.cardIdx);
-        const cardData = shuffledCards[cardIdx];
-        if (cardEl.classList.contains('is-matched')) {
-          if (cardData.speakText) speakChinese(cardData.speakText);
-          return;
-        }
-        if (cardEl.classList.contains('is-flipped')) return;
-
-        sounds.playFlip();
-        cardEl.classList.add('is-flipped');
-
-        // data already captured
-        // cardData already defined
-        flippedCards.push({ el: cardEl, data: cardData });
-
-        // Không phát âm khi mới lật 1 thẻ lẻ, chỉ phát âm khi lật đúng cặp
-
-        if (flippedCards.length === 2) {
-          moves++;
-          if (movesEl) movesEl.textContent = moves;
-          isLocked = true;
-
-          const [first, second] = flippedCards;
-          if (first.data.pairId === second.data.pairId) {
-            // Match found!
-            matchedPairs++;
-            sounds.playCorrect();
-            first.el.classList.add('is-matched');
-            second.el.classList.add('is-matched');
-
-            // Tự động phát âm chuẩn xác từ tiếng Trung khi lật chính xác 1 từ (khớp cặp)
-            const hanziToSpeak = first.data.type === 'hanzi' ? first.data.speakText : second.data.speakText;
-            if (hanziToSpeak) {
-              setTimeout(() => {
-                speakChinese(hanziToSpeak);
-              }, 120);
-            }
-            if (matchesEl) matchesEl.textContent = `${matchedPairs} / ${pairCount}`;
-            flippedCards = [];
-            isLocked = false;
-
-            if (matchedPairs === pairCount) {
-              clearActiveInterval();
-              sounds.playVictory();
-              recordScore({ category: 'game', points: SCORE_RULES.GAME_MEMORY_FINISH, description: 'Hoàn thành Lật thẻ trí nhớ' });
-              const finalScore = Math.max(100, 1000 - moves * 18 - seconds * 8);
-              const bestScore = Number(localStorage.getItem('mandarinly_game_best_memory') || 0);
-              if (finalScore > bestScore) {
-                localStorage.setItem('mandarinly_game_best_memory', String(finalScore));
-              }
-
-              setTimeout(() => {
-                showVictoryModal(arena, {
-                  title: 'Tuyệt đỉnh trí nhớ! 🎴',
-                  score: finalScore,
-                  stats: [
-                    { label: 'Thời gian', value: `${seconds}s` },
-                    { label: 'Số lượt lật', value: moves },
-                    { label: 'Độ chính xác', value: `${Math.round((pairCount / moves) * 100)}%` }
-                  ],
-                  onReplay: () => startMemoryGame(arena)
-                });
-              }, 400);
-            }
-          } else {
-            // No match
-            sounds.playWrong();
-            setTimeout(() => {
-              first.el.classList.remove('is-flipped');
-              second.el.classList.remove('is-flipped');
-              flippedCards = [];
-              isLocked = false;
-            }, 850);
-          }
-        }
-      });
-    });
-  }
-
-  // ==========================================
-  // GAME 2: ĐUA TỐC ĐỘ 60S (SPEED BLITZ)
-  // ==========================================
-  // Dữ liệu từ vựng & cấu trúc ngữ pháp ghép câu cho Đua tốc độ (Speed Blitz)
   const SPEED_COMPOUND_DATA = {
     pronouns: [
       { zh: '我', py: 'wǒ', vi: 'tôi', level: 'HSK 1' },
@@ -963,6 +790,66 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     };
   }
 
+  // Sinh danh sách từ vựng kết hợp giữa cụm từ ghép có nghĩa và từ đơn (cho Lật thẻ trí nhớ & Nối cặp từ)
+  function generateMixedWordPool(wordsPool, count = 6, currentLevel = 'Tất cả') {
+    const result = [];
+    const usedHanzi = new Set();
+    const usedMeanings = new Set();
+
+    // Số lượng cụm từ ghép mong muốn (~55% số lượng thẻ)
+    const compoundTarget = Math.max(1, Math.round(count * 0.55));
+    let compoundCount = 0;
+
+    // 1. Thử sinh các cụm từ ghép có nghĩa từ SPEED_COMPOUND_DATA
+    for (let attempts = 0; attempts < 35 && compoundCount < compoundTarget; attempts++) {
+      const compound = buildCompoundSpeedQuestion(currentLevel);
+      if (compound && !usedHanzi.has(compound.hanzi) && !usedMeanings.has(compound.meaning)) {
+        usedHanzi.add(compound.hanzi);
+        usedMeanings.add(compound.meaning);
+        result.push({
+          hanzi: compound.hanzi,
+          pinyin: compound.pinyin,
+          meaning: compound.meaning,
+          level: currentLevel
+        });
+        compoundCount++;
+      }
+    }
+
+    // 2. Bổ sung các từ đơn từ wordsPool
+    const shuffledWords = shuffle(wordsPool);
+    for (const w of shuffledWords) {
+      if (result.length >= count) break;
+      if (!usedHanzi.has(w.hanzi) && !usedMeanings.has(w.meaning)) {
+        usedHanzi.add(w.hanzi);
+        usedMeanings.add(w.meaning);
+        result.push({
+          hanzi: w.hanzi,
+          pinyin: w.pinyin || toPinyin(w.hanzi),
+          meaning: w.meaning,
+          level: w.level || currentLevel
+        });
+      }
+    }
+
+    // 3. Nếu vẫn chưa đủ (ví dụ wordsPool có ít từ), sinh thêm cụm từ ghép
+    for (let attempts = 0; attempts < 35 && result.length < count; attempts++) {
+      const compound = buildCompoundSpeedQuestion(currentLevel);
+      if (compound && !usedHanzi.has(compound.hanzi) && !usedMeanings.has(compound.meaning)) {
+        usedHanzi.add(compound.hanzi);
+        usedMeanings.add(compound.meaning);
+        result.push({
+          hanzi: compound.hanzi,
+          pinyin: compound.pinyin,
+          meaning: compound.meaning,
+          level: currentLevel
+        });
+      }
+    }
+
+    return shuffle(result);
+  }
+
   function generateSpeedQuestion(wordsPool, currentLevel) {
     // 55% xuất hiện câu ghép cụm từ có nghĩa (như 我吃, 喝水, 很好...), 45% từ đơn lẻ
     const wantCompound = Math.random() < 0.55;
@@ -998,6 +885,182 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       isCompound: false
     };
   }
+
+  // ==========================================
+  // GAME 1: LẬT THẺ TRÍ NHỚ (MEMORY CARDS)
+  // ==========================================
+  function startMemoryGame(arena) {
+    const wordsPool = getFilteredWords();
+    if (wordsPool.length < 4) {
+      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
+      bindGoToVocab(arena);
+      return;
+    }
+
+    const pairCount = Math.min(6, wordsPool.length);
+    const selectedWords = generateMixedWordPool(wordsPool, pairCount, currentLevel);
+
+    // Create pairs: 1 Hanzi card, 1 Meaning card for each word
+    const cards = [];
+    selectedWords.forEach((word, index) => {
+      cards.push({
+        id: `h_${index}`,
+        pairId: index,
+        type: 'hanzi',
+        text: word.hanzi,
+        pinyin: word.pinyin || toPinyin(word.hanzi),
+        sub: word.pinyin || toPinyin(word.hanzi),
+        speakText: word.hanzi
+      });
+      cards.push({
+        id: `m_${index}`,
+        pairId: index,
+        type: 'meaning',
+        text: word.meaning,
+        sub: 'Nghĩa',
+        speakText: word.hanzi
+      });
+    });
+
+    const shuffledCards = shuffle(cards);
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let seconds = 0;
+    let isLocked = false;
+
+    arena.innerHTML = `
+      <div class="memory-game-panel">
+        <div class="game-hud">
+          <div class="hud-item"><span>⏱️ Thời gian:</span> <strong id="memoryTimer">00:00</strong></div>
+          <div class="hud-item"><span>🔄 Lượt lật:</span> <strong id="memoryMoves">0</strong></div>
+          <div class="hud-item"><span>✨ Tiến độ:</span> <strong id="memoryMatches">0 / ${pairCount}</strong></div>
+          <button type="button" class="game-btn-secondary" id="memoryRestart">Chơi lại ↺</button>
+        </div>
+
+        <div class="memory-board grid-${pairCount * 2}">
+          ${shuffledCards
+            .map(
+              (card, idx) => `
+            <div class="memory-card" data-card-idx="${idx}" data-pair="${card.pairId}">
+              <div class="card-inner">
+                <div class="card-front">
+                  <img src="picture/card_back.jpg" class="card-cover-img" alt="Mặt sau thẻ bài LuLu" loading="lazy">
+                </div>
+                <div class="card-back ${card.type}">
+                  ${card.type === 'hanzi' ? `<span class="game-pinyin">${escapeHtml(card.pinyin || toPinyin(card.text))}</span>` : ''}
+                  <strong class="card-main-text">${escapeHtml(card.text)}</strong>
+                  ${card.type === 'meaning' ? `<small class="card-sub-text">Nghĩa</small>` : '<span class="card-speaker-icon" title="Nghe phát âm">🔊</span>'}
+                </div>
+              </div>
+            </div>
+          `
+            )
+            .join('')}
+        </div>
+      </div>
+    `;
+
+    const timerEl = arena.querySelector('#memoryTimer');
+    const movesEl = arena.querySelector('#memoryMoves');
+    const matchesEl = arena.querySelector('#memoryMatches');
+    const restartBtn = arena.querySelector('#memoryRestart');
+    const cardEls = arena.querySelectorAll('.memory-card');
+
+    restartBtn.addEventListener('click', () => startMemoryGame(arena));
+
+    activeInterval = setInterval(() => {
+      seconds++;
+      const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const ss = String(seconds % 60).padStart(2, '0');
+      if (timerEl) timerEl.textContent = `${mm}:${ss}`;
+    }, 1000);
+
+    cardEls.forEach((cardEl) => {
+      cardEl.addEventListener('click', () => {
+        if (isLocked) return;
+        const cardIdx = Number(cardEl.dataset.cardIdx);
+        const cardData = shuffledCards[cardIdx];
+        if (cardEl.classList.contains('is-matched')) {
+          if (cardData.speakText) speakChinese(cardData.speakText);
+          return;
+        }
+        if (cardEl.classList.contains('is-flipped')) return;
+
+        sounds.playFlip();
+        cardEl.classList.add('is-flipped');
+
+        // data already captured
+        // cardData already defined
+        flippedCards.push({ el: cardEl, data: cardData });
+
+        // Không phát âm khi mới lật 1 thẻ lẻ, chỉ phát âm khi lật đúng cặp
+
+        if (flippedCards.length === 2) {
+          moves++;
+          if (movesEl) movesEl.textContent = moves;
+          isLocked = true;
+
+          const [first, second] = flippedCards;
+          if (first.data.pairId === second.data.pairId) {
+            // Match found!
+            matchedPairs++;
+            sounds.playCorrect();
+            first.el.classList.add('is-matched');
+            second.el.classList.add('is-matched');
+
+            // Tự động phát âm chuẩn xác từ tiếng Trung khi lật chính xác 1 từ (khớp cặp)
+            const hanziToSpeak = first.data.type === 'hanzi' ? first.data.speakText : second.data.speakText;
+            if (hanziToSpeak) {
+              setTimeout(() => {
+                speakChinese(hanziToSpeak);
+              }, 120);
+            }
+            if (matchesEl) matchesEl.textContent = `${matchedPairs} / ${pairCount}`;
+            flippedCards = [];
+            isLocked = false;
+
+            if (matchedPairs === pairCount) {
+              clearActiveInterval();
+              sounds.playVictory();
+              recordScore({ category: 'game', points: SCORE_RULES.GAME_MEMORY_FINISH, description: 'Hoàn thành Lật thẻ trí nhớ' });
+              const finalScore = Math.max(100, 1000 - moves * 18 - seconds * 8);
+              const bestScore = Number(localStorage.getItem('mandarinly_game_best_memory') || 0);
+              if (finalScore > bestScore) {
+                localStorage.setItem('mandarinly_game_best_memory', String(finalScore));
+              }
+
+              setTimeout(() => {
+                showVictoryModal(arena, {
+                  title: 'Tuyệt đỉnh trí nhớ! 🎴',
+                  score: finalScore,
+                  stats: [
+                    { label: 'Thời gian', value: `${seconds}s` },
+                    { label: 'Số lượt lật', value: moves },
+                    { label: 'Độ chính xác', value: `${Math.round((pairCount / moves) * 100)}%` }
+                  ],
+                  onReplay: () => startMemoryGame(arena)
+                });
+              }, 400);
+            }
+          } else {
+            // No match
+            sounds.playWrong();
+            setTimeout(() => {
+              first.el.classList.remove('is-flipped');
+              second.el.classList.remove('is-flipped');
+              flippedCards = [];
+              isLocked = false;
+            }, 850);
+          }
+        }
+      });
+    });
+  }
+
+  // ==========================================
+  // GAME 2: ĐUA TỐC ĐỘ 60S (SPEED BLITZ)
+  // ==========================================
 
   function startSpeedGame(arena) {
     const wordsPool = getFilteredWords();
@@ -1220,7 +1283,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const batchSize = Math.min(5, wordsPool.length);
 
     function renderRound() {
-      const selectedWords = shuffle(wordsPool).slice(0, batchSize);
+      const selectedWords = generateMixedWordPool(wordsPool, batchSize, currentLevel);
       const hanziList = shuffle(
         selectedWords.map((w, idx) => ({ id: idx, text: w.hanzi, pinyin: w.pinyin || toPinyin(w.hanzi) }))
       );
