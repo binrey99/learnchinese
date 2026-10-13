@@ -2,7 +2,7 @@ import { supabase } from './supabase.js';
 import { normalizeLevel } from './levels.js';
 import { recordScore, SCORE_RULES } from './score-service.js';
 import { awardFoodReward } from './lulu.js';
-import { recordMistakeWord } from './srs-service.js';
+import { recordMistakeWord, getAllSrsCards } from './srs-service.js';
 import { pinyin } from 'https://esm.sh/pinyin-pro@3.27.0';
 
 function toPinyin(hanzi) {
@@ -280,7 +280,7 @@ async function loadGameVocabulary() {
     for (let from = 0; ; from += pageSize) {
       const { data, error } = await supabase
         .from('vocabulary')
-        .select('vocab, vietnamese_meaning, book_level')
+        .select('id, vocab, vietnamese_meaning, book_level')
         .order('id', { ascending: true })
         .range(from, from + pageSize - 1);
 
@@ -293,6 +293,7 @@ async function loadGameVocabulary() {
       const valid = rows
         .filter((w) => w.vocab && w.vietnamese_meaning)
         .map((w) => ({
+          id: w.id,
           hanzi: w.vocab.trim(),
           pinyin: toPinyin(w.vocab.trim()),
           meaning: w.vietnamese_meaning.trim(),
@@ -339,19 +340,73 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     </div>
   `;
 
-  const allWords = await loadGameVocabulary();
+  const MARKED_LEVEL = '⭐ Đã đánh dấu';
+  let userMasteredIds = new Set();
+
+  async function refreshMasteredIds() {
+    const set = new Set();
+    try {
+      const local = JSON.parse(localStorage.getItem('mandarinly_local_mastered') || '[]');
+      if (Array.isArray(local)) {
+        local.forEach((id) => set.add(String(id)));
+      }
+    } catch (_) {}
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('vocabulary_mastery')
+          .select('vocabulary_id')
+          .eq('user_id', user.id);
+        if (!error && data) {
+          data.forEach((item) => set.add(String(item.vocabulary_id)));
+        }
+      }
+    } catch (_) {}
+    userMasteredIds = set;
+    return set;
+  }
+
+  const [allWords] = await Promise.all([
+    loadGameVocabulary(),
+    refreshMasteredIds()
+  ]);
 
   // Distinct levels - sắp xếp theo thứ tự cố định
   const levelsInData = new Set(allWords.map((w) => w.level).filter(Boolean));
   const orderedLevels = LEVEL_ORDER.filter((lvl) => levelsInData.has(lvl));
   // Thêm bất kỳ level nào không có trong LEVEL_ORDER (nếu có)
   levelsInData.forEach((lvl) => { if (!LEVEL_ORDER.includes(lvl)) orderedLevels.push(lvl); });
-  const availableLevels = ['Tất cả', ...orderedLevels];
+  const availableLevels = ['Tất cả', MARKED_LEVEL, ...orderedLevels];
   let currentLevel = 'Tất cả';
   let currentGameMode = 'memory'; // 'memory' | 'speed' | 'match' | 'catch' | 'shooter'
 
   function getFilteredWords() {
     if (currentLevel === 'Tất cả') return allWords;
+    if (currentLevel === MARKED_LEVEL || currentLevel === 'Đã đánh dấu') {
+      const srsCards = getAllSrsCards();
+      const srsHanziSet = new Set(srsCards.map((c) => c.hanzi?.trim()).filter(Boolean));
+
+      // Lấy từ allWords nếu có ID trong danh sách đánh dấu sao (vocabulary_mastery) hoặc Hanzi trong SRS notebook
+      const matched = allWords.filter(
+        (w) => (w.id && userMasteredIds.has(String(w.id))) || srsHanziSet.has(w.hanzi)
+      );
+      const matchedHanzi = new Set(matched.map((w) => w.hanzi));
+
+      // Bổ sung các thẻ SRS nếu có từ vựng chưa xuất hiện trong allWords
+      const srsExtras = srsCards
+        .filter((c) => c.hanzi && c.meaning && !matchedHanzi.has(c.hanzi.trim()))
+        .map((c) => ({
+          id: c.id || null,
+          hanzi: c.hanzi.trim(),
+          pinyin: c.pinyin || toPinyin(c.hanzi.trim()),
+          meaning: c.meaning.trim(),
+          level: c.level || 'Đã đánh dấu'
+        }));
+
+      return [...matched, ...srsExtras];
+    }
     return allWords.filter((w) => w.level === currentLevel);
   }
 
@@ -442,11 +497,25 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     // Bind level filter
     const levelSelect = container.querySelector('#gameLevelSelect');
     if (levelSelect) {
-      levelSelect.addEventListener('change', (e) => {
+      levelSelect.addEventListener('change', async (e) => {
         currentLevel = e.target.value;
+        if (currentLevel === MARKED_LEVEL || currentLevel === 'Đã đánh dấu') {
+          await refreshMasteredIds();
+        }
         startActiveGame();
       });
     }
+
+    // Tự động cập nhật lại game khi người dùng đánh dấu/bỏ đánh dấu từ vựng (SRS / Yêu thích)
+    const onSrsUpdated = () => {
+      if (currentLevel === MARKED_LEVEL || currentLevel === 'Đã đánh dấu') {
+        refreshMasteredIds().then(() => {
+          startActiveGame();
+        });
+      }
+    };
+    window.addEventListener('srs-updated', onSrsUpdated);
+    activeCleanups.push(() => window.removeEventListener('srs-updated', onSrsUpdated));
 
     // Bind sound toggle
     const soundBtn = container.querySelector('#gameSoundBtn');
@@ -459,6 +528,43 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     }
 
     startActiveGame();
+  }
+
+  function renderEmptyState(count = 0, minRequired = 4) {
+    if (currentLevel === MARKED_LEVEL || currentLevel === 'Đã đánh dấu') {
+      if (count === 0) {
+        return `
+          <div class="game-empty game-empty-marked">
+            <div class="empty-marked-icon">⭐</div>
+            <h3>Chưa có từ vựng đã đánh dấu</h3>
+            <p>Bạn chưa đánh dấu từ nào. Hãy nhấn biểu tượng ngôi sao <strong>★</strong> hoặc ghim <strong>📌</strong> tại trang <strong>Từ vựng</strong> để tạo danh sách từ riêng và bắt đầu luyện tập!</p>
+            <button type="button" class="btn-goto-vocab" data-goto-vocab>
+              📖 Đến trang Từ vựng
+            </button>
+          </div>
+        `;
+      }
+      return `
+        <div class="game-empty game-empty-marked">
+          <div class="empty-marked-icon">⭐</div>
+          <h3>Cần thêm từ vựng đã đánh dấu</h3>
+          <p>Bạn hiện có <strong>${count}</strong> từ đã đánh dấu. Trò chơi này cần ít nhất <strong>${minRequired}</strong> từ để bắt đầu. Hãy đánh dấu thêm vài từ tại trang <strong>Từ vựng</strong> nhé!</p>
+          <button type="button" class="btn-goto-vocab" data-goto-vocab>
+            📖 Đánh dấu thêm từ vựng
+          </button>
+        </div>
+      `;
+    }
+    return `<div class="game-empty">Cần ít nhất ${minRequired} từ vựng để bắt đầu trò chơi. Hãy chọn cấp độ khác.</div>`;
+  }
+
+  function bindGoToVocab(arena) {
+    const btn = arena.querySelector('[data-goto-vocab]');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        window.location.hash = '#vocabulary';
+      });
+    }
   }
 
   function startActiveGame() {
@@ -485,7 +591,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   function startMemoryGame(arena) {
     const wordsPool = getFilteredWords();
     if (wordsPool.length < 4) {
-      arena.innerHTML = `<div class="game-empty">Không đủ từ vựng ở cấp độ này để tạo trò chơi. Vui lòng chọn cấp độ khác.</div>`;
+      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
+      bindGoToVocab(arena);
       return;
     }
 
@@ -656,7 +763,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   function startSpeedGame(arena) {
     const wordsPool = getFilteredWords();
     if (wordsPool.length < 4) {
-      arena.innerHTML = `<div class="game-empty">Cần ít nhất 4 từ vựng để bắt đầu trò chơi. Hãy chọn cấp độ khác.</div>`;
+      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
+      bindGoToVocab(arena);
       return;
     }
 
@@ -869,14 +977,15 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   // ==========================================
   function startMatchGame(arena) {
     const wordsPool = getFilteredWords();
-    if (wordsPool.length < 5) {
-      arena.innerHTML = `<div class="game-empty">Cần ít nhất 5 từ vựng để bắt đầu nối cặp. Hãy chọn cấp độ khác.</div>`;
+    if (wordsPool.length < 4) {
+      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
+      bindGoToVocab(arena);
       return;
     }
 
     let round = 1;
     let score = 0;
-    const batchSize = 5;
+    const batchSize = Math.min(5, wordsPool.length);
 
     function renderRound() {
       const selectedWords = shuffle(wordsPool).slice(0, batchSize);
@@ -1044,7 +1153,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   function startCatchGame(arena) {
     const wordsPool = getFilteredWords();
     if (wordsPool.length < 4) {
-      arena.innerHTML = `<div class="game-empty">Cần ít nhất 4 từ vựng để bắt đầu trò chơi chạm từ rơi. Hãy chọn cấp độ khác.</div>`;
+      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
+      bindGoToVocab(arena);
       return;
     }
 
@@ -1397,7 +1507,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   function startShooterGame(arena) {
     const wordsPool = getFilteredWords();
     if (wordsPool.length < 4) {
-      arena.innerHTML = `<div class="game-empty">Cần ít nhất 4 từ vựng để bắt đầu trò chơi bắn từ. Hãy chọn cấp độ khác.</div>`;
+      arena.innerHTML = renderEmptyState(wordsPool.length, 4);
+      bindGoToVocab(arena);
       return;
     }
 

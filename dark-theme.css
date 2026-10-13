@@ -1691,6 +1691,20 @@ body.dark-mode .mistake-source-chip {
   border-color: #334155 !important;
   color: #34d399 !important;
 }
+[data-theme="dark"] .game-empty-marked h3 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .game-empty-marked p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .btn-goto-vocab {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+}
+[data-theme="dark"] .btn-goto-vocab:hover {
+  background: #059669 !important;
+}
 
 /* Game 1: Memory Cards */
 [data-theme="dark"] .card-back {
