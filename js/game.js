@@ -760,6 +760,245 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
   // ==========================================
   // GAME 2: ĐUA TỐC ĐỘ 60S (SPEED BLITZ)
   // ==========================================
+  // Dữ liệu từ vựng & cấu trúc ngữ pháp ghép câu cho Đua tốc độ (Speed Blitz)
+  const SPEED_COMPOUND_DATA = {
+    pronouns: [
+      { zh: '我', py: 'wǒ', vi: 'tôi', level: 'HSK 1' },
+      { zh: '你', py: 'nǐ', vi: 'bạn', level: 'HSK 1' },
+      { zh: '他', py: 'tā', vi: 'anh ấy', level: 'HSK 1' },
+      { zh: '她', py: 'tā', vi: 'cô ấy', level: 'HSK 1' },
+      { zh: '我们', py: 'wǒmen', vi: 'chúng tôi', level: 'HSK 1' },
+      { zh: '大家', py: 'dàjiā', vi: 'mọi người', level: 'HSK 1' },
+      { zh: '老师', py: 'lǎoshī', vi: 'thầy giáo', level: 'HSK 1' },
+      { zh: '朋友', py: 'péngyou', vi: 'bạn bè', level: 'HSK 1' },
+      { zh: '妈妈', py: 'māma', vi: 'mẹ', level: 'HSK 1' },
+      { zh: '爸爸', py: 'bàba', vi: 'bố', level: 'HSK 1' }
+    ],
+    verbs: [
+      { zh: '吃', py: 'chī', vi: 'ăn', level: 'HSK 1' },
+      { zh: '喝', py: 'hē', vi: 'uống', level: 'HSK 1' },
+      { zh: '学', py: 'xué', vi: 'học', level: 'HSK 1' },
+      { zh: '做', py: 'zuò', vi: 'làm', level: 'HSK 1' },
+      { zh: '睡', py: 'shuì', vi: 'ngủ', level: 'HSK 1' },
+      { zh: '看', py: 'kàn', vi: 'xem', level: 'HSK 1' },
+      { zh: '读', py: 'dú', vi: 'đọc', level: 'HSK 1' },
+      { zh: '写', py: 'xiě', vi: 'viết', level: 'HSK 1' },
+      { zh: '听', py: 'tīng', vi: 'nghe', level: 'HSK 1' },
+      { zh: '说', py: 'shuō', vi: 'nói', level: 'HSK 1' },
+      { zh: '买', py: 'mǎi', vi: 'mua', level: 'HSK 1' },
+      { zh: '去', py: 'qù', vi: 'đi', level: 'HSK 1' },
+      { zh: '来', py: 'lái', vi: 'đến', level: 'HSK 1' },
+      { zh: '想', py: 'xiǎng', vi: 'muốn', level: 'HSK 1' },
+      { zh: '住', py: 'zhù', vi: 'ở', level: 'HSK 1' },
+      { zh: '工作', py: 'gōngzuò', vi: 'làm việc', level: 'HSK 1' },
+      { zh: '问', py: 'wèn', vi: 'hỏi', level: 'HSK 2' },
+      { zh: '等', py: 'děng', vi: 'đợi', level: 'HSK 2' },
+      { zh: '休息', py: 'xiūxi', vi: 'nghỉ ngơi', level: 'HSK 2' },
+      { zh: '跑步', py: 'pǎobù', vi: 'chạy bộ', level: 'HSK 2' },
+      { zh: '上班', py: 'shàngbān', vi: 'đi làm', level: 'Công xưởng' },
+      { zh: '下班', py: 'xiàbān', vi: 'tan làm', level: 'Công xưởng' },
+      { zh: '加班', py: 'jiābān', vi: 'tăng ca', level: 'Công xưởng' },
+      { zh: '检查', py: 'jiǎnchá', vi: 'kiểm tra', level: 'Công xưởng' }
+    ],
+    negatives: [
+      { zh: '不', py: 'bù', vi: 'không', level: 'HSK 1' },
+      { zh: '没', py: 'méi', vi: 'chưa', level: 'HSK 1' }
+    ],
+    degreeAdverbs: [
+      { zh: '很', py: 'hěn', vi: 'rất', level: 'HSK 1' },
+      { zh: '太', py: 'tài', vi: 'quá', level: 'HSK 1' },
+      { zh: '真', py: 'zhēn', vi: 'thật là', level: 'HSK 2' }
+    ],
+    adjectives: [
+      { zh: '好', py: 'hǎo', vi: 'tốt', level: 'HSK 1' },
+      { zh: '大', py: 'dà', vi: 'to', level: 'HSK 1' },
+      { zh: '小', py: 'xiǎo', vi: 'nhỏ', level: 'HSK 1' },
+      { zh: '多', py: 'duō', vi: 'nhiều', level: 'HSK 1' },
+      { zh: '少', py: 'shǎo', vi: 'ít', level: 'HSK 1' },
+      { zh: '忙', py: 'máng', vi: 'bận', level: 'HSK 2' },
+      { zh: '累', py: 'lèi', vi: 'mệt', level: 'HSK 2' },
+      { zh: '热', py: 'rè', vi: 'nóng', level: 'HSK 1' },
+      { zh: '冷', py: 'lěng', vi: 'lạnh', level: 'HSK 1' },
+      { zh: '贵', py: 'guì', vi: 'đắt', level: 'HSK 2' },
+      { zh: '便宜', py: 'piányi', vi: 'rẻ', level: 'HSK 2' },
+      { zh: '高兴', py: 'gāoxìng', vi: 'vui vẻ', level: 'HSK 1' },
+      { zh: '漂亮', py: 'piàoliang', vi: 'xinh đẹp', level: 'HSK 1' },
+      { zh: '快', py: 'kuài', vi: 'nhanh', level: 'HSK 2' },
+      { zh: '慢', py: 'màn', vi: 'chậm', level: 'HSK 2' },
+      { zh: '远', py: 'yuǎn', vi: 'xa', level: 'HSK 2' },
+      { zh: '近', py: 'jìn', vi: 'gần', level: 'HSK 2' }
+    ],
+    verbObjectList: [
+      { zh: '喝水', py: 'hē shuǐ', vi: 'uống nước', level: 'HSK 1' },
+      { zh: '喝茶', py: 'hē chá', vi: 'uống trà', level: 'HSK 1' },
+      { zh: '吃饭', py: 'chī fàn', vi: 'ăn cơm', level: 'HSK 1' },
+      { zh: '吃苹果', py: 'chī píngguǒ', vi: 'ăn táo', level: 'HSK 1' },
+      { zh: '看书', py: 'kàn shū', vi: 'đọc sách', level: 'HSK 1' },
+      { zh: '看电影', py: 'kàn diànyǐng', vi: 'xem phim', level: 'HSK 1' },
+      { zh: '看电视', py: 'kàn diànshì', vi: 'xem ti vi', level: 'HSK 1' },
+      { zh: '买东西', py: 'mǎi dōngxi', vi: 'mua đồ', level: 'HSK 1' },
+      { zh: '学汉语', py: 'xué hànyǔ', vi: 'học tiếng Trung', level: 'HSK 1' },
+      { zh: '写字', py: 'xiě zì', vi: 'viết chữ', level: 'HSK 1' },
+      { zh: '打电话', py: 'dǎ diànhuà', vi: 'gọi điện thoại', level: 'HSK 1' },
+      { zh: '去学校', py: 'qù xuéxiào', vi: 'đi đến trường', level: 'HSK 1' },
+      { zh: '去医院', py: 'qù yīyuàn', vi: 'đi bệnh viện', level: 'HSK 1' },
+      { zh: '去商店', py: 'qù shāngdiàn', vi: 'đi cửa hàng', level: 'HSK 1' },
+      { zh: '去北京', py: 'qù běijīng', vi: 'đi Bắc Kinh', level: 'HSK 1' },
+      { zh: '听音乐', py: 'tīng yīnyuè', vi: 'nghe nhạc', level: 'HSK 2' },
+      { zh: '去旅游', py: 'qù lǚyóu', vi: 'đi du lịch', level: 'HSK 2' },
+      { zh: '买衣服', py: 'mǎi yīfu', vi: 'mua quần áo', level: 'HSK 2' },
+      { zh: '去车间', py: 'qù chējiān', vi: 'đến phân xưởng', level: 'Công xưởng' },
+      { zh: '戴安全帽', py: 'dài ānquánmào', vi: 'đội mũ bảo hộ', level: 'Công xưởng' },
+      { zh: '检查产品', py: 'jiǎnchá chǎnpǐn', vi: 'kiểm tra sản phẩm', level: 'Công xưởng' }
+    ]
+  };
+
+  function buildCompoundSpeedQuestion(currentLevel) {
+    const isFactory = currentLevel === 'Công xưởng';
+    const patterns = [0, 0, 1, 2, 3, 4];
+    const chosenPattern = patterns[Math.floor(Math.random() * patterns.length)];
+
+    let verbCandidates = SPEED_COMPOUND_DATA.verbs;
+    if (isFactory) {
+      verbCandidates = SPEED_COMPOUND_DATA.verbs.filter((v) => v.level === 'Công xưởng' || v.level === 'HSK 1');
+    } else if (currentLevel && currentLevel.startsWith('HSK')) {
+      verbCandidates = SPEED_COMPOUND_DATA.verbs.filter((v) => v.level !== 'Công xưởng');
+    }
+
+    // Pattern 0: [Chủ ngữ] + [Động từ] (Ví dụ: 我吃 -> tôi ăn, tôi làm, tôi học, tôi ngủ)
+    if (chosenPattern === 0) {
+      const sub = SPEED_COMPOUND_DATA.pronouns[Math.floor(Math.random() * SPEED_COMPOUND_DATA.pronouns.length)];
+      const shuffledVerbs = shuffle(verbCandidates);
+      const targetVerb = shuffledVerbs[0];
+      const correctMeaning = `${sub.vi} ${targetVerb.vi}`;
+      const distractorVerbs = shuffledVerbs.slice(1, 4);
+      const options = shuffle([correctMeaning, ...distractorVerbs.map((v) => `${sub.vi} ${v.vi}`)]);
+
+      return {
+        hanzi: `${sub.zh}${targetVerb.zh}`,
+        pinyin: `${sub.py} ${targetVerb.py}`,
+        meaning: correctMeaning,
+        level: currentLevel,
+        options,
+        isCompound: true
+      };
+    }
+
+    // Pattern 1: [Phủ định] + [Động từ] (Ví dụ: 不吃 -> không ăn, không uống, không đi, không làm)
+    if (chosenPattern === 1) {
+      const adv = SPEED_COMPOUND_DATA.negatives[Math.floor(Math.random() * SPEED_COMPOUND_DATA.negatives.length)];
+      const shuffledVerbs = shuffle(verbCandidates);
+      const targetVerb = shuffledVerbs[0];
+      const correctMeaning = `${adv.vi} ${targetVerb.vi}`;
+      const distractorVerbs = shuffledVerbs.slice(1, 4);
+      const options = shuffle([correctMeaning, ...distractorVerbs.map((v) => `${adv.vi} ${v.vi}`)]);
+
+      return {
+        hanzi: `${adv.zh}${targetVerb.zh}`,
+        pinyin: `${adv.py} ${targetVerb.py}`,
+        meaning: correctMeaning,
+        level: currentLevel,
+        options,
+        isCompound: true
+      };
+    }
+
+    // Pattern 2: [Phó từ mức độ] + [Tính từ] (Ví dụ: 很好 -> rất tốt, rất to, rất bận, rất nhiều)
+    if (chosenPattern === 2) {
+      const adv = SPEED_COMPOUND_DATA.degreeAdverbs[Math.floor(Math.random() * SPEED_COMPOUND_DATA.degreeAdverbs.length)];
+      const shuffledAdjs = shuffle(SPEED_COMPOUND_DATA.adjectives);
+      const targetAdj = shuffledAdjs[0];
+      const correctMeaning = `${adv.vi} ${targetAdj.vi}`;
+      const distractorAdjs = shuffledAdjs.slice(1, 4);
+      const options = shuffle([correctMeaning, ...distractorAdjs.map((a) => `${adv.vi} ${a.vi}`)]);
+
+      return {
+        hanzi: `${adv.zh}${targetAdj.zh}`,
+        pinyin: `${adv.py} ${targetAdj.py}`,
+        meaning: correctMeaning,
+        level: currentLevel,
+        options,
+        isCompound: true
+      };
+    }
+
+    // Pattern 3: [Động từ] + [Tân ngữ] (Ví dụ: 喝水 -> uống nước, uống trà, ăn cơm, đọc sách)
+    let voCandidates = SPEED_COMPOUND_DATA.verbObjectList;
+    if (isFactory) {
+      voCandidates = SPEED_COMPOUND_DATA.verbObjectList.filter((vo) => vo.level === 'Công xưởng' || vo.level === 'HSK 1');
+    } else if (currentLevel && currentLevel.startsWith('HSK')) {
+      voCandidates = SPEED_COMPOUND_DATA.verbObjectList.filter((vo) => vo.level !== 'Công xưởng');
+    }
+    const shuffledVO = shuffle(voCandidates);
+    const targetVO = shuffledVO[0];
+
+    if (chosenPattern === 3) {
+      const correctMeaning = targetVO.vi;
+      const distractorVOs = shuffledVO.slice(1, 4);
+      const options = shuffle([correctMeaning, ...distractorVOs.map((vo) => vo.vi)]);
+
+      return {
+        hanzi: targetVO.zh,
+        pinyin: targetVO.py,
+        meaning: correctMeaning,
+        level: currentLevel,
+        options,
+        isCompound: true
+      };
+    }
+
+    // Pattern 4: [Đại từ] + [Động từ + Tân ngữ] (Ví dụ: 我喝水 -> tôi uống nước, tôi ăn cơm, tôi đọc sách, tôi mua đồ)
+    const sub = SPEED_COMPOUND_DATA.pronouns[Math.floor(Math.random() * SPEED_COMPOUND_DATA.pronouns.length)];
+    const correctMeaning = `${sub.vi} ${targetVO.vi}`;
+    const distractorVOs = shuffledVO.slice(1, 4);
+    const options = shuffle([correctMeaning, ...distractorVOs.map((vo) => `${sub.vi} ${vo.vi}`)]);
+
+    return {
+      hanzi: `${sub.zh}${targetVO.zh}`,
+      pinyin: `${sub.py} ${targetVO.py}`,
+      meaning: correctMeaning,
+      level: currentLevel,
+      options,
+      isCompound: true
+    };
+  }
+
+  function generateSpeedQuestion(wordsPool, currentLevel) {
+    // 55% xuất hiện câu ghép cụm từ có nghĩa (như 我吃, 喝水, 很好...), 45% từ đơn lẻ
+    const wantCompound = Math.random() < 0.55;
+
+    if (wantCompound) {
+      try {
+        const compound = buildCompoundSpeedQuestion(currentLevel);
+        if (compound) return compound;
+      } catch (_) {}
+    }
+
+    // Từ đơn (Single word) từ wordsPool
+    const targetWord = wordsPool[Math.floor(Math.random() * wordsPool.length)];
+    const distractors = wordsPool
+      .filter((w) => w.meaning !== targetWord.meaning && w.hanzi !== targetWord.hanzi)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3)
+      .map((w) => w.meaning);
+
+    while (distractors.length < 3) {
+      const fallbackItem = DEFAULT_VOCABULARY[Math.floor(Math.random() * DEFAULT_VOCABULARY.length)];
+      if (!distractors.includes(fallbackItem.meaning) && fallbackItem.meaning !== targetWord.meaning) {
+        distractors.push(fallbackItem.meaning);
+      }
+    }
+
+    return {
+      hanzi: targetWord.hanzi,
+      pinyin: targetWord.pinyin || toPinyin(targetWord.hanzi),
+      meaning: targetWord.meaning,
+      level: targetWord.level || currentLevel,
+      options: shuffle([targetWord.meaning, ...distractors]),
+      isCompound: false
+    };
+  }
+
   function startSpeedGame(arena) {
     const wordsPool = getFilteredWords();
     if (wordsPool.length < 4) {
@@ -867,22 +1106,15 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
     function nextQuestion() {
       if (isGameOver) return;
-      const targetWord = wordsPool[Math.floor(Math.random() * wordsPool.length)];
+      const target = generateSpeedQuestion(wordsPool, currentLevel);
 
-      hanziEl.textContent = targetWord.hanzi;
-      pinyinEl.textContent = targetWord.pinyin || toPinyin(targetWord.hanzi);
-      speakChinese(targetWord.hanzi);
+      hanziEl.textContent = target.hanzi;
+      pinyinEl.textContent = target.pinyin || toPinyin(target.hanzi);
+      speakChinese(target.hanzi);
 
-      speakBtn.onclick = () => speakChinese(targetWord.hanzi);
+      speakBtn.onclick = () => speakChinese(target.hanzi);
 
-      // 1 correct meaning + 3 random distractor meanings
-      const distractors = wordsPool
-        .filter((w) => w.meaning !== targetWord.meaning)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map((w) => w.meaning);
-
-      const options = shuffle([targetWord.meaning, ...distractors]);
+      const options = target.options;
 
       optionsContainer.innerHTML = options
         .map(
@@ -899,7 +1131,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           if (isGameOver) return;
           answeredCount++;
           const chosen = btn.dataset.meaning;
-          const isCorrect = chosen === targetWord.meaning;
+          const isCorrect = chosen === target.meaning;
 
           if (isCorrect) {
             correctCount++;
@@ -930,10 +1162,10 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             btn.classList.add('opt-wrong');
             streakEl.textContent = '0x';
             recordMistakeWord({
-              hanzi: targetWord.hanzi,
-              pinyin: targetWord.pinyin,
-              meaning: targetWord.meaning,
-              level: targetWord.level,
+              hanzi: target.hanzi,
+              pinyin: target.pinyin,
+              meaning: target.meaning,
+              level: target.level || currentLevel,
               source: 'Đua tốc độ 60s'
             });
 
@@ -944,7 +1176,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
             optionsContainer.querySelectorAll('.speed-opt-btn').forEach((b) => {
               b.disabled = true;
-              if (b.dataset.meaning === targetWord.meaning) {
+              if (b.dataset.meaning === target.meaning) {
                 b.classList.add('opt-correct');
               }
             });
