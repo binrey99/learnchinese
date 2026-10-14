@@ -1763,6 +1763,37 @@ body.dark-mode .mistake-source-chip {
 [data-theme="dark"] .dragon-ground-shadow {
   background: rgba(0, 0, 0, 0.45) !important;
 }
+[data-theme="dark"] .dragon-speech-bubble {
+  background: #1e293b !important;
+  color: #fde68a !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45) !important;
+}
+[data-theme="dark"] .dragon-speech-bubble.mood-praise {
+  background: #064e3b !important;
+  color: #a7f3d0 !important;
+  border-color: #34d399 !important;
+}
+[data-theme="dark"] .dragon-speech-bubble.mood-combo {
+  background: #431407 !important;
+  color: #fed7aa !important;
+  border-color: #fb923c !important;
+}
+[data-theme="dark"] .dragon-speech-bubble.mood-oops {
+  background: #4c0519 !important;
+  color: #fecdd3 !important;
+  border-color: #fb7185 !important;
+}
+[data-theme="dark"] .dragon-speech-bubble.mood-hurry {
+  background: #451a03 !important;
+  color: #fde68a !important;
+  border-color: #f59e0b !important;
+}
+[data-theme="dark"] .dragon-speech-bubble.mood-panic {
+  background: #450a0a !important;
+  color: #fecaca !important;
+  border-color: #ef4444 !important;
+}
 [data-theme="dark"] .speed-card {
   background: #1e293b !important;
   border-color: #334155 !important;

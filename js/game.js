@@ -1114,7 +1114,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
               <div class="speed-timer-bar">
                 <i id="speedProgress"></i>
               </div>
-              <div class="speed-dragon-actor" id="speedDragonActor" style="left: 100%;">
+              <div class="speed-dragon-actor align-right" id="speedDragonActor" style="left: 100%;">
+                <div class="dragon-speech-bubble" id="dragonSpeechBubble" aria-live="polite"></div>
                 <div class="dragon-fly-rig">
                   <span class="dragon-wind-lines"><i></i><i></i><i></i></span>
                   <img src="picture/lulu_fly.jpg" alt="Chú rồng bay" class="speed-dragon-img" id="speedDragonImg" />
@@ -1149,6 +1150,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const timerWrapEl = arena.querySelector('#speedTimerWrap');
     const flowerActorEl = arena.querySelector('#speedFlowerActor');
     const dragonActorEl = arena.querySelector('#speedDragonActor');
+    const dragonBubbleEl = arena.querySelector('#dragonSpeechBubble');
     const progressEl = arena.querySelector('#speedProgress');
     const secondsEl = arena.querySelector('#speedSeconds');
     const scoreEl = arena.querySelector('#speedScore');
@@ -1157,6 +1159,43 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const pinyinEl = arena.querySelector('#speedPinyin');
     const speakBtn = arena.querySelector('#speedSpeakBtn');
     const optionsContainer = arena.querySelector('#speedOptions');
+
+    let speechHideTimer = null;
+    let lastSpeechText = '';
+    let lastSpeechAt = 0;
+    let lastActionAt = Date.now();
+
+    function syncBubbleAlignment(pct) {
+      if (!dragonActorEl) return;
+      dragonActorEl.classList.toggle('align-left', pct < 26);
+      dragonActorEl.classList.toggle('align-right', pct > 76);
+    }
+
+    function pickLine(lines) {
+      if (!lines || !lines.length) return '';
+      if (lines.length === 1) return lines[0];
+      const candidates = lines.filter((line) => line !== lastSpeechText);
+      const pool = candidates.length ? candidates : lines;
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function sayLulu(text, mood = 'info', duration = 2300) {
+      if (!dragonBubbleEl || !text) return;
+      lastSpeechText = text;
+      lastSpeechAt = Date.now();
+      if (speechHideTimer) clearTimeout(speechHideTimer);
+
+      dragonBubbleEl.className = `dragon-speech-bubble mood-${mood}`;
+      dragonBubbleEl.textContent = text;
+      void dragonBubbleEl.offsetWidth;
+      dragonBubbleEl.classList.add('is-visible');
+
+      if (duration > 0) {
+        speechHideTimer = setTimeout(() => {
+          dragonBubbleEl.classList.remove('is-visible');
+        }, duration);
+      }
+    }
 
     // Tự động tách nền caro của picture/lulu_fly.jpg và picture/flower.jpg bằng Flood-Fill từ viền ảnh
     function makeCheckerboardTransparent(imgEl) {
@@ -1292,6 +1331,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       if (dragonActorEl) {
         dragonActorEl.style.left = `${pct}%`;
       }
+      syncBubbleAlignment(pct);
       if (timerWrapEl) {
         timerWrapEl.classList.toggle('is-danger', timeLeft > 0 && timeLeft <= 12);
       }
@@ -1316,9 +1356,11 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     function triggerGameOver() {
       if (isGameOver) return;
       clearActiveInterval();
+      if (speechHideTimer) clearTimeout(speechHideTimer);
       isGameOver = true;
       timeLeft = 0;
       updateTimerUI();
+      if (dragonBubbleEl) dragonBubbleEl.classList.remove('is-visible');
 
       optionsContainer?.querySelectorAll('button').forEach((b) => (b.disabled = true));
 
@@ -1371,6 +1413,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
     function nextQuestion() {
       if (isGameOver) return;
+      lastActionAt = Date.now();
       const target = generateSpeedQuestion(wordsPool, currentLevel);
 
       hanziEl.textContent = target.hanzi;
@@ -1394,6 +1437,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       optionsContainer.querySelectorAll('.speed-opt-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           if (isGameOver) return;
+          lastActionAt = Date.now();
           answeredCount++;
           const chosen = btn.dataset.meaning;
           const isCorrect = chosen === target.meaning;
@@ -1404,10 +1448,58 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             if (streak > maxStreak) maxStreak = streak;
             sounds.playCorrect();
 
+            const wasInDanger = timeLeft <= 14;
             // Thưởng thêm +3 giây khi trả lời đúng
             timeLeft += 3;
             updateTimerUI();
             showTimeDelta(3);
+
+            // Lời thoại của LuLu theo tiến độ trả lời đúng & Combo
+            if (streak >= 6) {
+              sayLulu(
+                pickLine([
+                  `Siêu cấp ${streak}x! Không ai cản nổi! 👑`,
+                  'Thần đồng tiếng Trung đây rồi! ⚡',
+                  `Combo ${streak}x cháy quá! Bay lên mây luôn! 🌟`,
+                  'Đỉnh nóc kịch trần! Hoa hít khói rồi! 🚀'
+                ]),
+                'combo',
+                2200
+              );
+            } else if (streak >= 3) {
+              sayLulu(
+                pickLine([
+                  `Combo ${streak}x! Giỏi lắm bạn ơi! 🔥`,
+                  'Tuyệt vời! Tốc độ tên lửa! 🚀',
+                  'Quá chuẩn! LuLu bay vèo vèo luôn! ✨',
+                  'Xuất sắc! Bỏ xa hoa ăn thịt rồi! 😎'
+                ]),
+                'combo',
+                2100
+              );
+            } else if (wasInDanger) {
+              sayLulu(
+                pickLine([
+                  'Hú hồn! Cứu LuLu kịp lúc lắm! 😮‍💨',
+                  'May quá! Thoát khỏi miệng hoa rồi! 🪽',
+                  'Giỏi lắm! Cố thêm vài câu để bay xa nào! 💪'
+                ]),
+                'praise',
+                2100
+              );
+            } else {
+              sayLulu(
+                pickLine([
+                  'Giỏi lắm! +3 giây bay tiếp! 🍊',
+                  'Chuẩn luôn! Bay cao nào! ✨',
+                  'Đúng rồi! Cứ thế phát huy nhé! 👍',
+                  'Tuyệt cú mèo! Nhanh trí lắm! 🌟',
+                  'Quá nhạy! Xa bông hoa thêm chút rồi! 🪽'
+                ]),
+                'praise',
+                1900
+              );
+            }
 
             const multiplier = Math.min(4, 1 + Math.floor(streak / 3));
             score += 100 * multiplier;
@@ -1451,6 +1543,29 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
               return;
             }
 
+            if (timeLeft <= 15) {
+              sayLulu(
+                pickLine([
+                  'Ối! Trừ 3 giây là sát miệng hoa rồi! 😱',
+                  'Nguy to! Hoa ăn thịt ngay sau lưng kìa! 🆘',
+                  'Cẩn thận bạn ơi! Sắp bị hoa đớp rồi! 💦'
+                ]),
+                'panic',
+                2300
+              );
+            } else {
+              sayLulu(
+                pickLine([
+                  'Ái chà! Lùi mất 3 giây rồi, cố lên! 💪',
+                  'Hự! Sai mất tiêu, bình tĩnh chọn lại nhé! 😵',
+                  'Suýt đúng rồi! Đừng để hoa đuổi kịp nha! 🌿',
+                  'Ối, chao đảo quá! Tập trung nào bạn ơi! 👀'
+                ]),
+                'oops',
+                2100
+              );
+            }
+
             setTimeout(nextQuestion, 600);
           }
         });
@@ -1458,6 +1573,14 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     }
 
     nextQuestion();
+    sayLulu(
+      pickLine([
+        'Bay thôi! Đừng để hoa đớp LuLu nhé! 🍊',
+        'Xuất phát! Giúp LuLu bay thật xa nào! ✨'
+      ]),
+      'info',
+      2600
+    );
 
     activeInterval = setInterval(() => {
       timeLeft--;
@@ -1465,6 +1588,52 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
       if (timeLeft <= 0) {
         triggerGameOver();
+        return;
+      }
+
+      const now = Date.now();
+      const idleMs = now - lastActionAt;
+      const sinceLastSpeech = now - lastSpeechAt;
+
+      // Lời thoại cảnh báo khẩn cấp khi thời gian sắp cạn
+      if (timeLeft === 12) {
+        sayLulu('Cứu LuLu! Hoa ăn thịt há miệng rồi kìa! 😱', 'panic', 2600);
+      } else if (timeLeft === 8 && sinceLastSpeech > 1400) {
+        sayLulu('Nhanh lên!! Nó sắp đớp trúng đuôi LuLu rồi! 💦', 'panic', 2400);
+      } else if (timeLeft === 4 && sinceLastSpeech > 1200) {
+        sayLulu('Á á á! Sát miệng hoa lắm rồi!! 🆘', 'panic', 2400);
+      } else if (timeLeft === 22 && sinceLastSpeech > 2200) {
+        sayLulu('Nhanh lên bạn ơi! Còn 22 giây thôi! ⏰', 'hurry', 2200);
+      } else if (timeLeft === 35 && sinceLastSpeech > 2500) {
+        sayLulu(
+          score >= 500
+            ? 'Phong độ đỉnh quá, giữ vững tốc độ nhé! 🔥'
+            : 'Nửa chặng đường rồi, tăng tốc lên nào! ⚡',
+          'info',
+          2200
+        );
+      } else if (idleMs >= 4200 && sinceLastSpeech >= 3200) {
+        // Nhắc nhở khi người chơi ngập ngừng lâu chưa chọn đáp án
+        if (timeLeft <= 15) {
+          sayLulu(
+            pickLine([
+              'Nhanh lên!! Hoa sắp đớp LuLu tới nơi rồi! 😱',
+              'Chọn nhanh cứu LuLu với!! 🆘'
+            ]),
+            'panic',
+            2200
+          );
+        } else {
+          sayLulu(
+            pickLine([
+              'Nhanh lên nào, hoa đang tiến lại gần kìa! ⏳',
+              'Chốt đáp án lẹ thôi, LuLu mỏi cánh quá! 🪽',
+              'Suy nghĩ nhanh nào, thời gian đang trôi! ⚡'
+            ]),
+            'hurry',
+            2200
+          );
+        }
       }
     }, 1000);
   }
