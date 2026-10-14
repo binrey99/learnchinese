@@ -12959,8 +12959,9 @@ body.show-pinyin .speed-pinyin{display:block!important}
 
 .site-footer-inner {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1.25fr;
-  gap: 28px;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 32px;
+  align-items: start;
   padding-bottom: 24px;
   border-bottom: 1.5px dashed #e2e8f0;
 }
@@ -13031,38 +13032,13 @@ body.show-pinyin .speed-pinyin{display:block!important}
   font-weight: 700;
 }
 
-.footer-links {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.footer-links a {
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
-  color: #475569;
-  transition: color 0.18s ease, transform 0.18s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.footer-links a:hover {
-  color: #059669;
-  transform: translateX(3px);
-}
-
 .footer-contact-list {
   list-style: none;
   padding: 0;
   margin: 0 0 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
 }
 
 .footer-contact-list li {
@@ -13129,9 +13105,8 @@ body.show-pinyin .speed-pinyin{display:block!important}
 .site-footer-bottom {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
+  justify-content: center;
+  text-align: center;
   padding-top: 16px;
   font-size: 12.5px;
   color: #64748b;
@@ -13145,43 +13120,10 @@ body.show-pinyin .speed-pinyin{display:block!important}
   color: #047857;
 }
 
-.footer-bottom-links {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.footer-bottom-links a {
-  color: #475569;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.footer-bottom-links a:hover {
-  color: #059669;
-}
-
-.footer-top-btn {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  color: #334155;
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.18s ease;
-}
-
-.footer-top-btn:hover {
-  background: #ecfdf5;
-  border-color: #6ee7b7;
-  color: #047857;
-}
-
-@media (max-width: 960px) {
+@media (max-width: 820px) {
   .site-footer-inner {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+    gap: 24px;
   }
 }
 
@@ -13189,13 +13131,8 @@ body.show-pinyin .speed-pinyin{display:block!important}
   .site-footer {
     padding: 24px 18px 18px;
   }
-  .site-footer-inner {
+  .footer-contact-list {
     grid-template-columns: 1fr;
-    gap: 22px;
-  }
-  .site-footer-bottom {
-    flex-direction: column;
-    text-align: center;
   }
 }
 
