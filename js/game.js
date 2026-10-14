@@ -1817,7 +1817,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     let lives = 3;
     let isGameOver = false;
     let isWaveClearing = false;
-    let shotsUntilDescent = 5;
+    let missesUntilDescent = 3;
     let blockIdCounter = 0;
 
     let blocks = []; // Active Hanzi blocks on board
@@ -1826,39 +1826,56 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     let flyingBullet = null; // Currently moving bullet
     let currentBulletWord = null;
     let nextBulletWord = null;
+    let aimedBlock = null;
 
     const PALETTES_COUNT = 6;
+    const BLOCK_RADIUS = 31;
+    const ROW_STEP_Y = 52;
+    const TOP_START_Y = 38;
+
+    function formatBulletMeaning(raw = '') {
+      const text = String(raw || '').trim();
+      if (text.length <= 24) return text;
+      // Rút gọn phần chú thích trong ngoặc nếu câu quá dài để hiển thị gọn đẹp
+      const withoutParen = text.replace(/\s*\([^)]*\)/g, '').trim();
+      if (withoutParen.length >= 2 && withoutParen.length <= 28) return withoutParen;
+      return text;
+    }
 
     arena.innerHTML = `
       <div class="shooter-game-panel">
         <div class="shooter-hud">
-          <div class="hud-item">
-            <span>🏆 Điểm:</span>
-            <strong id="shooterScore">0</strong>
+          <div class="shooter-hud-stats">
+            <div class="hud-item">
+              <span>🏆 Điểm:</span>
+              <strong id="shooterScore">0</strong>
+            </div>
+            <div class="hud-item">
+              <span>🔥 Combo:</span>
+              <strong id="shooterStreak">0x</strong>
+            </div>
+            <div class="hud-item">
+              <span>🌊 Vòng:</span>
+              <strong id="shooterWave">1</strong>
+            </div>
+            <div class="hud-item">
+              <span>❤️ Mạng:</span>
+              <strong id="shooterLives">❤️❤️❤️</strong>
+            </div>
           </div>
-          <div class="hud-item">
-            <span>🔥 Combo:</span>
-            <strong id="shooterStreak">0x</strong>
+          <div class="shooter-hud-actions">
+            <button type="button" class="shooter-next-box" id="shooterSwapBtn" title="Bấm để đổi giữa đạn hiện tại và đạn kế tiếp (Phím Space)">
+              <span class="next-label">Đổi đạn ⇄:</span>
+              <strong class="shooter-next-pill" id="shooterNextWord">...</strong>
+            </button>
+            <button type="button" class="game-btn-secondary shooter-restart-btn" id="shooterRestart">Chơi lại ↺</button>
           </div>
-          <div class="hud-item">
-            <span>🌊 Vòng:</span>
-            <strong id="shooterWave">1</strong>
-          </div>
-          <div class="hud-item">
-            <span>❤️ Mạng:</span>
-            <strong id="shooterLives">❤️❤️❤️</strong>
-          </div>
-          <div class="hud-item shooter-next-box">
-            <span>Kế tiếp:</span>
-            <strong class="shooter-next-pill" id="shooterNextWord">...</strong>
-          </div>
-          <button type="button" class="game-btn-secondary" id="shooterRestart">Chơi lại ↺</button>
         </div>
 
         <div class="shooter-board" id="shooterBoard">
           <!-- Danger line -->
           <div class="shooter-danger-line" id="shooterDangerLine">
-            <span>⚠️ VẠCH NGUY HIỂM ⚠️</span>
+            <span>⚠️ VẠCH NGUY HIỂM (Bắn sai ${missesUntilDescent} lần sẽ hạ trần) ⚠️</span>
           </div>
 
           <!-- Active Blocks Container -->
@@ -1875,20 +1892,20 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           <!-- Slingshot / Launcher Zone -->
           <div class="shooter-slingshot-zone" id="shooterSlingshotZone">
             <svg class="shooter-slingshot-fork" viewBox="0 0 100 80">
-              <path d="M 28 80 L 28 35 L 14 10 M 28 35 L 72 35 L 86 10 M 72 80 L 72 35" stroke="#64748b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
-              <line id="slingshotBandLeft" x1="14" y1="10" x2="50" y2="40" stroke="#f43f5e" stroke-width="4.5" stroke-linecap="round" />
-              <line id="slingshotBandRight" x1="86" y1="10" x2="50" y2="40" stroke="#f43f5e" stroke-width="4.5" stroke-linecap="round" />
+              <path d="M 28 80 L 28 35 L 14 10 M 28 35 L 72 35 L 86 10 M 72 80 L 72 35" stroke="#64748b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.65"/>
+              <line id="slingshotBandLeft" x1="14" y1="10" x2="50" y2="38" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" />
+              <line id="slingshotBandRight" x1="86" y1="10" x2="50" y2="38" stroke="#10b981" stroke-width="4.5" stroke-linecap="round" />
             </svg>
 
             <!-- Loaded Bullet on Pouch -->
             <div class="shooter-loaded-bullet" id="shooterLoadedBullet">
-              <span class="bullet-tag">BẮN NGHĨA:</span>
+              <span class="bullet-tag">BẮN NGHĨA TIẾNG VIỆT:</span>
               <strong class="bullet-meaning-text" id="shooterBulletText">...</strong>
             </div>
 
             <!-- Hint Arrow -->
             <div class="shooter-hint-arrow" id="shooterHint">
-              <span>👇 Kéo súng xuống để ngắm & thả ra để bắn 👇</span>
+              <span>🎯 Kéo ná xuống hoặc chỉ thẳng vào bóng chữ Hán để ngắm bắn</span>
             </div>
           </div>
         </div>
@@ -1898,14 +1915,13 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const shooterBoard = arena.querySelector('#shooterBoard');
     const blocksWrap = arena.querySelector('#shooterBlocksWrap');
     const fxLayer = arena.querySelector('#shooterFxLayer');
-    const aimSvg = arena.querySelector('#shooterAimSvg');
     const aimLine = arena.querySelector('#shooterAimLine');
-    const slingshotZone = arena.querySelector('#shooterSlingshotZone');
     const bandLeft = arena.querySelector('#slingshotBandLeft');
     const bandRight = arena.querySelector('#slingshotBandRight');
     const loadedBulletEl = arena.querySelector('#shooterLoadedBullet');
     const bulletTextEl = arena.querySelector('#shooterBulletText');
     const nextWordEl = arena.querySelector('#shooterNextWord');
+    const swapBtn = arena.querySelector('#shooterSwapBtn');
     const hintEl = arena.querySelector('#shooterHint');
     const dangerLineEl = arena.querySelector('#shooterDangerLine');
 
@@ -1918,62 +1934,146 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     restartBtn.addEventListener('click', () => startShooterGame(arena));
 
     // Dynamic Board metrics
-    let boardW = shooterBoard.clientWidth || 640;
-    let boardH = shooterBoard.clientHeight || 500;
+    let boardW = shooterBoard.clientWidth || 660;
+    let boardH = shooterBoard.clientHeight || 450;
     let launcherX = boardW / 2;
-    let launcherY = boardH - 60;
-    let dangerY = boardH - 140;
+    let launcherY = boardH - 52;
+    let dangerY = boardH - 115;
 
     function updateBoardMetrics() {
-      boardW = shooterBoard.clientWidth || 640;
-      boardH = shooterBoard.clientHeight || 500;
+      boardW = shooterBoard.clientWidth || 660;
+      boardH = shooterBoard.clientHeight || 450;
       launcherX = boardW / 2;
-      launcherY = boardH - 60;
-      dangerY = boardH - 140;
+      launcherY = boardH - 52;
+      dangerY = boardH - 115;
       dangerLineEl.style.top = `${dangerY}px`;
     }
     updateBoardMetrics();
 
-    // Word selection helpers
-    function getRandomWordFromBoard() {
-      if (!blocks.length) return null;
-      return blocks[Math.floor(Math.random() * blocks.length)].word;
+    function updateDangerLineLabel() {
+      const span = dangerLineEl.querySelector('span');
+      if (span) {
+        span.textContent = `⚠️ VẠCH NGUY HIỂM · Còn ${missesUntilDescent} lần bắn sai trước khi hạ trần ⚠️`;
+      }
     }
 
-    function getRandomWordFromPool() {
-      const p = getFilteredWords();
-      return p[Math.floor(Math.random() * p.length)];
+    // Tìm các bóng chữ Hán ở hàng mặt tiền (không bị bóng khác chắn ngay phía dưới)
+    function getReachableBlocks() {
+      if (!blocks.length) return [];
+      const reachable = blocks.filter((b) => {
+        const isBlockedBelow = blocks.some(
+          (other) => other !== b && other.y > b.y + 12 && Math.abs(other.x - b.x) < 42
+        );
+        return !isBlockedBelow;
+      });
+      return reachable.length > 0 ? reachable : blocks;
     }
 
-    function getNextBulletWord() {
-      if (blocks.length > 0) {
-        // 85% chọn đúng 1 trong các từ đang có trên bàn để người chơi luôn có mục tiêu bắn trúng!
-        if (Math.random() < 0.85) {
-          const w = getRandomWordFromBoard();
-          if (w) return w;
+    function getNextBulletWord(excludeWord = null) {
+      const candidates = getReachableBlocks();
+      if (!candidates.length) {
+        const p = getFilteredWords();
+        return p[Math.floor(Math.random() * p.length)];
+      }
+      if (excludeWord && candidates.length > 1) {
+        const filtered = candidates.filter(
+          (b) => b.word.hanzi !== excludeWord.hanzi && b.word.meaning !== excludeWord.meaning
+        );
+        if (filtered.length > 0) {
+          return filtered[Math.floor(Math.random() * filtered.length)].word;
         }
       }
-      return getRandomWordFromPool();
+      return candidates[Math.floor(Math.random() * candidates.length)].word;
+    }
+
+    function ensureValidBulletWords() {
+      if (!blocks.length) return;
+      const reachable = getReachableBlocks();
+      const isCurrentValid =
+        currentBulletWord &&
+        reachable.some(
+          (b) => b.word.hanzi === currentBulletWord.hanzi || b.word.meaning === currentBulletWord.meaning
+        );
+      if (!isCurrentValid) {
+        currentBulletWord = getNextBulletWord();
+      }
+      const isNextValid =
+        nextBulletWord &&
+        blocks.some(
+          (b) => b.word.hanzi === nextBulletWord.hanzi || b.word.meaning === nextBulletWord.meaning
+        );
+      if (!isNextValid) {
+        nextBulletWord = getNextBulletWord(currentBulletWord);
+      }
+      updateBulletDisplays();
     }
 
     function updateBulletDisplays() {
       if (currentBulletWord) {
-        bulletTextEl.textContent = currentBulletWord.meaning;
+        const displayMeaning = formatBulletMeaning(currentBulletWord.meaning);
+        bulletTextEl.textContent = displayMeaning;
+        loadedBulletEl.title = currentBulletWord.meaning;
       }
       if (nextBulletWord) {
-        nextWordEl.textContent = nextBulletWord.meaning;
+        nextWordEl.textContent = formatBulletMeaning(nextBulletWord.meaning);
+        swapBtn.title = `Đạn kế: "${nextBulletWord.meaning}" — Bấm để đổi đạn (Phím Space)`;
+      }
+    }
+
+    function swapBullets() {
+      if (isGameOver || isWaveClearing || flyingBullet || !currentBulletWord || !nextBulletWord) return;
+      const temp = currentBulletWord;
+      currentBulletWord = nextBulletWord;
+      nextBulletWord = temp;
+      sounds.playFlip();
+      updateBulletDisplays();
+      loadedBulletEl.classList.remove('bullet-swap-anim');
+      void loadedBulletEl.offsetWidth;
+      loadedBulletEl.classList.add('bullet-swap-anim');
+    }
+
+    swapBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      swapBullets();
+    });
+
+    const onKeyDown = (e) => {
+      if (e.code === 'Space' && currentGameMode === 'shooter' && !isGameOver) {
+        // Tránh cuộn trang khi nhấn Space đổi đạn
+        if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+        e.preventDefault();
+        swapBullets();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    activeCleanups.push(() => window.removeEventListener('keydown', onKeyDown));
+
+    function setAimedBlock(block) {
+      if (aimedBlock === block) return;
+      if (aimedBlock && aimedBlock.el) {
+        aimedBlock.el.classList.remove('is-aimed');
+      }
+      aimedBlock = block;
+      if (aimedBlock && aimedBlock.el) {
+        aimedBlock.el.classList.add('is-aimed');
       }
     }
 
     function renderBlock(block) {
       const el = document.createElement('div');
+      const hanziStr = String(block.word.hanzi || '').trim();
+      const pyStr = String(block.word.pinyin || toPinyin(hanziStr) || '').trim();
+      const charCount = Array.from(hanziStr).length;
+      const lenClass = `hanzi-len-${Math.min(4, Math.max(1, charCount))}`;
+      const pyClass = pyStr.length > 10 ? 'pinyin-long' : '';
+
       el.className = `shooter-block color-${block.colorIndex}`;
       el.dataset.id = block.id;
       el.style.left = `${block.x}px`;
       el.style.top = `${block.y}px`;
       el.innerHTML = `
-        <span class="block-hanzi">${escapeHtml(block.word.hanzi)}</span>
-        <span class="block-pinyin game-pinyin">${escapeHtml(block.word.pinyin || '')}</span>
+        <span class="block-hanzi ${lenClass}">${escapeHtml(hanziStr)}</span>
+        <span class="block-pinyin game-pinyin ${pyClass}">${escapeHtml(pyStr)}</span>
       `;
       blocksWrap.appendChild(el);
       block.el = el;
@@ -1987,7 +2087,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         word,
         x,
         y,
-        r: 30,
+        r: BLOCK_RADIUS,
         colorIndex: colorIndex !== null ? colorIndex : (blockIdCounter % PALETTES_COUNT),
         el: null
       };
@@ -1995,79 +2095,207 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       return block;
     }
 
-    // Spawn an entire wave of blocks
+    // Tính vị trí các cột chuẩn lưới tổ ong (Hexagonal Grid)
+    function getGridSlotPositions(rowIdx) {
+      const baseCols = 6;
+      const isOdd = rowIdx % 2 === 1;
+      const count = isOdd ? baseCols - 1 : baseCols;
+      const usableW = boardW - 56;
+      const colSpacing = usableW / baseCols;
+      const startX = isOdd ? 28 + colSpacing : 28 + colSpacing / 2;
+      const y = TOP_START_Y + rowIdx * ROW_STEP_Y;
+      const slots = [];
+      for (let c = 0; c < count; c++) {
+        slots.push({ x: Math.round(startX + c * colSpacing), y: Math.round(y), row: rowIdx, col: c });
+      }
+      return slots;
+    }
+
+    // Tìm ô trống hợp lệ gần điểm va chạm nhất để bóng không bao giờ đè lên nhau
+    function findNearestEmptySlot(targetX, targetY) {
+      let bestSlot = null;
+      let bestDist = Infinity;
+
+      for (let r = 0; r < 8; r++) {
+        const slots = getGridSlotPositions(r);
+        for (const s of slots) {
+          // Kiểm tra ô này đã có bóng nào chiếm chưa
+          const occupied = blocks.some((b) => Math.hypot(b.x - s.x, b.y - s.y) < BLOCK_RADIUS * 1.45);
+          if (occupied) continue;
+
+          // Ưu tiên ô nằm gần trần hoặc kề sát ít nhất 1 bóng hiện có
+          const touchesCeiling = r === 0;
+          const touchesExisting = blocks.some((b) => Math.hypot(b.x - s.x, b.y - s.y) <= BLOCK_RADIUS * 2.5);
+          if (!touchesCeiling && !touchesExisting) continue;
+
+          const dist = Math.hypot(targetX - s.x, targetY - s.y);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestSlot = s;
+          }
+        }
+      }
+
+      if (bestSlot) return bestSlot;
+
+      // Dự phòng nếu không tìm thấy ô lưới chuẩn
+      const clampedX = Math.max(38, Math.min(boardW - 38, targetX));
+      const clampedY = Math.max(TOP_START_Y, Math.min(dangerY - 10, targetY));
+      return { x: clampedX, y: clampedY };
+    }
+
+    // Kiểm tra và làm rụng các bóng bị mất liên kết với trần (Avalanche / Cluster Drop)
+    function dropFloatingBlocks() {
+      if (!blocks.length) return 0;
+      const anchored = new Set();
+      const queue = [];
+
+      // Tất cả bóng ở hàng trên cùng được neo vào trần
+      blocks.forEach((b) => {
+        if (b.y <= TOP_START_Y + 18) {
+          anchored.add(b);
+          queue.push(b);
+        }
+      });
+
+      // Lan truyền (BFS) sang các bóng kề cận
+      while (queue.length > 0) {
+        const curr = queue.shift();
+        for (const other of blocks) {
+          if (!anchored.has(other)) {
+            const dist = Math.hypot(curr.x - other.x, curr.y - other.y);
+            if (dist <= BLOCK_RADIUS * 2.55) {
+              anchored.add(other);
+              queue.push(other);
+            }
+          }
+        }
+      }
+
+      // Các bóng không nằm trong tập anchored sẽ rơi tự do!
+      const floating = blocks.filter((b) => !anchored.has(b));
+      if (!floating.length) return 0;
+
+      floating.forEach((fb) => {
+        const idx = blocks.indexOf(fb);
+        if (idx !== -1) blocks.splice(idx, 1);
+
+        if (fb.el) {
+          fb.el.classList.remove('is-aimed');
+          fb.el.classList.add('is-dropping');
+          fxLayer.appendChild(fb.el);
+          droppingBlocks.push({
+            el: fb.el,
+            origX: fb.x,
+            origY: fb.y,
+            x: fb.x,
+            y: fb.y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: -2.5,
+            rot: 0,
+            vRot: (Math.random() - 0.5) * 9
+          });
+        }
+        createParticles(fb.x, fb.y, 8);
+      });
+
+      return floating.length;
+    }
+
+    // Spawn an entire wave of blocks with unique words
     function spawnWave() {
+      updateBoardMetrics();
       blocks.forEach((b) => { if (b.el) b.el.remove(); });
       blocks = [];
+      setAimedBlock(null);
 
-      const colCount = 7;
-      const colSpacing = (boardW - 36) / colCount;
-      const rowsCount = Math.min(5, 2 + wave); // Wave 1: 3 rows, Wave 2: 4 rows...
-      const pool = shuffle(getFilteredWords());
+      const rowsCount = Math.min(4, 2 + Math.ceil(wave / 2)); // Wave 1-2: 3 hàng, Wave 3+: 4 hàng
+      const rawPool = shuffle(getFilteredWords());
+      // Lọc các từ duy nhất không trùng Hanzi trên bàn
+      const uniquePool = [];
+      const seenHanzi = new Set();
+      for (const w of rawPool) {
+        if (!seenHanzi.has(w.hanzi)) {
+          seenHanzi.add(w.hanzi);
+          uniquePool.push(w);
+        }
+      }
+      const pool = uniquePool.length >= 6 ? uniquePool : rawPool;
       let wordIdx = 0;
 
       for (let r = 0; r < rowsCount; r++) {
-        const isOdd = r % 2 === 1;
-        const count = isOdd ? colCount - 1 : colCount;
-        const startX = isOdd ? 18 + colSpacing : 18 + colSpacing / 2;
-        const y = 30 + r * 50;
-
-        for (let c = 0; c < count; c++) {
-          const x = startX + c * colSpacing;
+        const slots = getGridSlotPositions(r);
+        for (const s of slots) {
           const word = pool[wordIdx % pool.length];
           wordIdx++;
-          const block = createBlock(x, y, word);
+          const block = createBlock(s.x, s.y, word);
           blocks.push(block);
         }
       }
 
+      missesUntilDescent = 3;
+      updateDangerLineLabel();
       currentBulletWord = getNextBulletWord();
-      nextBulletWord = getNextBulletWord();
+      nextBulletWord = getNextBulletWord(currentBulletWord);
       updateBulletDisplays();
     }
 
-    // Ceiling descent: hạ các block xuống 1 bậc và thêm 1 hàng mới
+    // Ceiling descent: hạ các block xuống 1 bậc và thêm 1 hàng mới khi bắn sai nhiều lần
     function descendCeiling() {
       if (isGameOver || isWaveClearing) return;
-      const stepY = 48;
       let reachedDanger = false;
 
       blocks.forEach((b) => {
-        b.y += stepY;
+        b.y += ROW_STEP_Y;
         if (b.el) b.el.style.top = `${b.y}px`;
         if (b.y + b.r >= dangerY) {
           reachedDanger = true;
         }
       });
 
-      // Thêm 1 hàng mới trên cùng y = 30
-      const colCount = 7;
-      const colSpacing = (boardW - 36) / colCount;
-      const pool = shuffle(getFilteredWords());
-      for (let c = 0; c < colCount; c++) {
-        const x = 18 + colSpacing / 2 + c * colSpacing;
-        const word = pool[c % pool.length];
-        const block = createBlock(x, 30, word);
-        blocks.push(block);
-      }
+      // Thêm 1 hàng mới trên cùng (row 0) ưu tiên các từ chưa có trên bàn
+      const slots = getGridSlotPositions(0);
+      const existingHanzi = new Set(blocks.map((b) => b.word.hanzi));
+      const allWords = shuffle(getFilteredWords());
+      const freshWords = allWords.filter((w) => !existingHanzi.has(w.hanzi));
+      const usePool = freshWords.length >= slots.length ? freshWords : allWords;
 
-      // Rung cảnh báo
+      slots.forEach((s, idx) => {
+        const word = usePool[idx % usePool.length];
+        const block = createBlock(s.x, s.y, word);
+        blocks.push(block);
+      });
+
       dangerLineEl.classList.add('pulse-danger');
       setTimeout(() => dangerLineEl.classList.remove('pulse-danger'), 1000);
 
       if (reachedDanger) {
-        triggerGameOver();
+        lives--;
+        livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
+        if (lives <= 0) {
+          triggerGameOver();
+          return;
+        }
+        // Xóa bớt các bóng vượt quá vạch nguy hiểm để người chơi tiếp tục
+        const overBlocks = blocks.filter((b) => b.y + b.r >= dangerY);
+        overBlocks.forEach((ob) => {
+          const idx = blocks.indexOf(ob);
+          if (idx !== -1) blocks.splice(idx, 1);
+          if (ob.el) ob.el.remove();
+        });
       }
+
+      ensureValidBulletWords();
     }
 
     function showPopupText(text, isPositive, x, y) {
       const popup = document.createElement('span');
       popup.className = `shooter-popup ${isPositive ? 'plus' : 'minus'}`;
       popup.textContent = text;
-      popup.style.left = `${x}px`;
-      popup.style.top = `${y}px`;
+      popup.style.left = `${Math.max(50, Math.min(boardW - 50, x))}px`;
+      popup.style.top = `${Math.max(30, y)}px`;
       fxLayer.appendChild(popup);
-      setTimeout(() => popup.remove(), 800);
+      setTimeout(() => popup.remove(), 850);
     }
 
     function createParticles(x, y, count = 12) {
@@ -2095,6 +2323,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     function triggerGameOver() {
       if (isGameOver) return;
       isGameOver = true;
+      setAimedBlock(null);
       clearActiveGame();
       sounds.playVictory();
 
@@ -2122,6 +2351,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     function handleWaveCleared() {
       if (isWaveClearing || isGameOver) return;
       isWaveClearing = true;
+      setAimedBlock(null);
       sounds.playVictory();
 
       score += 500;
@@ -2138,119 +2368,151 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         wave++;
         waveEl.textContent = String(wave);
         isWaveClearing = false;
-        shotsUntilDescent = 5;
         spawnWave();
-      }, 1600);
+      }, 1500);
     }
 
     // ==========================================
-    // SLINGSHOT CONTROLS (KÉO XUỐNG ĐỂ BẮN)
+    // AIMING & SLINGSHOT CONTROLS (HỖ TRỢ CẢ KÉO NÁ & CHỈ TRỰC TIẾP)
     // ==========================================
     let isDragging = false;
-    let dragPullX = 0;
-    let dragPullY = 0;
+    let aimVx = 0;
+    let aimVy = 0;
 
     function resetSlingshotVisuals() {
       loadedBulletEl.style.transform = 'translate(0, 0)';
       bandLeft.setAttribute('x2', '50');
-      bandLeft.setAttribute('y2', '40');
+      bandLeft.setAttribute('y2', '38');
       bandRight.setAttribute('x2', '50');
-      bandRight.setAttribute('y2', '40');
+      bandRight.setAttribute('y2', '38');
       aimLine.setAttribute('points', '');
       aimLine.style.opacity = '0';
+      setAimedBlock(null);
+    }
+
+    // Dò đường bay của đạn & tìm bóng mục tiêu sẽ va chạm đầu tiên
+    function traceAimTrajectory(dirX, dirY) {
+      let rayX = launcherX;
+      let rayY = launcherY;
+      const stepDist = 10;
+      let rVx = dirX * stepDist;
+      let rVy = dirY * stepDist;
+      const points = [`${Math.round(rayX)},${Math.round(rayY)}`];
+      let firstHit = null;
+
+      for (let step = 0; step < 68; step++) {
+        rayX += rVx;
+        rayY += rVy;
+
+        // Phản xạ tường trái / phải
+        if (rayX <= 24) {
+          rayX = 24;
+          rVx = -rVx;
+          points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
+        } else if (rayX >= boardW - 24) {
+          rayX = boardW - 24;
+          rVx = -rVx;
+          points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
+        }
+
+        // Kiểm tra chạm bóng trên bàn
+        for (let i = 0; i < blocks.length; i++) {
+          const b = blocks[i];
+          if (Math.hypot(rayX - b.x, rayY - b.y) <= BLOCK_RADIUS + 14) {
+            firstHit = b;
+            break;
+          }
+        }
+
+        if (firstHit || rayY <= 28) {
+          points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
+          break;
+        }
+      }
+
+      points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
+      return { points: points.join(' '), hitBlock: firstHit };
+    }
+
+    function updateAimFromPointer(clientX, clientY) {
+      const rect = shooterBoard.getBoundingClientRect();
+      const curX = clientX - rect.left;
+      const curY = clientY - rect.top;
+
+      let pullX = 0;
+      let pullY = 0;
+      const maxPull = 62;
+
+      if (curY >= launcherY - 8) {
+        // Chế độ 1: Kéo ná xuống (Slingshot Pull)
+        let dx = curX - launcherX;
+        let dy = Math.max(10, curY - launcherY);
+        const dist = Math.hypot(dx, dy);
+        if (dist > maxPull) {
+          dx = (dx / dist) * maxPull;
+          dy = (dy / dist) * maxPull;
+        }
+        pullX = dx;
+        pullY = dy;
+        aimVx = -dx;
+        aimVy = -dy;
+      } else {
+        // Chế độ 2: Chỉ / kéo trực tiếp lên phía bóng mục tiêu (Direct Aim)
+        let dx = curX - launcherX;
+        let dy = Math.min(-18, curY - launcherY);
+        const dist = Math.hypot(dx, dy);
+        const normX = dx / (dist || 1);
+        const normY = dy / (dist || 1);
+        pullX = -normX * 36;
+        pullY = -normY * 36;
+        aimVx = normX * maxPull;
+        aimVy = normY * maxPull;
+      }
+
+      // Giới hạn góc bắn để không bắn ngang sát đáy
+      if (aimVy > -12) {
+        aimVy = -12;
+      }
+
+      loadedBulletEl.style.transform = `translate(${Math.round(pullX * 0.55)}px, ${Math.round(pullY * 0.45)}px)`;
+
+      const svgDx = (pullX / maxPull) * 32;
+      const svgDy = (pullY / maxPull) * 30;
+      bandLeft.setAttribute('x2', `${50 + svgDx}`);
+      bandLeft.setAttribute('y2', `${38 + svgDy}`);
+      bandRight.setAttribute('x2', `${50 + svgDx}`);
+      bandRight.setAttribute('y2', `${38 + svgDy}`);
+
+      const len = Math.hypot(aimVx, aimVy);
+      if (len > 8) {
+        const dirX = aimVx / len;
+        const dirY = aimVy / len;
+        const trace = traceAimTrajectory(dirX, dirY);
+        aimLine.setAttribute('points', trace.points);
+        aimLine.style.opacity = '1';
+        setAimedBlock(trace.hitBlock);
+      } else {
+        aimLine.style.opacity = '0';
+        setAimedBlock(null);
+      }
     }
 
     function onPointerDown(e) {
       if (isGameOver || isWaveClearing || flyingBullet) return;
-      const rect = shooterBoard.getBoundingClientRect();
-      const pointerY = e.clientY - rect.top;
-
-      // Cho phép bắt đầu kéo nếu chạm vào nửa dưới của bảng
-      if (pointerY >= launcherY - 90) {
-        isDragging = true;
-        dragPullX = 0;
-        dragPullY = 0;
-        hintEl.style.display = 'none';
-        try {
-          shooterBoard.setPointerCapture(e.pointerId);
-        } catch (_) {}
-      }
+      if (e.button && e.button !== 0) return;
+      isDragging = true;
+      aimVx = 0;
+      aimVy = 0;
+      if (hintEl) hintEl.style.display = 'none';
+      try {
+        shooterBoard.setPointerCapture(e.pointerId);
+      } catch (_) {}
+      updateAimFromPointer(e.clientX, e.clientY);
     }
 
     function onPointerMove(e) {
       if (!isDragging || isGameOver || isWaveClearing || flyingBullet) return;
-      const rect = shooterBoard.getBoundingClientRect();
-      const curX = e.clientX - rect.left;
-      const curY = e.clientY - rect.top;
-
-      let dx = curX - launcherX;
-      let dy = curY - launcherY;
-
-      // Yêu cầu kéo xuống (dy > 0)
-      dy = Math.max(0, dy);
-
-      const dist = Math.hypot(dx, dy);
-      const maxPull = 70;
-      if (dist > maxPull) {
-        dx = (dx / dist) * maxPull;
-        dy = (dy / dist) * maxPull;
-      }
-
-      dragPullX = dx;
-      dragPullY = dy;
-
-      // Di chuyển viên đạn theo tay kéo
-      loadedBulletEl.style.transform = `translate(${dragPullX}px, ${dragPullY}px)`;
-
-      // Co dãn dây cao su ná
-      const svgDx = (dragPullX / maxPull) * 35;
-      const svgDy = (dragPullY / maxPull) * 35;
-      bandLeft.setAttribute('x2', `${50 + svgDx}`);
-      bandLeft.setAttribute('y2', `${40 + svgDy}`);
-      bandRight.setAttribute('x2', `${50 + svgDx}`);
-      bandRight.setAttribute('y2', `${40 + svgDy}`);
-
-      // Tính tia ngắm (hướng ngược lại của lực kéo ná)
-      const launchVx = -dragPullX;
-      const launchVy = -dragPullY;
-      const len = Math.hypot(launchVx, launchVy);
-
-      if (len > 12 && dragPullY > 8) {
-        const dirX = launchVx / len;
-        const dirY = launchVy / len;
-
-        // Bắn tia dự đoán bật tường
-        let rayX = launcherX;
-        let rayY = launcherY;
-        let rVx = dirX * 18;
-        let rVy = dirY * 18;
-        const points = [`${Math.round(rayX)},${Math.round(rayY)}`];
-
-        for (let step = 0; step < 26; step++) {
-          rayX += rVx;
-          rayY += rVy;
-
-          if (rayX <= 22) {
-            rayX = 22;
-            rVx = -rVx;
-            points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
-          } else if (rayX >= boardW - 22) {
-            rayX = boardW - 22;
-            rVx = -rVx;
-            points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
-          }
-
-          if (rayY <= 30) {
-            points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
-            break;
-          }
-        }
-        points.push(`${Math.round(rayX)},${Math.round(rayY)}`);
-        aimLine.setAttribute('points', points.join(' '));
-        aimLine.style.opacity = '1';
-      } else {
-        aimLine.style.opacity = '0';
-      }
+      updateAimFromPointer(e.clientX, e.clientY);
     }
 
     function onPointerUp(e) {
@@ -2260,44 +2522,33 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         shooterBoard.releasePointerCapture(e.pointerId);
       } catch (_) {}
 
-      aimLine.style.opacity = '0';
-      aimLine.setAttribute('points', '');
+      const len = Math.hypot(aimVx, aimVy);
+      if (len > 8 && aimVy < -8 && !flyingBullet && currentBulletWord) {
+        const speed = 16.5;
+        const vx = (aimVx / len) * speed;
+        const vy = (aimVy / len) * speed;
 
-      // Nếu kéo đủ lực xuống (dy >= 14) -> BẮN!
-      if (dragPullY >= 14 && !flyingBullet) {
-        const launchVx = -dragPullX;
-        const launchVy = -dragPullY;
-        const len = Math.hypot(launchVx, launchVy);
+        const bulletEl = document.createElement('div');
+        bulletEl.className = 'shooter-flying-bullet';
+        bulletEl.innerHTML = `<span class="flying-meaning">${escapeHtml(formatBulletMeaning(currentBulletWord.meaning))}</span>`;
+        fxLayer.appendChild(bulletEl);
 
-        if (len > 10) {
-          const speed = 15;
-          const vx = (launchVx / len) * speed;
-          const vy = (launchVy / len) * speed;
+        flyingBullet = {
+          x: launcherX,
+          y: launcherY,
+          vx,
+          vy,
+          r: 22,
+          word: currentBulletWord,
+          el: bulletEl
+        };
 
-          // Tạo viên đạn bay
-          const bulletEl = document.createElement('div');
-          bulletEl.className = 'shooter-flying-bullet';
-          bulletEl.innerHTML = `<span class="flying-meaning">${escapeHtml(currentBulletWord.meaning)}</span>`;
-          fxLayer.appendChild(bulletEl);
+        sounds.playShoot();
+        shotsFired++;
 
-          flyingBullet = {
-            x: launcherX + dragPullX,
-            y: launcherY + dragPullY,
-            vx,
-            vy,
-            r: 28,
-            word: currentBulletWord,
-            el: bulletEl
-          };
-
-          sounds.playShoot();
-          shotsFired++;
-
-          // Chuyển đạn kế tiếp thành đạn hiện tại
-          currentBulletWord = nextBulletWord;
-          nextBulletWord = getNextBulletWord();
-          updateBulletDisplays();
-        }
+        currentBulletWord = nextBulletWord;
+        nextBulletWord = getNextBulletWord(currentBulletWord);
+        updateBulletDisplays();
       }
 
       resetSlingshotVisuals();
@@ -2320,30 +2571,37 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         flyingBullet.y += flyingBullet.vy;
 
         // Bật tường trái / phải
-        if (flyingBullet.x - flyingBullet.r <= 12) {
-          flyingBullet.x = 12 + flyingBullet.r;
+        if (flyingBullet.x - flyingBullet.r <= 14) {
+          flyingBullet.x = 14 + flyingBullet.r;
           flyingBullet.vx = -flyingBullet.vx;
-        } else if (flyingBullet.x + flyingBullet.r >= boardW - 12) {
-          flyingBullet.x = boardW - 12 - flyingBullet.r;
+        } else if (flyingBullet.x + flyingBullet.r >= boardW - 14) {
+          flyingBullet.x = boardW - 14 - flyingBullet.r;
           flyingBullet.vx = -flyingBullet.vx;
         }
 
         flyingBullet.el.style.left = `${flyingBullet.x}px`;
         flyingBullet.el.style.top = `${flyingBullet.y}px`;
 
-        // Kiểm tra va chạm với các khối Hanzi
-        let hitBlock = null;
+        // Kiểm tra tất cả các khối Hanzi trong bán kính va chạm, ưu tiên khối khớp nghĩa!
+        const collidedBlocks = [];
         for (let i = 0; i < blocks.length; i++) {
           const b = blocks[i];
           const dist = Math.hypot(flyingBullet.x - b.x, flyingBullet.y - b.y);
           if (dist <= flyingBullet.r + b.r - 2) {
-            hitBlock = b;
-            break;
+            collidedBlocks.push(b);
           }
         }
 
+        let hitBlock = null;
+        if (collidedBlocks.length > 0) {
+          const matchingBlock = collidedBlocks.find(
+            (b) => b.word.meaning === flyingBullet.word.meaning || b.word.hanzi === flyingBullet.word.hanzi
+          );
+          hitBlock = matchingBlock || collidedBlocks[0];
+        }
+
         // Kiểm tra va chạm với trần
-        const hitCeiling = flyingBullet.y - flyingBullet.r <= 28;
+        const hitCeiling = flyingBullet.y - flyingBullet.r <= 24;
 
         if (hitBlock || hitCeiling) {
           const shotWord = flyingBullet.word;
@@ -2353,10 +2611,9 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           flyingBullet = null;
 
           // Kiểm tra đúng nghĩa (TRÚNG) hay sai nghĩa (HỤT)
-          const isMatch = hitBlock && (
-            hitBlock.word.meaning === shotWord.meaning ||
-            hitBlock.word.hanzi === shotWord.hanzi
-          );
+          const isMatch =
+            hitBlock &&
+            (hitBlock.word.meaning === shotWord.meaning || hitBlock.word.hanzi === shotWord.hanzi);
 
           if (isMatch) {
             // ==========================================
@@ -2368,25 +2625,16 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             streakEl.textContent = `${streak}x`;
 
             const comboBonus = Math.min(5, streak);
-            const addedScore = 100 * comboBonus;
-            score += addedScore;
-            scoreEl.textContent = String(score);
-            wordsClearedCount++;
+            let addedScore = 100 * comboBonus;
 
-            sounds.playCorrect();
-            sounds.playPop();
-            speakChinese(hitBlock.word.hanzi);
-
-            showPopupText(`+${addedScore} ${streak > 1 ? `(x${streak})` : ''}`, true, hitBlock.x, hitBlock.y);
-            createParticles(hitBlock.x, hitBlock.y, 16);
-
-            // Cho block rơi rụng
+            // Cho block bị bắn trúng rơi rụng
             const blockIndex = blocks.indexOf(hitBlock);
             if (blockIndex !== -1) {
               blocks.splice(blockIndex, 1);
             }
 
             const dropEl = hitBlock.el;
+            dropEl.classList.remove('is-aimed');
             dropEl.classList.add('is-dropping');
             fxLayer.appendChild(dropEl);
 
@@ -2396,25 +2644,47 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
               origY: hitBlock.y,
               x: hitBlock.x,
               y: hitBlock.y,
-              vx: (Math.random() - 0.5) * 5,
-              vy: -4.5,
+              vx: (Math.random() - 0.5) * 4.5,
+              vy: -4.2,
               rot: 0,
               vRot: (Math.random() - 0.5) * 10
             });
 
+            // Kiểm tra các bóng mất điểm tựa bên dưới để rơi theo chùm (Avalanche Bonus)
+            const avalancheCount = dropFloatingBlocks();
+            if (avalancheCount > 0) {
+              addedScore += avalancheCount * 150;
+            }
+
+            score += addedScore;
+            scoreEl.textContent = String(score);
+            wordsClearedCount += 1 + avalancheCount;
+
+            sounds.playCorrect();
+            sounds.playPop();
+            speakChinese(hitBlock.word.hanzi);
+
+            const bonusLabel =
+              avalancheCount > 0
+                ? `+${addedScore} (Rụng chùm +${avalancheCount}! 🔥)`
+                : `+${addedScore} ${streak > 1 ? `(x${streak})` : ''}`;
+            showPopupText(bonusLabel, true, hitBlock.x, hitBlock.y);
+            createParticles(hitBlock.x, hitBlock.y, 16);
+
             // Nếu toàn bộ block đã bị bắn rụng -> QUA VÒNG
             if (blocks.length === 0) {
               handleWaveCleared();
+            } else {
+              ensureValidBulletWords();
             }
           } else {
             // ==========================================
-            // BẮN SAI HOẶC TRƯỢT: TỪ ĐÓ SẼ Ở TRÊN ĐÓ (DÍNH LẠI)!
+            // BẮN SAI HOẶC TRƯỢT: TỪ ĐÓ SẼ ĐƯỢC GẮN VÀO Ô TRỐNG TRÊN BÀN!
             // ==========================================
             sounds.playWrong();
             streak = 0;
             streakEl.textContent = '0x';
 
-            // Ghi nhận vào Sổ tay từ hay sai
             if (hitBlock) {
               recordMistakeWord({
                 hanzi: hitBlock.word.hanzi,
@@ -2424,29 +2694,18 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
               });
             }
 
-            // Gắn viên đạn vào trần / cạnh block bị va chạm
-            let attachX = impactX;
-            let attachY = impactY;
-            if (hitBlock) {
-              const angle = Math.atan2(impactY - hitBlock.y, impactX - hitBlock.x);
-              attachX = Math.max(30, Math.min(boardW - 30, hitBlock.x + Math.cos(angle) * 54));
-              attachY = Math.max(30, hitBlock.y + Math.sin(angle) * 50);
-            } else {
-              attachY = 32;
-            }
-
-            // Tạo khối mới dính lại ở trên
-            const newBlock = createBlock(attachX, attachY, shotWord);
+            // Gắn viên đạn vào ô lưới trống gần điểm va chạm nhất (không đè lên bóng cũ)
+            const slot = findNearestEmptySlot(impactX, impactY);
+            const newBlock = createBlock(slot.x, slot.y, shotWord);
             blocks.push(newBlock);
 
-            showPopupText('Dính lại! ❌', false, attachX, attachY);
+            showPopupText('Bắn sai · Dính lại! ❌', false, slot.x, slot.y);
 
-            // Rung màn hình
             shooterBoard.classList.add('board-shake');
             setTimeout(() => shooterBoard.classList.remove('board-shake'), 350);
 
             // Kiểm tra chạm vạch nguy hiểm
-            if (attachY + 30 >= dangerY) {
+            if (slot.y + BLOCK_RADIUS >= dangerY) {
               lives--;
               livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
               if (lives <= 0) {
@@ -2454,13 +2713,15 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                 return;
               }
             }
-          }
 
-          // Kiểm tra hạ trần sau mỗi 5 phát bắn
-          shotsUntilDescent--;
-          if (shotsUntilDescent <= 0) {
-            shotsUntilDescent = 5;
-            descendCeiling();
+            // Chỉ hạ trần khi người chơi bắn sai đủ số lượt quy định
+            missesUntilDescent--;
+            if (missesUntilDescent <= 0) {
+              missesUntilDescent = 3;
+              descendCeiling();
+            }
+            updateDangerLineLabel();
+            ensureValidBulletWords();
           }
         }
       }
@@ -2470,7 +2731,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         const db = droppingBlocks[i];
         db.x += db.vx;
         db.y += db.vy;
-        db.vy += 0.45; // Trọng lực
+        db.vy += 0.45;
         db.rot += db.vRot;
 
         db.el.style.transform = `translate(${db.x - db.origX}px, ${db.y - db.origY}px) rotate(${db.rot}deg) scale(0.92)`;
