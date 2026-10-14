@@ -1167,8 +1167,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
     function syncBubbleAlignment(pct) {
       if (!dragonActorEl) return;
-      dragonActorEl.classList.toggle('align-left', pct < 26);
-      dragonActorEl.classList.toggle('align-right', pct > 76);
+      dragonActorEl.classList.toggle('align-left', pct < 38);
+      dragonActorEl.classList.toggle('align-right', pct > 64);
     }
 
     function pickLine(lines) {
