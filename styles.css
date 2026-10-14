@@ -4576,6 +4576,12 @@ body.show-pinyin .speed-pinyin{display:block!important}
 .battle-hero-badge{display:inline-block;padding:6px 14px;background:#fee2e2;color:#b91c1c;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;margin-bottom:10px}
 .battle-hero h1{font-size:32px;color:#28543b;margin:0 0 10px;font-family:'Noto Sans SC','Noto Sans',sans-serif}
 .battle-hero p{color:#64748b;font-size:13px;max-width:580px;margin:0 auto;line-height:1.5}
+.battle-settings-strip{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:0 auto 22px;padding:12px 18px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;max-width:680px}
+.settings-label{font-size:13px;font-weight:700;color:#334155}
+.battle-qcount-options{display:flex;gap:8px;flex-wrap:wrap}
+.qcount-btn{background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;transition:.2s}
+.qcount-btn:hover{border-color:#ef4444;color:#ef4444;background:#fff5f5}
+.qcount-btn.active{background:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);border-color:#dc2626;color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.25)}
 .battle-mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
 .battle-mode-card{background:#fff;border:2px solid #e2e8f0;border-radius:14px;padding:22px 18px;display:flex;flex-direction:column;justify-content:space-between;transition:.2s}
 .battle-mode-card:hover{border-color:#ef4444;transform:translateY(-3px);box-shadow:0 10px 25px rgba(239,68,68,.1)}

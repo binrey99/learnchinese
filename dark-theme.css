@@ -2001,6 +2001,7 @@ body.dark-mode .mistake-source-chip {
   color: #94a3b8 !important;
 }
 [data-theme="dark"] .battle-mode-card,
+[data-theme="dark"] .battle-settings-strip,
 [data-theme="dark"] .battle-rules-strip,
 [data-theme="dark"] .battle-duel-header,
 [data-theme="dark"] .battle-question-card,
@@ -2011,9 +2012,25 @@ body.dark-mode .mistake-source-chip {
   color: #f8fafc !important;
 }
 [data-theme="dark"] .battle-mode-card h3,
+[data-theme="dark"] .settings-label,
 [data-theme="dark"] .rule-col strong,
 [data-theme="dark"] .battle-q-header h2 {
   color: #f8fafc !important;
+}
+[data-theme="dark"] .qcount-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .qcount-btn:hover {
+  background: #334155 !important;
+  border-color: #ef4444 !important;
+  color: #fca5a5 !important;
+}
+[data-theme="dark"] .qcount-btn.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
 }
 [data-theme="dark"] .battle-mode-card p,
 [data-theme="dark"] .rule-col span {

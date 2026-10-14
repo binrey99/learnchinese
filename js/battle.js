@@ -146,14 +146,46 @@ const FALLBACK_VOCAB = [
   { vocab: '车间', vietnamese_meaning: 'phân xưởng', pinyin: 'chē jiān' },
   { vocab: '仓库', vietnamese_meaning: 'kho hàng', pinyin: 'cāng kù' },
   { vocab: '上班', vietnamese_meaning: 'đi làm', pinyin: 'shàng bān' },
-  { vocab: '下班', vietnamese_meaning: 'tan làm', pinyin: 'xià bān' }
+  { vocab: '下班', vietnamese_meaning: 'tan làm', pinyin: 'xià bān' },
+  { vocab: '老师', vietnamese_meaning: 'thầy giáo', pinyin: 'lǎo shī' },
+  { vocab: '学生', vietnamese_meaning: 'học sinh', pinyin: 'xué sheng' },
+  { vocab: '吃饭', vietnamese_meaning: 'ăn cơm', pinyin: 'chī fàn' },
+  { vocab: '喝茶', vietnamese_meaning: 'uống trà', pinyin: 'hē chá' },
+  { vocab: '看书', vietnamese_meaning: 'đọc sách', pinyin: 'kàn shū' },
+  { vocab: '看电影', vietnamese_meaning: 'xem phim', pinyin: 'kàn diàn yǐng' },
+  { vocab: '买东西', vietnamese_meaning: 'mua đồ', pinyin: 'mǎi dōng xi' },
+  { vocab: '汉语', vietnamese_meaning: 'tiếng Hán', pinyin: 'hàn yǔ' },
+  { vocab: '漂亮', vietnamese_meaning: 'xinh đẹp', pinyin: 'piào liang' },
+  { vocab: '便宜', vietnamese_meaning: 'rẻ', pinyin: 'pián yi' },
+  { vocab: '准备', vietnamese_meaning: 'chuẩn bị', pinyin: 'zhǔn bèi' },
+  { vocab: '检查', vietnamese_meaning: 'kiểm tra', pinyin: 'jiǎn chá' },
+  { vocab: '安全', vietnamese_meaning: 'an toàn', pinyin: 'ān quán' },
+  { vocab: '产品', vietnamese_meaning: 'sản phẩm', pinyin: 'chǎn pǐn' },
+  { vocab: '质量', vietnamese_meaning: 'chất lượng', pinyin: 'zhì liàng' },
+  { vocab: '帮助', vietnamese_meaning: 'giúp đỡ', pinyin: 'bāng zhù' },
+  { vocab: '时间', vietnamese_meaning: 'thời gian', pinyin: 'shí jiān' },
+  { vocab: '明天', vietnamese_meaning: 'ngày mai', pinyin: 'míng tiān' },
+  { vocab: '天气', vietnamese_meaning: 'thời tiết', pinyin: 'tiān qì' },
+  { vocab: '休息', vietnamese_meaning: 'nghỉ ngơi', pinyin: 'xiū xi' }
 ];
 
 const FALLBACK_SENTENCES = [
   { question_vi: 'Tôi đang học tiếng Trung.', answer_zh: '我正在学习汉语。', words: ['我', '正在', '学习', '汉语'] },
   { question_vi: 'Hôm nay công việc rất bận.', answer_zh: '今天工作很忙。', words: ['今天', '工作', '很', '忙'] },
   { question_vi: 'Bạn thích uống trà không?', answer_zh: '你喜欢喝茶吗？', words: ['你', '喜欢', '喝茶', '吗'] },
-  { question_vi: 'Chào mừng bạn đến công ty chúng tôi.', answer_zh: '欢迎来到我们公司。', words: ['欢迎', '来到', '我们', '公司'] }
+  { question_vi: 'Chào mừng bạn đến công ty chúng tôi.', answer_zh: '欢迎来到我们公司。', words: ['欢迎', '来到', '我们', '公司'] },
+  { question_vi: 'Tôi muốn ăn cơm Trung Quốc.', answer_zh: '我想吃中国菜。', words: ['我', '想', '吃', '中国菜'] },
+  { question_vi: 'Bây giờ là mấy giờ rồi?', answer_zh: '现在几点了？', words: ['现在', '几点', '了'] },
+  { question_vi: 'Thời tiết hôm nay rất đẹp.', answer_zh: '今天天气很好。', words: ['今天', '天气', '很', '好'] },
+  { question_vi: 'Ngày mai bạn có rảnh không?', answer_zh: '明天你有空吗？', words: ['明天', '你', '有空', '吗'] },
+  { question_vi: 'Anh ấy là bạn tốt của tôi.', answer_zh: '他是我的好朋友。', words: ['他', '是', '我的', '好朋友'] },
+  { question_vi: 'Cuốn sách này rất thú vị.', answer_zh: '这本书很有意思。', words: ['这本书', '很', '有意思'] },
+  { question_vi: 'Tôi muốn đi du lịch Bắc Kinh.', answer_zh: '我想去北京旅游。', words: ['我', '想', '去北京', '旅游'] },
+  { question_vi: 'Xin hỏi trạm xe buýt ở đâu?', answer_zh: '请问公共汽车站在哪儿？', words: ['请问', '公共汽车站', '在哪儿'] },
+  { question_vi: 'Bạn học tiếng Trung bao lâu rồi?', answer_zh: '你学汉语多长时间了？', words: ['你', '学汉语', '多长时间', '了'] },
+  { question_vi: 'Hãy chú ý an toàn khi làm việc.', answer_zh: '工作时请注意安全。', words: ['工作时', '请', '注意', '安全'] },
+  { question_vi: 'Chất lượng sản phẩm này rất tốt.', answer_zh: '这个产品质量很好。', words: ['这个', '产品', '质量', '很', '好'] },
+  { question_vi: 'Tôi có thể giúp gì cho bạn không?', answer_zh: '我能帮你什么吗？', words: ['我', '能', '帮', '你', '什么', '吗'] }
 ];
 
 // Active channel and cleanup trackers
@@ -206,7 +238,7 @@ async function loadBattleResources() {
     const { data: sData } = await supabase
       .from('sentence_order_exercises')
       .select('question_vi, answer_zh, words')
-      .limit(100);
+      .limit(200);
 
     if (sData && sData.length >= 4) {
       sentenceList = sData.map((s) => {
@@ -238,96 +270,123 @@ async function loadBattleResources() {
 }
 
 /**
- * Sinh bộ 6 câu hỏi thi đấu gồm cả 3 dạng
+ * Sinh bộ câu hỏi thi đấu linh hoạt theo số lượng (mặc định 10 câu) gồm cả 4 dạng câu hỏi
  */
-function generateBattleQuestions(vocabList, sentenceList) {
+function generateBattleQuestions(vocabList, sentenceList, totalCount = 10) {
+  const count = Math.max(5, Math.min(30, Number(totalCount) || 10));
   const questions = [];
 
-  // Dạng 1: Chọn từ đúng (Trắc nghiệm Việt -> Hán)
-  const v1 = shuffle(vocabList);
-  const target1 = v1[0];
-  const distractors1 = v1.slice(1, 4);
-  questions.push({
-    id: 1,
-    type: 'choice',
-    typeName: 'Chọn từ đúng',
-    prompt: `Chọn chữ Hán có nghĩa là: "${target1.vietnamese_meaning}"`,
-    speakText: target1.vocab,
-    correctAnswer: target1.vocab,
-    options: shuffle([
-      { hanzi: target1.vocab, pinyin: target1.pinyin },
-      ...distractors1.map((d) => ({ hanzi: d.vocab, pinyin: d.pinyin }))
-    ])
-  });
+  let vPool = shuffle(vocabList);
+  let sPool = shuffle(sentenceList);
+  let vIndex = 0;
+  let sIndex = 0;
 
-  // Dạng 2: Sắp xếp câu
-  const sPool = shuffle(sentenceList);
-  const s1 = sPool[0];
-  questions.push({
-    id: 2,
-    type: 'order',
-    typeName: 'Sắp xếp câu',
-    prompt: `Sắp xếp các từ tiếng Trung khớp với nghĩa: "${s1.question_vi}"`,
-    correctAnswer: s1.answer_zh,
-    words: shuffle([...s1.words])
-  });
+  function getVocabWord() {
+    if (vIndex >= vPool.length) {
+      vPool = shuffle(vocabList);
+      vIndex = 0;
+    }
+    return vPool[vIndex++];
+  }
 
-  // Dạng 3: Nối cặp từ (4 cặp)
-  const vPairs = shuffle(vocabList).slice(0, 4);
-  questions.push({
-    id: 3,
-    type: 'match',
-    typeName: 'Nối cặp từ vựng',
-    prompt: 'Nối nhanh các cặp chữ Hán và nghĩa tiếng Việt tương ứng',
-    pairs: vPairs.map((p) => ({
-      hanzi: p.vocab,
-      pinyin: p.pinyin,
-      meaning: p.vietnamese_meaning
-    }))
-  });
+  function getSentence() {
+    if (sIndex >= sPool.length) {
+      sPool = shuffle(sentenceList);
+      sIndex = 0;
+    }
+    return sPool[sIndex++];
+  }
 
-  // Dạng 4: Chọn từ đúng (Trắc nghiệm Hán -> Việt)
-  const target2 = v1[4] || v1[1];
-  const distractors2 = v1.filter((w) => w.vocab !== target2.vocab).slice(0, 3);
-  questions.push({
-    id: 4,
-    type: 'choice_meaning',
-    typeName: 'Chọn nghĩa đúng',
-    prompt: `Nghĩa tiếng Việt của chữ Hán: "${target2.vocab}"`,
-    speakText: target2.vocab,
-    pinyinPrompt: target2.pinyin,
-    correctAnswer: target2.vietnamese_meaning,
-    options: shuffle([
-      target2.vietnamese_meaning,
-      ...distractors2.map((d) => d.vietnamese_meaning)
-    ])
-  });
+  // Luân phiên đa dạng các dạng câu hỏi
+  const typePattern = ['choice', 'order', 'match', 'choice_meaning', 'order', 'choice', 'match', 'choice_meaning'];
 
-  // Dạng 5: Sắp xếp câu
-  const s2 = sPool[1] || sPool[0];
-  questions.push({
-    id: 5,
-    type: 'order',
-    typeName: 'Sắp xếp câu',
-    prompt: `Sắp xếp các từ tiếng Trung khớp với nghĩa: "${s2.question_vi}"`,
-    correctAnswer: s2.answer_zh,
-    words: shuffle([...s2.words])
-  });
+  for (let i = 0; i < count; i++) {
+    const isFinal = i === count - 1;
+    const qType = typePattern[i % typePattern.length];
 
-  // Dạng 6: Nối cặp từ
-  const vPairs2 = shuffle(vocabList.filter((w) => !vPairs.some((p) => p.vocab === w.vocab))).slice(0, 4);
-  const finalPairs = vPairs2.length === 4 ? vPairs2 : vPairs;
-  questions.push({
-    id: 6,
-    type: 'match',
-    typeName: 'Nối cặp từ vựng (Hiệp quyết định)',
-    prompt: 'Nối các cặp từ vựng để ghi điểm quyết định chiến thắng!',
-    pairs: finalPairs.map((p) => ({
-      hanzi: p.vocab,
-      pinyin: p.pinyin,
-      meaning: p.vietnamese_meaning
-    }))
-  });
+    if (qType === 'choice') {
+      const target = getVocabWord();
+      const distractors = [];
+      const usedVocabs = new Set([target.vocab]);
+      for (const w of shuffle(vocabList)) {
+        if (!usedVocabs.has(w.vocab) && w.vietnamese_meaning !== target.vietnamese_meaning) {
+          usedVocabs.add(w.vocab);
+          distractors.push(w);
+          if (distractors.length >= 3) break;
+        }
+      }
+      questions.push({
+        id: i + 1,
+        type: 'choice',
+        typeName: isFinal ? 'Chọn từ đúng (Hiệp quyết định 🔥)' : 'Chọn từ đúng',
+        prompt: `Chọn chữ Hán có nghĩa là: "${target.vietnamese_meaning}"`,
+        speakText: target.vocab,
+        targetMeaning: target.vietnamese_meaning,
+        correctAnswer: target.vocab,
+        options: shuffle([
+          { hanzi: target.vocab, pinyin: target.pinyin },
+          ...distractors.map((d) => ({ hanzi: d.vocab, pinyin: d.pinyin }))
+        ])
+      });
+    } else if (qType === 'choice_meaning') {
+      const target = getVocabWord();
+      const distractors = [];
+      const usedMeanings = new Set([target.vietnamese_meaning]);
+      for (const w of shuffle(vocabList)) {
+        if (!usedMeanings.has(w.vietnamese_meaning) && w.vocab !== target.vocab) {
+          usedMeanings.add(w.vietnamese_meaning);
+          distractors.push(w);
+          if (distractors.length >= 3) break;
+        }
+      }
+      questions.push({
+        id: i + 1,
+        type: 'choice_meaning',
+        typeName: isFinal ? 'Chọn nghĩa đúng (Hiệp quyết định 🔥)' : 'Chọn nghĩa đúng',
+        prompt: `Nghĩa tiếng Việt của chữ Hán: "${target.vocab}"`,
+        speakText: target.vocab,
+        pinyinPrompt: target.pinyin,
+        correctAnswer: target.vietnamese_meaning,
+        options: shuffle([
+          target.vietnamese_meaning,
+          ...distractors.map((d) => d.vietnamese_meaning)
+        ])
+      });
+    } else if (qType === 'order') {
+      const s = getSentence();
+      questions.push({
+        id: i + 1,
+        type: 'order',
+        typeName: isFinal ? 'Sắp xếp câu (Hiệp quyết định 🔥)' : 'Sắp xếp câu',
+        prompt: `Sắp xếp các từ tiếng Trung khớp với nghĩa: "${s.question_vi}"`,
+        correctAnswer: s.answer_zh,
+        words: shuffle([...s.words])
+      });
+    } else if (qType === 'match') {
+      const selectedPairs = [];
+      const usedHanzi = new Set();
+      for (let pIdx = 0; pIdx < vocabList.length * 2 && selectedPairs.length < 4; pIdx++) {
+        const candidate = getVocabWord();
+        if (!usedHanzi.has(candidate.vocab)) {
+          usedHanzi.add(candidate.vocab);
+          selectedPairs.push({
+            hanzi: candidate.vocab,
+            pinyin: candidate.pinyin,
+            meaning: candidate.vietnamese_meaning
+          });
+        }
+      }
+      questions.push({
+        id: i + 1,
+        type: 'match',
+        typeName: isFinal ? 'Nối cặp từ vựng (Hiệp quyết định 🔥)' : 'Nối cặp từ vựng',
+        prompt: isFinal
+          ? 'Nối các cặp từ vựng để ghi điểm quyết định chiến thắng!'
+          : 'Nối nhanh các cặp chữ Hán và nghĩa tiếng Việt tương ứng',
+        pairs: selectedPairs
+      });
+    }
+  }
 
   return questions;
 }
@@ -340,6 +399,11 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
   if (!container) return;
 
   clearBattleSession();
+
+  let selectedQuestionCount = Number(localStorage.getItem('mandarinly_battle_qcount')) || 10;
+  if (![6, 10, 15, 20].includes(selectedQuestionCount)) {
+    selectedQuestionCount = 10;
+  }
 
   let currentUser = null;
   try {
@@ -364,7 +428,17 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
         <div class="battle-hero">
           <div class="battle-hero-badge">⚔️ ĐẤU TRƯỜNG THỜI GIAN THỰC</div>
           <h1>Thi đấu đối kháng 1v1 Realtime</h1>
-          <p>Thách thức người học khác trong trận đấu 6 câu hỏi: Sắp xếp câu, Chọn từ đúng và Nối cặp từ vựng. Cập nhật tỉ số tức thời!</p>
+          <p>Thách thức người học khác trong trận đấu kịch tính: Sắp xếp câu, Chọn từ đúng và Nối cặp từ vựng. Cập nhật tỉ số tức thời!</p>
+        </div>
+
+        <div class="battle-settings-strip">
+          <span class="settings-label">🎯 Số lượng câu hỏi mỗi trận:</span>
+          <div class="battle-qcount-options" id="battleQCountOptions">
+            <button type="button" class="qcount-btn ${selectedQuestionCount === 6 ? 'active' : ''}" data-count="6">6 câu (Nhanh)</button>
+            <button type="button" class="qcount-btn ${selectedQuestionCount === 10 ? 'active' : ''}" data-count="10">10 câu (Tiêu chuẩn)</button>
+            <button type="button" class="qcount-btn ${selectedQuestionCount === 15 ? 'active' : ''}" data-count="15">15 câu (Đầy đủ)</button>
+            <button type="button" class="qcount-btn ${selectedQuestionCount === 20 ? 'active' : ''}" data-count="20">20 câu (Thử thách)</button>
+          </div>
         </div>
 
         <div class="battle-mode-grid">
@@ -407,16 +481,27 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
             <span>Trả lời càng nhanh càng được nhiều điểm thưởng tốc độ</span>
           </div>
           <div class="rule-col">
-            <strong>🎯 3 Dạng câu hỏi</strong>
-            <span>Chọn từ đúng · Sắp xếp câu · Nối cặp từ vựng</span>
+            <strong>🎯 4 Dạng câu hỏi</strong>
+            <span>Chọn chữ Hán · Chọn nghĩa Việt · Sắp xếp câu · Nối cặp từ</span>
           </div>
           <div class="rule-col">
             <strong>🏆 Thưởng xếp hạng</strong>
-            <span>Chiến thắng được cộng +50 điểm vào BXH Tuần của Supabase</span>
+            <span>Chiến thắng được cộng điểm thưởng lớn vào BXH Tuần của Supabase</span>
           </div>
         </div>
       </div>
     `;
+
+    // Bind Question Count Selector
+    container.querySelectorAll('.qcount-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        container.querySelectorAll('.qcount-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedQuestionCount = Number(btn.dataset.count) || 10;
+        localStorage.setItem('mandarinly_battle_qcount', String(selectedQuestionCount));
+        if (toast) toast(`Đã chọn chế độ thi đấu ${selectedQuestionCount} câu hỏi!`);
+      });
+    });
 
     // Bind Quick Match
     container.querySelector('#btnQuickMatch').addEventListener('click', () => {
@@ -457,7 +542,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
           <div class="radar-circle circle-3"></div>
           <span class="radar-center-icon">⚔️</span>
         </div>
-        <h2>Đang tìm kiếm đối thủ...</h2>
+        <h2>Đang tìm kiếm đối thủ (${selectedQuestionCount} câu)...</h2>
         <p>Đang quét người học trực tuyến trên Supabase Realtime</p>
         <div class="matchmaking-status" id="matchStatusText">Thời gian chờ: 0s</div>
         <div class="matchmaking-actions">
@@ -523,7 +608,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
 
           if (isHost) {
             const { vocabList, sentenceList } = await loadBattleResources();
-            const questions = generateBattleQuestions(vocabList, sentenceList);
+            const questions = generateBattleQuestions(vocabList, sentenceList, selectedQuestionCount);
 
             lobby.send({
               type: 'broadcast',
@@ -578,7 +663,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
           <span class="radar-center-icon">🔑</span>
         </div>
         <h2>Mã phòng: <strong style="color:#28543b;letter-spacing:2px;">${code}</strong></h2>
-        <p>Hãy gửi mã phòng này cho bạn bè để cùng tham gia thi đấu!</p>
+        <p>Hãy gửi mã phòng này cho bạn bè để cùng tham gia thi đấu (${selectedQuestionCount} câu)!</p>
         <div class="matchmaking-status">Đang chờ bạn bè vào phòng...</div>
         <div class="matchmaking-actions">
           <button type="button" class="battle-btn-secondary" id="btnCancelRoom">Hủy phòng</button>
@@ -606,7 +691,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
           };
 
           const { vocabList, sentenceList } = await loadBattleResources();
-          const questions = generateBattleQuestions(vocabList, sentenceList);
+          const questions = generateBattleQuestions(vocabList, sentenceList, selectedQuestionCount);
 
           roomChannel.send({
             type: 'broadcast',
@@ -677,7 +762,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
   // ==========================================
   async function startBotMatch() {
     const { vocabList, sentenceList } = await loadBattleResources();
-    const questions = generateBattleQuestions(vocabList, sentenceList);
+    const questions = generateBattleQuestions(vocabList, sentenceList, selectedQuestionCount);
 
     const botOpponent = {
       id: 'bot_panda',
@@ -758,7 +843,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
               <div class="duel-timer-box">
                 <span class="duel-timer-val" id="duelTimerVal">20s</span>
               </div>
-              <span class="duel-round-label" id="duelRoundLabel">Câu 1/6</span>
+              <span class="duel-round-label" id="duelRoundLabel">Câu 1/${questions.length}</span>
             </div>
 
             <!-- Opponent -->
@@ -916,7 +1001,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
             if (q.correctAnswer) {
               recordMistakeWord({
                 hanzi: q.correctAnswer,
-                meaning: String(q.prompt || '').replace(/^Nghĩa\s*"|"\s*là chữ Hán nào\??/gi, '').trim(),
+                meaning: q.targetMeaning || String(q.prompt || '').replace(/^Chọn chữ Hán có nghĩa là:\s*"|"$|\?/gi, '').trim(),
                 source: 'Đấu trường 1v1'
               });
             }
@@ -1247,12 +1332,13 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
 
       if (isWin) sounds.playVictory(); else if (isTie) sounds.playCorrect(); else sounds.playWrong();
 
-      // Points earned for Leaderboard
-      const rewardPoints = isWin ? 50 : isTie ? 25 : 15;
+      // Points earned for Leaderboard (scales with question count)
+      const baseWinPts = Math.min(100, Math.max(50, Math.round(questions.length * 6)));
+      const rewardPoints = isWin ? baseWinPts : isTie ? Math.round(baseWinPts * 0.5) : Math.max(15, Math.round(baseWinPts * 0.3));
       recordScore({
         category: 'game',
         points: rewardPoints,
-        description: `Đấu trường 1v1 (${isWin ? 'Chiến thắng' : isTie ? 'Hòa' : 'Tham gia'})`
+        description: `Đấu trường 1v1 - ${questions.length} câu (${isWin ? 'Chiến thắng' : isTie ? 'Hòa' : 'Tham gia'})`
       });
 
       let battleFood = null;
