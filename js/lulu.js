@@ -321,6 +321,9 @@ export async function awardLuluExp(amount = 0, { source = 'Học tập', foodDro
 }
 
 
+let luluGlobalListenersBound = false;
+let activeLuluController = null;
+
 export function initLulu({ toast } = {}) {
   const container = document.querySelector('[data-lulu]');
   if (!container) return;
@@ -329,42 +332,57 @@ export function initLulu({ toast } = {}) {
   let currentQuote = LULU_QUOTES[0];
   let currentQuiz = null;
 
+  activeLuluController = {
+    updatePet(nextPet) {
+      if (!nextPet) return;
+      pet = nextPet;
+      if (document.body.contains(container)) renderUI();
+    },
+    updateInventory(inventory) {
+      if (!inventory) return;
+      pet.inventory = inventory;
+      if (document.body.contains(container)) renderUI();
+    },
+    updatePendingExp(pendingExp) {
+      pet.pendingExp = pendingExp || 0;
+      if (document.body.contains(container)) renderUI();
+    }
+  };
+
   // Khởi động đồng bộ Supabase nếu đã đăng nhập
   syncPetWithSupabase().then((synced) => {
     if (synced) {
-      pet = synced;
-      renderUI();
+      activeLuluController?.updatePet(synced);
     }
   });
 
-  // Tự động đồng bộ lại khi người dùng đăng nhập
-  try {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        syncPetWithSupabase().then((synced) => {
-          if (synced) {
-            pet = synced;
-            renderUI();
-          }
-        });
+  if (!luluGlobalListenersBound) {
+    luluGlobalListenersBound = true;
+
+    // Tự động đồng bộ lại khi người dùng đăng nhập
+    try {
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          syncPetWithSupabase().then((synced) => {
+            if (synced) activeLuluController?.updatePet(synced);
+          });
+        }
+      });
+    } catch (_) {}
+
+    // Lắng nghe sự kiện rơi thức ăn khi chơi game
+    window.addEventListener('lulu-inventory-updated', (e) => {
+      if (e.detail?.inventory) {
+        activeLuluController?.updateInventory(e.detail.inventory);
       }
     });
-  } catch (_) {}
 
-  // Lắng nghe sự kiện rơi thức ăn khi chơi game
-  window.addEventListener('lulu-inventory-updated', (e) => {
-    if (e.detail?.inventory) {
-      pet.inventory = e.detail.inventory;
-      renderUI();
-    }
-  });
-
-  // Lắng nghe EXP tặng từ hoạt động học tập bên ngoài → chỉ cập nhật thanh kho chờ
-  window.addEventListener('lulu-exp-awarded', (e) => {
-    if (!e.detail?.pet) return;
-    pet.pendingExp = e.detail.pet.pendingExp || 0;
-    renderUI();
-  });
+    // Lắng nghe EXP tặng từ hoạt động học tập bên ngoài → chỉ cập nhật thanh kho chờ
+    window.addEventListener('lulu-exp-awarded', (e) => {
+      if (!e.detail?.pet) return;
+      activeLuluController?.updatePendingExp(e.detail.pet.pendingExp || 0);
+    });
+  }
 
   // Chuyển EXP kho chờ → EXP tăng cấp thật của LuLu (khi ấn vào đầu LuLu)
   async function transferPendingExp() {
@@ -515,7 +533,7 @@ export function initLulu({ toast } = {}) {
             <div class="lulu-speech-bubble" id="luluSpeech">
               <div class="lulu-speech-content">
                 <strong class="lulu-speech-zh">${currentQuote.zh}</strong>
-                <small class="lulu-speech-py">${currentQuote.py}</small>
+                <small class="lulu-speech-py game-pinyin">${currentQuote.py}</small>
                 <p class="lulu-speech-vi">${currentQuote.vi}</p>
               </div>
               <button type="button" class="lulu-speech-audio" id="luluSpeakBtn" title="Phát âm câu nói">🔊</button>
@@ -594,7 +612,9 @@ export function initLulu({ toast } = {}) {
                 <p>Nhận đồ ăn và EXP cho LuLu mỗi ngày</p>
               </div>
             </div>
-            <button type="button" class="lulu-btn-secondary" id="luluDailyClaimBtn">🎁 Nhận quà điểm danh (+3 Táo, +2 Cam)</button>
+            <button type="button" class="lulu-btn-secondary" id="luluDailyClaimBtn" ${pet.lastClaimDate === new Date().toDateString() ? 'disabled style="opacity:0.7;cursor:not-allowed;"' : ''}>
+              ${pet.lastClaimDate === new Date().toDateString() ? '✓ Đã điểm danh hôm nay (Quay lại ngày mai)' : '🎁 Nhận quà điểm danh (+3 Táo, +2 Cam, +1 Dưa hấu)'}
+            </button>
           </div>
         </div>
 
@@ -756,7 +776,7 @@ export function initLulu({ toast } = {}) {
       <div class="quiz-question-row">
         <div class="quiz-prompt">
           <strong class="quiz-zh">${currentQuiz.zh}</strong>
-          <span class="quiz-py">${currentQuiz.py}</span>
+          <span class="quiz-py game-pinyin">${currentQuiz.py}</span>
         </div>
         <button type="button" class="quiz-listen-btn" id="quizSpeakBtn" title="Nghe phát âm">🔊</button>
       </div>

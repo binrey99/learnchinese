@@ -556,7 +556,7 @@ export function renderSrsStudyPanel(
             </div>
 
             <div class="srs-card-main">
-              <span class="srs-card-pinyin ${isAnswerRevealed || studyMode === 'flashcard' ? '' : 'is-masked'}">
+              <span class="srs-card-pinyin game-pinyin ${isAnswerRevealed ? '' : 'is-masked'}">
                 ${escapeHtml(currentCard.pinyin || safeToPinyin(currentCard.hanzi))}
               </span>
               <div class="srs-hanzi-row">

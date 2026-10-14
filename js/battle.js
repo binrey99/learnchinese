@@ -123,7 +123,7 @@ class BattleSounds {
 const sounds = new BattleSounds();
 
 function speakChinese(text) {
-  if (!('speechSynthesis' in window) || !text) return;
+  if (sounds.muted || !('speechSynthesis' in window) || !text) return;
   try {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -208,7 +208,11 @@ function clearBattleSession() {
     clearTimeout(botTimeout);
     botTimeout = null;
   }
+  try {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  } catch (_) {}
 }
+export const cleanupBattle = clearBattleSession;
 
 /**
  * Tải dữ liệu từ vựng & sắp xếp câu từ Supabase
@@ -556,6 +560,8 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
     const timerEl = container.querySelector('#matchStatusText');
     const switchToBotBtn = container.querySelector('#btnSwitchToBot');
 
+    clearBattleSession();
+
     const waitInterval = setInterval(() => {
       waitSeconds++;
       if (timerEl) timerEl.textContent = `Thời gian chờ: ${waitSeconds}s`;
@@ -563,15 +569,14 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
         switchToBotBtn.style.display = 'inline-block';
       }
     }, 1000);
+    activeInterval = waitInterval;
 
     container.querySelector('#btnCancelMatch').addEventListener('click', () => {
-      clearInterval(waitInterval);
       clearBattleSession();
       renderLobby();
     });
 
     switchToBotBtn.addEventListener('click', () => {
-      clearInterval(waitInterval);
       clearBattleSession();
       startBotMatch();
     });
@@ -662,7 +667,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
         <div class="radar-spinner">
           <span class="radar-center-icon">🔑</span>
         </div>
-        <h2>Mã phòng: <strong style="color:#28543b;letter-spacing:2px;">${code}</strong></h2>
+        <h2>Mã phòng: <strong class="battle-room-code" style="color:#28543b;letter-spacing:2px;">${code}</strong></h2>
         <p>Hãy gửi mã phòng này cho bạn bè để cùng tham gia thi đấu (${selectedQuestionCount} câu)!</p>
         <div class="matchmaking-status">Đang chờ bạn bè vào phòng...</div>
         <div class="matchmaking-actions">
@@ -996,7 +1001,9 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
             speakChinese(ans);
           } else {
             sounds.playWrong();
-            const correctBtn = card.querySelector(`[data-answer="${q.correctAnswer}"]`);
+            const correctBtn = Array.from(card.querySelectorAll('.battle-choice-btn')).find(
+              (b) => b.dataset.answer === q.correctAnswer
+            );
             if (correctBtn) correctBtn.classList.add('correct');
             if (q.correctAnswer) {
               recordMistakeWord({
@@ -1055,7 +1062,9 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
             if (q.speakText) speakChinese(q.speakText);
           } else {
             sounds.playWrong();
-            const correctBtn = card.querySelector(`[data-answer="${q.correctAnswer}"]`);
+            const correctBtn = Array.from(card.querySelectorAll('.battle-choice-btn')).find(
+              (b) => b.dataset.answer === q.correctAnswer
+            );
             if (correctBtn) correctBtn.classList.add('correct');
             if (q.speakText) {
               recordMistakeWord({
@@ -1086,7 +1095,7 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
           <h2>${escapeHtml(q.prompt)}</h2>
         </div>
         <div class="battle-order-answer-slot" id="orderAnswerSlot">
-          <span class="slot-placeholder">Chạm các từ bên dưới để ghép câu...</span>
+          <span class="slot-placeholder">Chạm các từ bên dưới để ghép câu (chạm lại từ đã ghép để bỏ)...</span>
         </div>
         <div class="battle-order-bank" id="orderBank">
           ${q.words
@@ -1113,25 +1122,40 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
 
       function updateSlot() {
         if (!selectedTokens.length) {
-          slot.innerHTML = '<span class="slot-placeholder">Chạm các từ bên dưới để ghép câu...</span>';
+          slot.innerHTML = '<span class="slot-placeholder">Chạm các từ bên dưới để ghép câu (chạm lại từ đã ghép để bỏ)...</span>';
           return;
         }
         slot.innerHTML = selectedTokens
           .map(
-            (t) => `
-          <span class="battle-word-token in-slot">
+            (t, idx) => `
+          <button type="button" class="battle-word-token in-slot" data-slot-idx="${idx}" title="Chạm để gỡ từ này">
             <span class="game-pinyin">${escapeHtml(toPinyin(t.text))}</span>
             <strong>${escapeHtml(t.text)}</strong>
-          </span>
+          </button>
         `
           )
           .join('');
       }
 
+      slot.addEventListener('click', (e) => {
+        if (myAnswered) return;
+        const slotBtn = e.target.closest('[data-slot-idx]');
+        if (!slotBtn) return;
+        const idx = Number(slotBtn.dataset.slotIdx);
+        const removed = selectedTokens.splice(idx, 1)[0];
+        if (removed) {
+          sounds.playTick();
+          const bankBtn = bank.querySelector(`[data-token-id="${removed.id}"]`);
+          if (bankBtn) bankBtn.classList.remove('used');
+          updateSlot();
+        }
+      });
+
       bank.querySelectorAll('.battle-word-token').forEach((btn) => {
         btn.addEventListener('click', () => {
           if (myAnswered || btn.classList.contains('used')) return;
           sounds.playTick();
+          speakChinese(btn.dataset.tokenText);
           btn.classList.add('used');
           selectedTokens.push({ id: btn.dataset.tokenId, text: btn.dataset.tokenText });
           updateSlot();
@@ -1215,18 +1239,20 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
       function checkPair() {
         if (!selectedHanzi || !selectedMeaning) return;
 
-        const hVal = selectedHanzi.dataset.hanzi;
-        const mTarget = selectedMeaning.dataset.forHanzi;
+        const hEl = selectedHanzi;
+        const mEl = selectedMeaning;
+        const hVal = hEl.dataset.hanzi;
+        const mTarget = mEl.dataset.forHanzi;
+
+        selectedHanzi = null;
+        selectedMeaning = null;
 
         if (hVal === mTarget) {
           sounds.playCorrect();
           speakChinese(hVal);
-          selectedHanzi.classList.add('matched');
-          selectedMeaning.classList.add('matched');
+          hEl.classList.add('matched');
+          mEl.classList.add('matched');
           matchedCount++;
-
-          selectedHanzi = null;
-          selectedMeaning = null;
 
           if (matchedCount === q.pairs.length) {
             const speedBonus = Math.round((roundTimeLeft / 20) * 50);
@@ -1234,13 +1260,20 @@ export async function initBattle({ selector = '[data-battle]', toast } = {}) {
           }
         } else {
           sounds.playWrong();
-          selectedHanzi.classList.add('shake');
-          selectedMeaning.classList.add('shake');
+          hEl.classList.add('shake');
+          mEl.classList.add('shake');
+          const pairObj = (q.pairs || []).find((p) => p.hanzi === hVal);
+          if (pairObj) {
+            recordMistakeWord({
+              hanzi: pairObj.hanzi,
+              pinyin: pairObj.pinyin || '',
+              meaning: pairObj.meaning,
+              source: 'Đấu trường 1v1'
+            });
+          }
           setTimeout(() => {
-            selectedHanzi?.classList.remove('shake', 'selected');
-            selectedMeaning?.classList.remove('shake', 'selected');
-            selectedHanzi = null;
-            selectedMeaning = null;
+            hEl.classList.remove('shake', 'selected');
+            mEl.classList.remove('shake', 'selected');
           }, 400);
         }
       }

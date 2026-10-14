@@ -327,6 +327,7 @@ function clearActiveGame() {
   activeCleanups = [];
 }
 const clearActiveInterval = clearActiveGame;
+export const cleanupGame = clearActiveGame;
 
 export async function initGame({ selector = '[data-game]', toast } = {}) {
   const container = document.querySelector(selector);
@@ -1098,7 +1099,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
 
         <div class="speed-card" id="speedCard">
           <div class="speed-word-box">
-            <span class="speed-pinyin" id="speedPinyin"></span>
+            <span class="speed-pinyin game-pinyin" id="speedPinyin"></span>
             <h2 class="speed-hanzi" id="speedHanzi">...</h2>
             <button type="button" class="speed-speak-btn" id="speedSpeakBtn" title="Phát âm">🔊</button>
           </div>
@@ -1669,13 +1670,16 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       fallingWords.forEach((item) => item.el.remove());
       fallingWords = [];
 
-      // Chọn từ mục tiêu
-      currentTarget = wordsPool[Math.floor(Math.random() * wordsPool.length)];
+      // Chọn bộ 3 từ kết hợp từ ghép có nghĩa & từ đơn
+      const mixedWave = generateMixedWordPool(wordsPool, 3, currentLevel);
+      currentTarget = mixedWave[0] || wordsPool[Math.floor(Math.random() * wordsPool.length)];
       targetTextEl.textContent = `"${currentTarget.meaning}"`;
       speakBtn.onclick = () => speakChinese(currentTarget.hanzi);
 
       // Chọn 2 từ gây nhiễu
-      const distractors = shuffle(wordsPool.filter((w) => w.meaning !== currentTarget.meaning)).slice(0, 2);
+      const distractors = mixedWave.length >= 3
+        ? mixedWave.slice(1, 3)
+        : shuffle(wordsPool.filter((w) => w.meaning !== currentTarget.meaning)).slice(0, 2);
       const waveWords = shuffle([
         { word: currentTarget, isCorrect: true },
         ...distractors.map((w) => ({ word: w, isCorrect: false }))
@@ -1760,6 +1764,16 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             lives--;
             livesEl.textContent = '❤️'.repeat(Math.max(0, lives)) + '🖤'.repeat(Math.max(0, 3 - lives));
             sounds.playWrong();
+
+            if (currentTarget) {
+              recordMistakeWord({
+                hanzi: currentTarget.hanzi,
+                pinyin: currentTarget.pinyin,
+                meaning: currentTarget.meaning,
+                level: currentTarget.level,
+                source: 'Chạm từ rơi'
+              });
+            }
 
             showPopupText('Bỏ lỡ! -1 ❤️', false, Math.max(70, Math.min((catchBoard.clientWidth || 600) - 70, item.x)), currentHeight - 40);
 

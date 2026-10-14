@@ -1725,6 +1725,26 @@ body.dark-mode .mistake-source-chip {
 [data-theme="dark"] .card-sub-text {
   color: #34d399 !important;
 }
+[data-theme="dark"] .memory-card.is-matched .card-back {
+  background: rgba(16, 185, 129, 0.22) !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.35) !important;
+}
+[data-theme="dark"] .game-hud,
+[data-theme="dark"] .game-meta-strip {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .hud-item strong,
+[data-theme="dark"] .speed-score-box strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .game-sound-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
 
 /* Game 2: Speed Blitz */
 [data-theme="dark"] .speed-card {
@@ -1772,6 +1792,11 @@ body.dark-mode .mistake-source-chip {
 [data-theme="dark"] .match-card.is-selected {
   border-color: #10b981 !important;
   background: rgba(16, 185, 129, 0.2) !important;
+}
+[data-theme="dark"] .match-card.is-done {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
 }
 
 /* Game 4: Word Fall Tap */
@@ -1904,11 +1929,31 @@ body.dark-mode .mistake-source-chip {
 }
 
 /* Victory Modal */
-[data-theme="dark"] .victory-modal-card {
+[data-theme="dark"] .victory-modal-card,
+[data-theme="dark"] .game-victory-card {
   background: #1e293b !important;
   border-color: #334155 !important;
   color: #f8fafc !important;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
+}
+[data-theme="dark"] .game-victory-card h2 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .game-victory-card p {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .victory-score,
+[data-theme="dark"] .victory-stat-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .victory-score strong,
+[data-theme="dark"] .victory-stat-box strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .victory-score span,
+[data-theme="dark"] .victory-stat-box span {
+  color: #94a3b8 !important;
 }
 
 /* ==========================================================================
@@ -1999,15 +2044,39 @@ body.dark-mode .mistake-source-chip {
   color: #f8fafc !important;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7) !important;
 }
-[data-theme="dark"] .learner-stat-card {
+[data-theme="dark"] .learner-profile-head h3,
+[data-theme="dark"] .learner-breakdown-section h4 {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .learner-modal-close,
+[data-theme="dark"] .learner-stat-card,
+[data-theme="dark"] .breakdown-row {
   background: #0f172a !important;
   border-color: #334155 !important;
   color: #f8fafc !important;
+}
+[data-theme="dark"] .learner-stat-card strong,
+[data-theme="dark"] .bd-val {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .mastered-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .mastered-hanzi {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .mastered-meaning {
+  color: #e2e8f0 !important;
 }
 
 /* ==========================================================================
    13. BATTLE 1V1 REALTIME
    ========================================================================== */
+[data-theme="dark"] .battle-room-code {
+  color: #34d399 !important;
+}
 [data-theme="dark"] .battle-hero h1 {
   color: #f8fafc !important;
 }

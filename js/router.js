@@ -8,8 +8,8 @@ import { initMaterials } from './materials.js';
 import { renderProfile } from './profile.js';
 import { initLeaderboard } from './leaderboard.js';
 import { initSentenceOrder } from './sentence-order.js';
-import { initGame } from './game.js';
-import { initBattle } from './battle.js';
+import { initGame, cleanupGame } from './game.js';
+import { initBattle, cleanupBattle } from './battle.js';
 import { initLulu } from './lulu.js';
 import { initActivityPage } from './recent-activity.js';
 
@@ -98,6 +98,14 @@ export function initRouter({ toast } = {}) {
 
   let currentRoute = null;
 
+  const stopBackgroundActivities = () => {
+    try { cleanupGame?.(); } catch (_) {}
+    try { cleanupBattle?.(); } catch (_) {}
+    try {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    } catch (_) {}
+  };
+
   const render = () => {
     let route = window.location.hash.replace('#', '') || 'dashboard';
 
@@ -112,19 +120,31 @@ export function initRouter({ toast } = {}) {
     const page = pages[route];
     const isDashboard = !page;
 
+    const navHighlightRoute =
+      route === 'translation' || route === 'sentence-order'
+        ? 'practice'
+        : route === 'hsk'
+          ? 'writing'
+          : route;
+
     dashboard.hidden = !isDashboard;
     pageView.hidden = isDashboard;
     document.querySelectorAll('.nav-item[data-route]').forEach((item) => {
-      item.classList.toggle('active', item.dataset.route === route);
+      item.classList.toggle('active', item.dataset.route === navHighlightRoute);
     });
 
     if (isDashboard) {
+      if (currentRoute !== null) {
+        stopBackgroundActivities();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       currentRoute = null;
       return;
     }
 
     // Tránh render lại nếu đang ở cùng route (giữ nguyên state)
     if (route === currentRoute) return;
+    stopBackgroundActivities();
     currentRoute = route;
 
     pageView.innerHTML = `
@@ -163,7 +183,7 @@ export function initRouter({ toast } = {}) {
   window.addEventListener('hashchange', render);
 
   // Fix: Lắng nghe click để xử lý trường hợp hash không thay đổi
-  // (hashchange không fire) khi user click lại cùng một route
+  // (hashchange không fire) khi user click lại cùng một route trên thanh điều hướng
   document.addEventListener('click', (e) => {
     const link = e.target.closest('a[href^="#"]');
     if (!link) return;
@@ -171,6 +191,9 @@ export function initRouter({ toast } = {}) {
     if (!targetHash || targetHash === 'top') return;
     if (window.location.hash === `#${targetHash}`) {
       e.preventDefault();
+      if (link.classList.contains('nav-item') || link.classList.contains('brand')) {
+        currentRoute = null;
+      }
       render();
     }
   });

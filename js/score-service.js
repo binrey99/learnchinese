@@ -191,7 +191,8 @@ export async function getLeaderboardData(timeframe = 'week') {
         displayName: row.display_name || 'Học viên',
         avatarUrl: row.avatar_url || 'picture/main_picture.png',
         totalPoints: 0,
-        breakdown: { vocabulary: 0, translation: 0, sentence_order: 0, game: 0, mock_exam: 0, streak: 0 }
+        isMe: Boolean(currentUser && uid === currentUser.id),
+        breakdown: { vocabulary: 0, translation: 0, sentence_order: 0, game: 0, mock_exam: 0, streak: 0, practice: 0, battle: 0 }
       });
     }
 
@@ -251,7 +252,7 @@ export async function getLeaderboardData(timeframe = 'week') {
         avatarUrl: myAvatar || 'picture/main_picture.png',
         totalPoints: Math.max(localSum, 0),
         isMe: true,
-        breakdown: { vocabulary: 0, translation: 0, sentence_order: 0, game: 0, mock_exam: 0, streak: 0 }
+        breakdown: { vocabulary: 0, translation: 0, sentence_order: 0, game: 0, mock_exam: 0, streak: 0, practice: 0, battle: 0 }
       });
       filteredLocal.forEach((item) => {
         const u = userMap.get(currentUser.id);

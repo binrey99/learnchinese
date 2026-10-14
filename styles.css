@@ -2239,7 +2239,7 @@ a {
 .vocabulary-pinyin {
   display: none;
   color: #059669 !important;
-  font-size: 11px !important;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1.2;
   margin-bottom: 2px;
@@ -2248,6 +2248,28 @@ a {
 
 body.show-pinyin .vocabulary-pinyin {
   display: block !important;
+}
+
+body:not(.show-pinyin) .writing-word-pinyin,
+body:not(.show-pinyin) .char-pinyin-small,
+body:not(.show-pinyin) .mistake-pinyin,
+body:not(.show-pinyin) .mock-pinyin-sub,
+body:not(.show-pinyin) .mock-passage-py,
+body:not(.show-pinyin) .mock-speak-py {
+  display: none !important;
+}
+
+.order-word-chip {
+  display: inline-flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.order-word-chip .game-pinyin {
+  font-size: 11px;
+  margin-bottom: 0;
 }
 
 .vocabulary-item span {
@@ -3618,7 +3640,7 @@ body.show-pinyin .speed-pinyin{display:block!important}
 .falling-item:hover{transform:translateX(-50%) scale(1.1);box-shadow:0 12px 28px rgba(40,84,59,0.28);z-index:4}
 .falling-item:active{transform:translateX(-50%) scale(0.95)}
 .falling-item .drop-hanzi{display:block;font-size:28px;color:#1e4630;line-height:1.15;font-weight:800;letter-spacing:0.5px}
-.falling-item .game-pinyin{display:block;margin-bottom:3px;font-size:14px;font-weight:700;color:#4a6358;line-height:1.2}
+.falling-item .game-pinyin{margin-bottom:3px;font-size:14px;font-weight:700;color:#4a6358;line-height:1.2}
 
 /* Shapes phong phú cho khối từ rơi */
 /* 1. Hình tròn bong bóng (Circle) */
