@@ -582,133 +582,32 @@ function renderRecentActivityCard(panel, bundle) {
   });
 }
 
-/**
- * Render bảng Huy hiệu & Cột mốc trên Trang chủ
- */
-function renderDashboardBadgesCard(panel, bundle) {
-  if (!panel) return;
-
-  const { badges, learnerInfo, totalPoints } = bundle;
-  const unlockedBadges = badges.filter((b) => b.unlocked);
-  const lockedBadges = badges.filter((b) => !b.unlocked);
-
-  // Tìm huy hiệu sắp đạt được nhất (có % tiến độ cao nhất trong số chưa mở)
-  const nextBadge =
-    lockedBadges.slice().sort((a, b) => b.percent - a.percent || a.target - b.target)[0] || null;
-
-  // Sắp xếp hiển thị trên trang chủ: ưu tiên huy hiệu đã mở lên trước, sau đó theo % tiến độ giảm dần
-  const displayBadges = badges
-    .slice()
-    .sort((a, b) => {
-      if (a.unlocked !== b.unlocked) return a.unlocked ? -1 : 1;
-      return b.percent - a.percent;
-    })
-    .slice(0, 6);
-
-  panel.innerHTML = `
-    <div class="panel-heading badges-panel-heading">
-      <div>
-        <h2>Huy hiệu & Danh hiệu</h2>
-        <p>Đã mở khóa <strong>${unlockedBadges.length}/${badges.length}</strong> huy hiệu vinh danh</p>
-      </div>
-      <span class="dashboard-rank-badge" style="border-color:${learnerInfo.color};color:${learnerInfo.color}">
-        ${learnerInfo.badge}
-      </span>
-    </div>
-
-    ${
-      nextBadge
-        ? `
-      <div class="next-milestone-banner">
-        <div class="next-milestone-icon">${nextBadge.icon}</div>
-        <div class="next-milestone-body">
-          <div class="next-milestone-top">
-            <span class="next-milestone-tag">SẮP MỞ KHÓA</span>
-            <strong>${escapeHtml(nextBadge.name)}</strong>
-            <span class="next-milestone-ratio">${nextBadge.current}/${nextBadge.target} ${nextBadge.unit}</span>
-          </div>
-          <p>${escapeHtml(nextBadge.desc)}</p>
-          <div class="next-milestone-bar">
-            <div class="next-milestone-fill" style="width: ${nextBadge.percent}%"></div>
-          </div>
-        </div>
-        <a href="${nextBadge.route}" class="next-milestone-cta" title="Chinh phục ngay">Học ngay →</a>
-      </div>
-    `
-        : `
-      <div class="next-milestone-banner all-unlocked">
-        <div class="next-milestone-icon">👑</div>
-        <div class="next-milestone-body">
-          <div class="next-milestone-top">
-            <span class="next-milestone-tag">HOÀN HẢO 100%</span>
-            <strong>Đã chinh phục trọn bộ ${badges.length} huy hiệu!</strong>
-          </div>
-          <p>Bạn là Huyền Thoại Hán Ngữ thực thụ của LuLu Chinese (${totalPoints.toLocaleString('vi-VN')} điểm).</p>
-        </div>
-      </div>
-    `
-    }
-
-    <div class="dashboard-badges-grid">
-      ${displayBadges
-        .map(
-          (b) => `
-        <a href="${b.unlocked ? '#activity' : b.route}" class="dash-badge-item ${b.unlocked ? 'is-unlocked' : 'is-locked'}" title="${escapeHtml(b.desc)} (${b.current}/${b.target} ${b.unit})">
-          <div class="dash-badge-icon-box">
-            <span class="dash-badge-emoji">${b.icon}</span>
-            ${b.unlocked ? '<span class="dash-badge-check">✓</span>' : ''}
-          </div>
-          <div class="dash-badge-info">
-            <strong>${escapeHtml(b.name)}</strong>
-            <small>${b.unlocked ? 'Đã đạt ✦' : `${b.current}/${b.target} ${b.unit} (${b.percent}%)`}</small>
-            <div class="dash-badge-mini-bar">
-              <div class="dash-badge-mini-fill" style="width:${b.percent}%"></div>
-            </div>
-          </div>
-        </a>
-      `
-        )
-        .join('')}
-    </div>
-
-    <div class="dashboard-badges-footer">
-      <a class="text-link" href="#activity">Xem bộ sưu tập ${badges.length} huy hiệu →</a>
-      <a class="text-link" href="#profile">Hồ sơ học viên →</a>
-    </div>
-  `;
-}
-
 function bindDashboardListeners() {
   if (listenersBound) return;
   listenersBound = true;
 
-  const refreshAll = async (checkNewBadges = false) => {
+  const refreshAll = async () => {
     try {
       const bundle = await loadUserActivityAndBadges();
       cachedBundle = bundle;
-      if (checkNewBadges) {
-        checkNewlyUnlockedBadges(bundle.badges, globalToast);
-      }
       const activityPanel = document.querySelector('#recentActivityPanel');
-      const badgesPanel = document.querySelector('#dashboardBadgesPanel');
       if (activityPanel) renderRecentActivityCard(activityPanel, bundle);
-      if (badgesPanel) renderDashboardBadgesCard(badgesPanel, bundle);
     } catch (err) {
-      console.warn('Không thể làm mới Hoạt động gần đây & Huy hiệu:', err);
+      console.warn('Không thể làm mới Hoạt động gần đây:', err);
     }
   };
 
-  window.addEventListener('activity-recorded', () => refreshAll(true));
-  window.addEventListener('auth-changed', () => refreshAll(false));
+  window.addEventListener('activity-recorded', () => refreshAll());
+  window.addEventListener('auth-changed', () => refreshAll());
   window.addEventListener('hashchange', () => {
     if ((window.location.hash.replace('#', '') || 'dashboard') === 'dashboard') {
-      refreshAll(false);
+      refreshAll();
     }
   });
 }
 
 /**
- * Khởi tạo và hiển thị cả 2 bảng Hoạt động gần đây + Huy hiệu trên Trang chủ
+ * Khởi tạo và hiển thị bảng Hoạt động gần đây trên Trang chủ
  */
 export async function renderDashboardActivityAndBadges({ toast } = {}) {
   if (toast) globalToast = toast;
@@ -716,21 +615,20 @@ export async function renderDashboardActivityAndBadges({ toast } = {}) {
 
   const activityPanel = document.querySelector('#recentActivityPanel');
   const badgesPanel = document.querySelector('#dashboardBadgesPanel');
-  if (!activityPanel && !badgesPanel) return;
+  if (badgesPanel) badgesPanel.remove();
+  if (!activityPanel) return;
 
   try {
     const bundle = await loadUserActivityAndBadges();
     cachedBundle = bundle;
-    checkNewlyUnlockedBadges(bundle.badges, globalToast);
-    if (activityPanel) renderRecentActivityCard(activityPanel, bundle);
-    if (badgesPanel) renderDashboardBadgesCard(badgesPanel, bundle);
+    renderRecentActivityCard(activityPanel, bundle);
   } catch (err) {
-    console.warn('Lỗi khi tải Hoạt động & Huy hiệu trang chủ:', err);
+    console.warn('Lỗi khi tải Hoạt động gần đây trang chủ:', err);
   }
 }
 
 /**
- * Trang chi tiết #activity ("Xem tất cả" Nhật ký Hoạt động & Bộ sưu tập Huy hiệu)
+ * Trang chi tiết #activity ("Xem tất cả" Nhật ký Hoạt động)
  */
 export async function initActivityPage({ toast } = {}) {
   if (toast) globalToast = toast;
@@ -740,26 +638,17 @@ export async function initActivityPage({ toast } = {}) {
   container.innerHTML = `
     <div class="profile-loading-box">
       <div class="profile-spinner"></div>
-      <p>Đang tải nhật ký hoạt động và bộ sưu tập huy hiệu...</p>
+      <p>Đang tải nhật ký hoạt động...</p>
     </div>
   `;
 
   const bundle = await loadUserActivityAndBadges();
   cachedBundle = bundle;
 
-  const { activities, badges, totalPoints, masteredCount, streak, learnerInfo } = bundle;
-  const unlockedCount = badges.filter((b) => b.unlocked).length;
-
-  let badgeFilter = 'all'; // 'all' | 'unlocked' | 'locked'
+  const { activities, totalPoints, masteredCount, streak } = bundle;
   let categoryFilter = 'all'; // 'all' | 'vocab' | 'practice' | 'game'
 
   const renderPageContent = () => {
-    const filteredBadges = badges.filter((b) => {
-      if (badgeFilter === 'unlocked') return b.unlocked;
-      if (badgeFilter === 'locked') return !b.unlocked;
-      return true;
-    });
-
     const filteredActivities = activities.filter((act) => {
       if (categoryFilter === 'all') return true;
       const meta = getCategoryMeta(act.category, act.description);
@@ -773,17 +662,14 @@ export async function initActivityPage({ toast } = {}) {
           <div class="activity-page-title-group">
             <a href="#dashboard" class="activity-back-btn">← Trang chủ</a>
             <div>
-              <h2>Nhật ký Hoạt động & Bộ sưu tập Huy hiệu</h2>
-              <p>Theo dõi mọi cột mốc tiến bộ và danh hiệu bạn đã chinh phục cùng LuLu</p>
+              <h2>Nhật ký Hoạt động Học tập</h2>
+              <p>Theo dõi lịch sử các bài học và điểm thưởng bạn đã đạt được cùng LuLu</p>
             </div>
           </div>
-          <span class="dashboard-rank-badge" style="border-color:${learnerInfo.color};color:${learnerInfo.color}">
-            ${learnerInfo.badge} · ${learnerInfo.title}
-          </span>
         </div>
 
-        <!-- 4 Thẻ tóm tắt thành tích -->
-        <div class="activity-summary-cards">
+        <!-- 3 Thẻ tóm tắt thành tích -->
+        <div class="activity-summary-cards" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
           <div class="activity-stat-card">
             <span class="activity-stat-emoji">🏆</span>
             <div>
@@ -799,13 +685,6 @@ export async function initActivityPage({ toast } = {}) {
             </div>
           </div>
           <div class="activity-stat-card">
-            <span class="activity-stat-emoji">🏅</span>
-            <div>
-              <strong>${unlockedCount} / ${badges.length}</strong>
-              <small>Huy hiệu đã đạt</small>
-            </div>
-          </div>
-          <div class="activity-stat-card">
             <span class="activity-stat-emoji">📚</span>
             <div>
               <strong>${masteredCount} từ</strong>
@@ -814,58 +693,7 @@ export async function initActivityPage({ toast } = {}) {
           </div>
         </div>
 
-        <!-- Phần 1: Bộ sưu tập 12 Huy hiệu -->
-        <section class="panel activity-full-section">
-          <div class="activity-section-top">
-            <div>
-              <h3>🏅 Bộ sưu tập Huy hiệu (${unlockedCount}/${badges.length})</h3>
-              <p>Hoàn thành nhiệm vụ ở các kỹ năng để mở khóa trọn bộ huy hiệu vinh danh</p>
-            </div>
-            <div class="activity-filter-tabs">
-              <button type="button" class="activity-filter-chip ${badgeFilter === 'all' ? 'active' : ''}" data-badge-filter="all">Tất cả (${badges.length})</button>
-              <button type="button" class="activity-filter-chip ${badgeFilter === 'unlocked' ? 'active' : ''}" data-badge-filter="unlocked">Đã đạt (${unlockedCount})</button>
-              <button type="button" class="activity-filter-chip ${badgeFilter === 'locked' ? 'active' : ''}" data-badge-filter="locked">Đang chinh phục (${badges.length - unlockedCount})</button>
-            </div>
-          </div>
-
-          <div class="profile-badges-grid">
-            ${filteredBadges
-              .map(
-                (b) => `
-              <div class="badge-card ${b.unlocked ? 'is-unlocked' : 'is-locked'}">
-                <div class="badge-icon-wrap">
-                  <span class="badge-emoji">${b.icon}</span>
-                  ${b.unlocked ? '<span class="badge-check">✓</span>' : ''}
-                </div>
-                <div class="badge-body">
-                  <div class="badge-title-row">
-                    <h4>${escapeHtml(b.name)}</h4>
-                    <span class="badge-status-tag">${b.unlocked ? 'ĐÃ ĐẠT ✦' : 'CHƯA ĐẠT'}</span>
-                  </div>
-                  <p class="badge-desc">${escapeHtml(b.desc)}</p>
-                  <div class="badge-progress-box">
-                    <div class="badge-progress-bar">
-                      <div class="badge-progress-fill" style="width: ${b.percent}%;"></div>
-                    </div>
-                    <div class="badge-progress-labels">
-                      <span>${b.current}/${b.target} ${b.unit}</span>
-                      <span>${b.percent}%</span>
-                    </div>
-                  </div>
-                  ${
-                    !b.unlocked
-                      ? `<a href="${b.route}" class="badge-action-link">Luyện ngay →</a>`
-                      : ''
-                  }
-                </div>
-              </div>
-            `
-              )
-              .join('')}
-          </div>
-        </section>
-
-        <!-- Phần 2: Toàn bộ lịch sử hoạt động -->
+        <!-- Toàn bộ lịch sử hoạt động -->
         <section class="panel activity-full-section">
           <div class="activity-section-top">
             <div>
@@ -916,7 +744,7 @@ export async function initActivityPage({ toast } = {}) {
             <div class="activity-empty-box">
               <div class="activity-empty-icon">🌱</div>
               <strong>Chưa có hoạt động nào trong danh mục này</strong>
-              <p>Hãy chọn một bài học bất kỳ để bắt đầu tích lũy điểm thưởng và mở khóa huy hiệu nhé!</p>
+              <p>Hãy chọn một bài học bất kỳ để bắt đầu tích lũy điểm thưởng nhé!</p>
               <div class="activity-empty-actions">
                 <a href="#vocabulary" class="activity-quick-cta">📖 Học từ vựng</a>
                 <a href="#writing" class="activity-quick-cta">🖌️ Tập viết</a>
@@ -928,13 +756,6 @@ export async function initActivityPage({ toast } = {}) {
         </section>
       </div>
     `;
-
-    container.querySelectorAll('[data-badge-filter]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        badgeFilter = btn.dataset.badgeFilter || 'all';
-        renderPageContent();
-      });
-    });
 
     container.querySelectorAll('[data-cat-filter]').forEach((btn) => {
       btn.addEventListener('click', () => {

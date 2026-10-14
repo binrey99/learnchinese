@@ -320,7 +320,6 @@ export async function renderProfile(options = {}) {
         <div class="profile-details">
           <div class="profile-badge-row">
             <span class="profile-badge">HỒ SƠ HỌC VIÊN</span>
-            <span class="profile-rank-pill" style="border-color:${learnerInfo.color};color:${learnerInfo.color}">${learnerInfo.badge}</span>
             <div class="profile-top-actions">
               <button type="button" class="profile-logout-pill" id="profilePageLogoutBtn" title="Đăng xuất">Đăng xuất</button>
               <button type="button" class="profile-change-pwd-pill" id="openChangePwdModalBtn" title="Đổi mật khẩu tài khoản">
@@ -362,16 +361,8 @@ export async function renderProfile(options = {}) {
               <strong class="meta-value" style="color:#ea580c">🔥 ${streakInfo.streak} ngày</strong>
             </div>
             <div class="meta-item">
-              <span class="meta-label">Danh hiệu</span>
-              <strong class="meta-value" style="color:${learnerInfo.color}">${learnerInfo.title}</strong>
-            </div>
-            <div class="meta-item">
               <span class="meta-label">Ngày tham gia</span>
               <strong class="meta-value">${joined}</strong>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Huy hiệu đạt được</span>
-              <strong class="meta-value text-gold">${unlockedBadgesCount} / ${BADGES.length} ✦</strong>
             </div>
           </div>
         </div>
@@ -415,47 +406,6 @@ export async function renderProfile(options = {}) {
               <span class="stat-name">Điểm trò chơi & thi đấu</span>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- Bộ sưu tập Huy Hiệu Thành Tích -->
-      <section class="profile-badges-section">
-        <div class="profile-section-head">
-          <div>
-            <h3 class="profile-section-title">Bộ sưu tập huy hiệu</h3>
-            <p class="profile-section-subtitle">Chinh phục các cột mốc học tập để mở khóa huy hiệu vinh danh</p>
-          </div>
-          <span class="badges-counter-pill">${unlockedBadgesCount}/${BADGES.length} Hoàn thành</span>
-        </div>
-
-        <div class="profile-badges-grid">
-          ${BADGES.map((b) => {
-            const percent = Math.min(100, Math.round((b.current / b.target) * 100));
-            return `
-              <div class="badge-card ${b.unlocked ? 'is-unlocked' : 'is-locked'}">
-                <div class="badge-icon-wrap">
-                  <span class="badge-emoji">${b.icon}</span>
-                  ${b.unlocked ? '<span class="badge-check">✓</span>' : ''}
-                </div>
-                <div class="badge-body">
-                  <div class="badge-title-row">
-                    <h4>${escapeHtml(b.name)}</h4>
-                    <span class="badge-status-tag">${b.unlocked ? 'ĐÃ ĐẠT ✦' : 'CHƯA ĐẠT'}</span>
-                  </div>
-                  <p class="badge-desc">${escapeHtml(b.desc)}</p>
-                  <div class="badge-progress-box">
-                    <div class="badge-progress-bar">
-                      <div class="badge-progress-fill" style="width: ${percent}%;"></div>
-                    </div>
-                    <div class="badge-progress-labels">
-                      <span>${b.current}/${b.target}</span>
-                      <span>${percent}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
         </div>
       </section>
 

@@ -80,8 +80,8 @@ const pages = {
     template: '<div data-lulu></div>'
   },
   activity: {
-    title: 'Nhật ký Hoạt động & Huy hiệu',
-    description: 'Xem toàn bộ lịch sử hoạt động học tập và bộ sưu tập huy hiệu thành tích của bạn.',
+    title: 'Nhật ký Hoạt động Học tập',
+    description: 'Xem toàn bộ lịch sử hoạt động học tập và điểm thưởng của bạn.',
     template: '<div data-activity-page></div>'
   },
   'support-admin': {
