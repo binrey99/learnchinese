@@ -232,8 +232,10 @@ class SoundEffects {
 const sounds = new SoundEffects();
 
 // Chinese speech pronunciation with robust dual-engine fallback (Web Speech + YouDao audio)
-function speakChinese(text, onEnd) {
-  if (!text || sounds.muted) return;
+function speakChinese(text, onEnd, opts = {}) {
+  const rate = typeof opts === 'number' ? opts : (opts?.rate || 0.85);
+  const force = typeof opts === 'object' && Boolean(opts?.force);
+  if (!text || (sounds.muted && !force)) return;
 
   // Engine 1: Web SpeechSynthesis
   if ('speechSynthesis' in window) {
@@ -241,7 +243,7 @@ function speakChinese(text, onEnd) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'zh-CN';
-      utterance.rate = 0.85;
+      utterance.rate = rate;
 
       const voices = window.speechSynthesis.getVoices();
       const zh = voices.find(
@@ -253,7 +255,7 @@ function speakChinese(text, onEnd) {
       let started = false;
       utterance.onstart = () => { started = true; };
       utterance.onerror = () => {
-        if (!started) playChineseAudioFallback(text, onEnd);
+        if (!started) playChineseAudioFallback(text, onEnd, rate, force);
       };
 
       window.speechSynthesis.speak(utterance);
@@ -261,7 +263,7 @@ function speakChinese(text, onEnd) {
       // Chrome speech synthesis safety fallback
       setTimeout(() => {
         if (!window.speechSynthesis.speaking && !started) {
-          playChineseAudioFallback(text, onEnd);
+          playChineseAudioFallback(text, onEnd, rate, force);
         }
       }, 250);
       return;
@@ -269,13 +271,14 @@ function speakChinese(text, onEnd) {
   }
 
   // Engine 2: High quality dictionary CDN audio
-  playChineseAudioFallback(text, onEnd);
+  playChineseAudioFallback(text, onEnd, rate, force);
 }
 
-function playChineseAudioFallback(text, onEnd) {
-  if (sounds.muted || !text) return;
+function playChineseAudioFallback(text, onEnd, rate = 0.85, force = false) {
+  if ((sounds.muted && !force) || !text) return;
   try {
     const audio = new Audio(`https://dict.youdao.com/dictvoice?audio=${encodeURIComponent(text)}&le=zh`);
+    audio.playbackRate = Math.max(0.5, Math.min(1.2, rate <= 0.7 ? 0.72 : 1.0));
     if (onEnd) audio.onended = onEnd;
     audio.play().catch(() => {});
   } catch (_) {}
@@ -1137,16 +1140,37 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         </div>
 
         <div class="speed-card" id="speedCard">
+          <div class="speed-mode-bar">
+            <div class="speed-mode-switch" role="group" aria-label="Chế độ hiển thị câu hỏi">
+              <button type="button" class="speed-mode-pill" data-speed-mode="visual">
+                👀 Nhìn chữ
+              </button>
+              <button type="button" class="speed-mode-pill" data-speed-mode="audio">
+                🎧 Nghe phản xạ <small>+20%</small>
+              </button>
+            </div>
+            <div class="speed-audio-actions">
+              <button type="button" class="speed-speak-btn" id="speedSpeakBtn" title="Phát âm chuẩn (1.0x)">🔊 1.0x</button>
+              <button type="button" class="speed-speak-btn speed-slow-btn" id="speedSlowBtn" title="Nghe chậm (0.75x)">🐢 0.75x</button>
+            </div>
+          </div>
           <div class="speed-word-box">
-            <span class="speed-pinyin game-pinyin" id="speedPinyin"></span>
-            <h2 class="speed-hanzi" id="speedHanzi">...</h2>
-            <button type="button" class="speed-speak-btn" id="speedSpeakBtn" title="Phát âm">🔊</button>
+            <button type="button" class="speed-audio-mystery" id="speedAudioMystery" title="Nhấn để nghe lại phát âm">
+              <span class="mystery-headphone-icon">🎧</span>
+              <span class="mystery-wave-bars"><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="mystery-hint-text">Nghe phát âm &amp; chọn nghĩa đúng</span>
+            </button>
+            <div class="speed-visual-word" id="speedVisualWord">
+              <span class="speed-pinyin game-pinyin" id="speedPinyin"></span>
+              <h2 class="speed-hanzi" id="speedHanzi">...</h2>
+            </div>
           </div>
           <div class="speed-options" id="speedOptions"></div>
         </div>
       </div>
     `;
 
+    const speedCardEl = arena.querySelector('#speedCard');
     const timerWrapEl = arena.querySelector('#speedTimerWrap');
     const flowerActorEl = arena.querySelector('#speedFlowerActor');
     const dragonActorEl = arena.querySelector('#speedDragonActor');
@@ -1158,7 +1182,39 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const hanziEl = arena.querySelector('#speedHanzi');
     const pinyinEl = arena.querySelector('#speedPinyin');
     const speakBtn = arena.querySelector('#speedSpeakBtn');
+    const slowBtn = arena.querySelector('#speedSlowBtn');
+    const mysteryBtn = arena.querySelector('#speedAudioMystery');
     const optionsContainer = arena.querySelector('#speedOptions');
+
+    let isAudioOnly = localStorage.getItem('mandarinly_speed_audio_mode') === 'true';
+    let currentTargetWord = null;
+
+    function syncSpeedAudioModeUI() {
+      if (speedCardEl) {
+        speedCardEl.classList.toggle('is-audio-only', isAudioOnly);
+      }
+      arena.querySelectorAll('[data-speed-mode]').forEach((btn) => {
+        btn.classList.toggle('active', (btn.dataset.speedMode === 'audio') === isAudioOnly);
+      });
+    }
+    syncSpeedAudioModeUI();
+
+    arena.querySelectorAll('[data-speed-mode]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nextMode = btn.dataset.speedMode === 'audio';
+        if (nextMode === isAudioOnly) return;
+        isAudioOnly = nextMode;
+        localStorage.setItem('mandarinly_speed_audio_mode', String(isAudioOnly));
+        if (speedCardEl) speedCardEl.classList.remove('is-revealed');
+        syncSpeedAudioModeUI();
+        if (isAudioOnly) {
+          sayLulu('Chế độ Nghe Phản Xạ! Dỏng tai nghe kỹ nhé! 🎧', 'info', 2200);
+          if (currentTargetWord) speakChinese(currentTargetWord.hanzi, null, { rate: 0.85, force: true });
+        } else {
+          sayLulu('Đã bật lại chế độ nhìn mặt chữ Hán! 👀', 'info', 1800);
+        }
+      });
+    });
 
     let speechHideTimer = null;
     let lastSpeechText = '';
@@ -1415,12 +1471,16 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       if (isGameOver) return;
       lastActionAt = Date.now();
       const target = generateSpeedQuestion(wordsPool, currentLevel);
+      currentTargetWord = target;
 
+      if (speedCardEl) speedCardEl.classList.remove('is-revealed');
       hanziEl.textContent = target.hanzi;
       pinyinEl.textContent = target.pinyin || toPinyin(target.hanzi);
-      speakChinese(target.hanzi);
+      speakChinese(target.hanzi, null, { rate: 0.85, force: isAudioOnly });
 
-      speakBtn.onclick = () => speakChinese(target.hanzi);
+      speakBtn.onclick = () => speakChinese(target.hanzi, null, { rate: 0.85, force: true });
+      if (slowBtn) slowBtn.onclick = () => speakChinese(target.hanzi, null, { rate: 0.62, force: true });
+      if (mysteryBtn) mysteryBtn.onclick = () => speakChinese(target.hanzi, null, { rate: 0.85, force: true });
 
       const options = target.options;
 
@@ -1441,6 +1501,10 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
           answeredCount++;
           const chosen = btn.dataset.meaning;
           const isCorrect = chosen === target.meaning;
+
+          if (isAudioOnly && speedCardEl) {
+            speedCardEl.classList.add('is-revealed');
+          }
 
           if (isCorrect) {
             correctCount++;
@@ -1487,6 +1551,16 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
                 'praise',
                 2100
               );
+            } else if (isAudioOnly) {
+              sayLulu(
+                pickLine([
+                  'Tai thính quá! Nghe chuẩn luôn! 🎧',
+                  'Phản xạ nghe đỉnh thật sự! +3s 👂✨',
+                  'Chuẩn luôn! Nghe phát bắt trúng ngay! 🍊'
+                ]),
+                'praise',
+                1900
+              );
             } else {
               sayLulu(
                 pickLine([
@@ -1502,7 +1576,8 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             }
 
             const multiplier = Math.min(4, 1 + Math.floor(streak / 3));
-            score += 100 * multiplier;
+            const basePoints = isAudioOnly ? 120 : 100;
+            score += basePoints * multiplier;
 
             btn.classList.add('opt-correct');
             optionsContainer.querySelectorAll('button').forEach((b) => (b.disabled = true));
@@ -1512,7 +1587,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
             streakEl.classList.add('pulse');
             setTimeout(() => streakEl.classList.remove('pulse'), 300);
 
-            setTimeout(nextQuestion, 280);
+            setTimeout(nextQuestion, isAudioOnly ? 460 : 280);
           } else {
             streak = 0;
             sounds.playWrong();
@@ -1566,7 +1641,7 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
               );
             }
 
-            setTimeout(nextQuestion, 600);
+            setTimeout(nextQuestion, isAudioOnly ? 780 : 600);
           }
         });
       });

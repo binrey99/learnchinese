@@ -3804,13 +3804,42 @@ body.show-pinyin .game-pinyin{display:block!important}
 .speed-streak-box strong.pulse{animation:combo-pop .3s ease-out}
 @keyframes combo-pop{0%{transform:scale(1)}50%{transform:scale(1.4)}100%{transform:scale(1)}}
 
-.speed-card{background:#fff;border:2px solid #e3ede6;border-radius:14px;padding:26px 20px;text-align:center;box-shadow:0 4px 14px #243b2f0a}
-.speed-word-box{margin-bottom:22px;position:relative}
+.speed-card{background:#fff;border:2px solid #e3ede6;border-radius:14px;padding:18px 20px 24px;text-align:center;box-shadow:0 4px 14px #243b2f0a}
+.speed-mode-bar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px dashed #e2ece5}
+.speed-mode-switch{display:inline-flex;background:#f1f6f3;padding:3px;border-radius:999px;border:1px solid #dce8e0}
+.speed-mode-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:999px;border:none;background:transparent;color:#527066;font-size:11.5px;font-weight:800;cursor:pointer;transition:all .18s ease}
+.speed-mode-pill small{background:#dcfce7;color:#15803d;padding:1px 5px;border-radius:999px;font-size:9.5px;font-weight:900}
+.speed-mode-pill.active{background:#28543b;color:#fff;box-shadow:0 2px 6px rgba(40,84,59,0.22)}
+.speed-mode-pill.active small{background:#fde68a;color:#92400e}
+.speed-audio-actions{display:inline-flex;align-items:center;gap:6px}
+.speed-speak-btn{display:inline-flex;align-items:center;gap:4px;background:#e4f2e8;color:#28543b;border:1px solid #c2e2cc;border-radius:999px;padding:5px 11px;font-size:11.5px;font-weight:800;cursor:pointer;transition:.2s}
+.speed-speak-btn:hover{background:#28543b;color:#fff;border-color:#28543b}
+.speed-speak-btn.speed-slow-btn{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.speed-speak-btn.speed-slow-btn:hover{background:#f59e0b;color:#fff;border-color:#f59e0b}
+
+.speed-word-box{margin-bottom:20px;position:relative;min-height:74px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .speed-pinyin{display:none;font-size:15px;color:#3d8b5f;font-weight:700;margin-bottom:6px;min-height:18px;letter-spacing:0.5px}
 body.show-pinyin .speed-pinyin{display:block!important}
 .speed-hanzi{font-size:46px;color:#28543b;margin:0;letter-spacing:1px;font-family:'Noto Sans SC','Noto Sans',sans-serif}
-.speed-speak-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#e4f2e8;color:#28543b;border-radius:50%;width:34px;height:34px;font-size:15px;display:grid;place-items:center;transition:.2s}
-.speed-speak-btn:hover{background:#28543b;color:#fff}
+
+/* Hộp âm thanh bí ẩn khi bật Chế độ Nghe Phản Xạ trong Đua tốc độ */
+.speed-audio-mystery{display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 24px;border-radius:16px;background:linear-gradient(135deg,#f0fdf4 0%,#dcfce7 100%);border:2px dashed #34d399;color:#065f46;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
+.speed-audio-mystery:hover{transform:scale(1.02);box-shadow:0 6px 18px rgba(16,185,129,0.18)}
+.mystery-headphone-icon{font-size:28px;line-height:1;animation:headphonePulse 1.4s ease-in-out infinite}
+@keyframes headphonePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.mystery-wave-bars{display:inline-flex;align-items:center;gap:4px;height:16px}
+.mystery-wave-bars i{display:block;width:3.5px;border-radius:999px;background:#10b981;animation:soundWaveBar 0.8s ease-in-out infinite}
+.mystery-wave-bars i:nth-child(1){height:7px;animation-delay:0s}
+.mystery-wave-bars i:nth-child(2){height:14px;animation-delay:0.15s}
+.mystery-wave-bars i:nth-child(3){height:10px;animation-delay:0.3s}
+.mystery-wave-bars i:nth-child(4){height:15px;animation-delay:0.45s}
+.mystery-wave-bars i:nth-child(5){height:8px;animation-delay:0.6s}
+@keyframes soundWaveBar{0%,100%{transform:scaleY(0.55);opacity:0.65}50%{transform:scaleY(1.2);opacity:1}}
+.mystery-hint-text{font-size:12px;font-weight:800;color:#047857}
+.speed-card.is-audio-only:not(.is-revealed) .speed-visual-word{display:none}
+.speed-card.is-audio-only:not(.is-revealed) .speed-audio-mystery{display:inline-flex}
+.speed-card.is-audio-only.is-revealed .speed-visual-word{display:block;animation:fadeIn .2s ease-out}
+.speed-card.is-audio-only.is-revealed .speed-pinyin{display:block!important}
 
 .speed-options{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .speed-opt-btn{min-height:56px;padding:12px 14px;background:#fff;border:2px solid #dfeae3;border-radius:10px;font-size:14px;font-weight:700;color:#28543b;transition:border-color .15s,transform .15s,background .15s;text-align:center}
@@ -13445,4 +13474,348 @@ body.show-pinyin .speed-pinyin{display:block!important}
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   LISTENING REFLEX & DICTATION (LUYỆN NGHE PHẢN XẠ & CHÉP CHÍNH TẢ)
+   ========================================================================== */
+.practice-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.practice-new-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.4px;
+}
+
+.listening-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.listening-mode-tabs {
+  display: inline-flex;
+  background: #f1f6f3;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid #dce8e0;
+  gap: 4px;
+}
+.listening-mode-tab {
+  border: none;
+  background: transparent;
+  color: #527066;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.listening-mode-tab.active {
+  background: #28543b;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(40, 84, 59, 0.25);
+}
+.listening-level-filter select {
+  padding: 7px 12px;
+  border: 1.5px solid #dce8e0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #28543b;
+  font-size: 12px;
+  font-weight: 800;
+  outline: none;
+  cursor: pointer;
+}
+.listening-hud-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #f7faf8;
+  border: 1px solid #e2ece5;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #527066;
+}
+.listening-hud-strip strong {
+  color: #28543b;
+  font-weight: 800;
+}
+.listening-combo-pill {
+  color: #ea580c !important;
+}
+
+.listening-audio-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0 18px;
+}
+.listening-main-speaker {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 3px solid #6ee7b7;
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #ecfdf5 65%, #d1fae5 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+}
+.listening-main-speaker:hover {
+  transform: scale(1.06);
+  box-shadow: 0 14px 30px rgba(16, 185, 129, 0.28);
+}
+.listening-main-speaker:active {
+  transform: scale(0.96);
+}
+.speaker-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px dashed #34d399;
+  opacity: 0.45;
+  pointer-events: none;
+}
+.listening-audio-stage.is-speaking .speaker-ring {
+  opacity: 1;
+  animation: game-spin 4s linear infinite;
+}
+.speaker-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+.listening-wave-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 14px;
+}
+.listening-wave-bars i {
+  display: block;
+  width: 3px;
+  height: 5px;
+  border-radius: 999px;
+  background: #10b981;
+  transition: height 0.2s ease;
+}
+.listening-wave-bars.is-active i {
+  animation: soundWaveBar 0.65s ease-in-out infinite;
+}
+.listening-wave-bars.is-active i:nth-child(1) { height: 7px; animation-delay: 0s; }
+.listening-wave-bars.is-active i:nth-child(2) { height: 13px; animation-delay: 0.12s; }
+.listening-wave-bars.is-active i:nth-child(3) { height: 9px; animation-delay: 0.24s; }
+.listening-wave-bars.is-active i:nth-child(4) { height: 14px; animation-delay: 0.36s; }
+.listening-wave-bars.is-active i:nth-child(5) { height: 8px; animation-delay: 0.48s; }
+
+.listening-audio-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.listening-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.18s ease;
+}
+.listening-ctrl-btn.primary {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #6ee7b7;
+}
+.listening-ctrl-btn.primary:hover {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #10b981;
+}
+.listening-ctrl-btn.slow {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+.listening-ctrl-btn.slow:hover {
+  background: #f59e0b;
+  color: #ffffff;
+  border-color: #f59e0b;
+}
+.listening-ctrl-btn.hint {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+.listening-ctrl-btn.hint:hover {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+.listening-reveal-box {
+  margin: 4px auto 14px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  animation: fadeIn 0.25s ease-out;
+}
+.listening-reveal-pinyin {
+  font-size: 14px;
+  font-weight: 700;
+  color: #047857;
+}
+.listening-reveal-hanzi {
+  font-size: 34px;
+  color: #064e3b;
+  font-family: 'Noto Sans SC', 'Noto Sans', sans-serif;
+  line-height: 1.2;
+}
+.listening-reveal-meaning {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.listening-hint-banner {
+  margin: 0 auto 14px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 12.5px;
+}
+.listening-hint-banner code {
+  font-weight: 800;
+  letter-spacing: 1px;
+  background: #dbeafe;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.listening-opt-btn {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  text-align: left !important;
+}
+.opt-key-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e4f2e8;
+  color: #28543b;
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.listening-opt-meaning {
+  font-size: 14.5px !important;
+  color: #1e293b;
+}
+
+.listening-dictation-form {
+  margin: 8px auto 12px;
+  max-width: 480px;
+  text-align: left;
+}
+.dictation-label {
+  display: block;
+  font-size: 12.5px;
+  color: #475569;
+  margin-bottom: 8px;
+}
+.dictation-input-row {
+  display: flex;
+  gap: 8px;
+}
+.dictation-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.dictation-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+.dictation-input.is-correct {
+  border-color: #22c55e;
+  background: #f0fdf4;
+  color: #15803d;
+}
+.dictation-input.is-wrong {
+  border-color: #ef4444;
+  background: #fef2f2;
+  color: #dc2626;
+}
+.dictation-submit-btn {
+  white-space: nowrap;
+  padding: 0 18px !important;
+  border-radius: 12px !important;
+}
+
+@media (max-width: 650px) {
+  .speed-mode-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .speed-mode-switch {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .speed-mode-pill {
+    justify-content: center;
+  }
+  .speed-audio-actions {
+    justify-content: center;
+  }
+  .dictation-input-row {
+    flex-direction: column;
+  }
+  .dictation-submit-btn {
+    padding: 12px 18px !important;
+  }
+}
+
 

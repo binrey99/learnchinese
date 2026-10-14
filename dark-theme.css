@@ -2578,4 +2578,108 @@ body.dark-mode .mistake-source-chip {
   color: #34d399 !important;
 }
 
+/* ==========================================================================
+   DARK MODE: LISTENING REFLEX & DICTATION
+   ========================================================================== */
+[data-theme="dark"] .speed-mode-bar {
+  border-bottom-color: #334155 !important;
+}
+[data-theme="dark"] .speed-mode-switch,
+[data-theme="dark"] .listening-mode-tabs {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .speed-mode-pill,
+[data-theme="dark"] .listening-mode-tab {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] .speed-mode-pill.active,
+[data-theme="dark"] .listening-mode-tab.active {
+  background: #10b981 !important;
+  color: #064e3b !important;
+}
+[data-theme="dark"] .speed-speak-btn.speed-slow-btn,
+[data-theme="dark"] .listening-ctrl-btn.slow {
+  background: #451a03 !important;
+  color: #fde68a !important;
+  border-color: #b45309 !important;
+}
+[data-theme="dark"] .speed-audio-mystery {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;
+  border-color: #34d399 !important;
+  color: #d1fae5 !important;
+}
+[data-theme="dark"] .mystery-hint-text {
+  color: #a7f3d0 !important;
+}
+[data-theme="dark"] .listening-level-filter select,
+[data-theme="dark"] .listening-hud-strip {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .listening-hud-strip strong {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .listening-main-speaker {
+  background: radial-gradient(circle at 35% 30%, #1e293b 0%, #064e3b 80%) !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .listening-ctrl-btn.primary {
+  background: #064e3b !important;
+  color: #a7f3d0 !important;
+  border-color: #10b981 !important;
+}
+[data-theme="dark"] .listening-ctrl-btn.hint {
+  background: #1e3a8a !important;
+  color: #bfdbfe !important;
+  border-color: #3b82f6 !important;
+}
+[data-theme="dark"] .listening-reveal-box {
+  background: rgba(16, 185, 129, 0.14) !important;
+  border-color: rgba(52, 211, 153, 0.4) !important;
+}
+[data-theme="dark"] .listening-reveal-pinyin {
+  color: #6ee7b7 !important;
+}
+[data-theme="dark"] .listening-reveal-hanzi {
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .listening-reveal-meaning,
+[data-theme="dark"] .dictation-label {
+  color: #cbd5e1 !important;
+}
+[data-theme="dark"] .listening-hint-banner {
+  background: rgba(30, 58, 138, 0.35) !important;
+  border-color: #3b82f6 !important;
+  color: #bfdbfe !important;
+}
+[data-theme="dark"] .listening-hint-banner code {
+  background: #1e293b !important;
+  color: #93c5fd !important;
+}
+[data-theme="dark"] .listening-opt-meaning {
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .opt-key-badge {
+  background: #0f172a !important;
+  color: #34d399 !important;
+}
+[data-theme="dark"] .dictation-input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+[data-theme="dark"] .dictation-input.is-correct {
+  background: rgba(22, 163, 74, 0.2) !important;
+  border-color: #22c55e !important;
+  color: #86efac !important;
+}
+[data-theme="dark"] .dictation-input.is-wrong {
+  background: rgba(220, 38, 38, 0.2) !important;
+  border-color: #ef4444 !important;
+  color: #fca5a5 !important;
+}
+
+
 
