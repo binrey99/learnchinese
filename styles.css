@@ -3576,13 +3576,123 @@ body.show-pinyin .game-pinyin{display:block!important}
 /* ==========================================
    GAME 2: ĐUA TỐC ĐỘ 60S (SPEED BLITZ)
    ========================================== */
-.speed-game-panel{max-width:620px;margin:0 auto}
-.speed-hud{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;padding:12px 18px;background:#f7faf8;border:1px solid #e6eee8;border-radius:12px}
-.speed-timer-wrap{display:flex;align-items:center;gap:8px;flex:1;position:relative}
-.timer-icon{font-size:16px}
-.speed-timer-bar{flex:1;height:10px;background:#e2ebe5;border-radius:999px;overflow:hidden}
-.speed-timer-bar i{display:block;height:100%;width:100%;background:#4f9d72;border-radius:999px;transition:width .3s linear,background .3s}
-.time-delta{position:absolute;right:0;top:-18px;font-size:13px;font-weight:800;pointer-events:none;animation:delta-float .75s cubic-bezier(.2,0,.2,1) forwards}
+.speed-game-panel{max-width:650px;margin:0 auto}
+.speed-hud{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:20px;padding:18px 20px 16px;background:#f7faf8;border:1.5px solid #e2ece5;border-radius:16px;overflow:visible}
+.speed-timer-wrap{display:flex;align-items:center;gap:10px;flex:1;position:relative;min-height:56px;padding-left:2px}
+
+/* Hoa ăn thịt ở đầu thanh thời gian (0%) */
+.speed-flower-actor{position:relative;width:58px;height:66px;flex-shrink:0;display:flex;align-items:center;justify-content:center;z-index:4;margin-top:-6px;margin-bottom:-6px;transform-origin:35% 85%;animation:flowerIdleSway 2.2s ease-in-out infinite}
+.speed-flower-img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(40,84,59,0.22));pointer-events:none;user-select:none}
+@keyframes flowerIdleSway{
+  0%,100%{transform:rotate(-3deg) scale(1)}
+  50%{transform:rotate(4deg) scale(1.05,0.97)}
+}
+.speed-timer-wrap.is-danger .speed-flower-actor{
+  animation:flowerHungrySnap 0.48s ease-in-out infinite;
+}
+@keyframes flowerHungrySnap{
+  0%,100%{transform:rotate(-4deg) scale(1.04)}
+  50%{transform:rotate(8deg) scale(1.14,0.94) translateX(3px)}
+}
+
+/* Đường bay của chú rồng và thanh thời gian */
+.speed-timer-track{position:relative;flex:1;height:44px;display:flex;align-items:center;margin-right:18px}
+.speed-timer-bar{width:100%;height:12px;background:#dfe9e2;border-radius:999px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(15,23,42,0.08)}
+.speed-timer-bar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#3b8256 0%,#4f9d72 60%,#34d399 100%);border-radius:999px;transition:width .35s cubic-bezier(0.22,1,0.36,1),background .3s}
+
+/* Chú rồng bay ở mũi thanh thời gian */
+.speed-dragon-actor{position:absolute;top:50%;left:100%;width:56px;height:56px;transform:translate(-50%,-56%);transition:left .35s cubic-bezier(0.22,1,0.36,1);z-index:3;pointer-events:none}
+.dragon-fly-rig{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;animation:dragonFlyHover 0.85s ease-in-out infinite}
+.speed-dragon-img{width:54px;height:54px;object-fit:contain;filter:drop-shadow(0 5px 10px rgba(234,138,40,0.32));user-select:none}
+@keyframes dragonFlyHover{
+  0%,100%{transform:translateY(-5px) rotate(-4deg) scale(1.03,0.98)}
+  50%{transform:translateY(4px) rotate(5deg) scale(0.98,1.03)}
+}
+
+/* Bóng đổ dưới bụng rồng tạo chiều sâu bay lượn */
+.dragon-ground-shadow{position:absolute;bottom:-3px;left:50%;width:28px;height:6px;background:rgba(40,84,59,0.2);border-radius:50%;transform:translateX(-50%);filter:blur(1.5px);animation:dragonShadowPulse 0.85s ease-in-out infinite}
+@keyframes dragonShadowPulse{
+  0%,100%{transform:translateX(-50%) scale(0.75);opacity:0.45}
+  50%{transform:translateX(-50%) scale(1.1);opacity:0.8}
+}
+
+/* Vệt gió bay phía sau chú rồng */
+.dragon-wind-lines{position:absolute;left:-14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.dragon-wind-lines i{display:block;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,rgba(245,158,11,0.75));animation:dragonWindStream 0.65s linear infinite}
+.dragon-wind-lines i:nth-child(1){width:12px;animation-delay:0s}
+.dragon-wind-lines i:nth-child(2){width:16px;margin-left:-4px;animation-delay:0.2s}
+.dragon-wind-lines i:nth-child(3){width:10px;animation-delay:0.4s}
+@keyframes dragonWindStream{
+  0%{opacity:0;transform:translateX(6px) scaleX(0.5)}
+  40%{opacity:1}
+  100%{opacity:0;transform:translateX(-10px) scaleX(1.2)}
+}
+
+/* Giọt mồ hôi khi sắp hết giờ (<= 12s) */
+.dragon-panic-sweat{position:absolute;top:-4px;right:-2px;font-size:13px;opacity:0;transform:scale(0.5);transition:opacity .2s,transform .2s}
+.speed-timer-wrap.is-danger .dragon-fly-rig{animation-duration:0.42s}
+.speed-timer-wrap.is-danger .dragon-panic-sweat{opacity:1;animation:sweatDropBounce 0.55s ease-in-out infinite}
+@keyframes sweatDropBounce{
+  0%,100%{transform:translateY(0) scale(0.95)}
+  50%{transform:translateY(3px) scale(1.15)}
+}
+
+/* Hiệu ứng vọt lên khi trả lời đúng (+3s) hoặc khựng lại khi sai (-3s) */
+.speed-dragon-actor.is-boosting .dragon-fly-rig{animation:dragonBoostLeap 0.45s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes dragonBoostLeap{
+  0%{transform:scale(1)}
+  40%{transform:translateY(-12px) translateX(6px) rotate(-12deg) scale(1.18)}
+  100%{transform:translateY(-5px) rotate(-4deg) scale(1)}
+}
+.speed-dragon-actor.is-stumbling .dragon-fly-rig{animation:dragonStumbleShake 0.42s ease-in-out}
+@keyframes dragonStumbleShake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-6px) rotate(-14deg) scale(0.92)}
+  75%{transform:translateX(4px) rotate(10deg) scale(0.95)}
+}
+
+/* CƠ CHẾ HOA ĂN THỊT ĐỚP CHÚ RỒNG KHI HẾT THỜI GIAN */
+.flower-chomp-fx{position:absolute;top:-14px;left:42px;white-space:nowrap;background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;font-size:11px;font-weight:900;padding:3px 9px;border-radius:999px;box-shadow:0 4px 12px rgba(239,68,68,0.4);opacity:0;transform:scale(0.3);pointer-events:none;z-index:6}
+.speed-timer-wrap.is-eating .speed-flower-actor{
+  animation:flowerDevourLunge 0.95s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes flowerDevourLunge{
+  0%{transform:scale(1) translateX(0)}
+  22%{transform:scale(1.38,1.25) translateX(18px) rotate(12deg)}
+  42%{transform:scale(1.15,1.32) translateX(8px) rotate(-8deg)}
+  62%{transform:scale(1.32,1.18) translateX(14px) rotate(8deg)}
+  82%{transform:scale(1.08,1.15) translateX(4px) rotate(-3deg)}
+  100%{transform:scale(1.15) translateX(4px) rotate(0deg)}
+}
+.speed-timer-wrap.is-eating .speed-dragon-actor{
+  left:0%!important;
+  animation:dragonDevoured 0.72s cubic-bezier(0.55,0.06,0.68,0.19) forwards;
+}
+@keyframes dragonDevoured{
+  0%{transform:translate(-30%,-56%) scale(1) rotate(0deg);opacity:1}
+  30%{transform:translate(-55%,-62%) scale(0.85) rotate(-28deg);opacity:1}
+  65%{transform:translate(-85%,-50%) scale(0.35) rotate(-140deg);opacity:0.75}
+  100%{transform:translate(-105%,-48%) scale(0) rotate(-260deg);opacity:0}
+}
+.speed-timer-wrap.is-eating .flower-chomp-fx{
+  animation:chompBadgePop 0.95s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes chompBadgePop{
+  0%{opacity:0;transform:scale(0.3) translateY(8px)}
+  25%{opacity:1;transform:scale(1.15) translateY(-4px) rotate(-5deg)}
+  75%{opacity:1;transform:scale(1) translateY(-6px) rotate(3deg)}
+  100%{opacity:0;transform:scale(0.8) translateY(-14px)}
+}
+.flower-bite-particle{position:absolute;left:75%;top:42%;font-size:14px;pointer-events:none;z-index:7;animation:biteParticleBurst 0.8s ease-out forwards}
+@keyframes biteParticleBurst{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(0.5)}
+  60%{opacity:1;transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(1.15)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--tx) * 1.25),calc(-50% + var(--ty) * 1.25 + 8px)) scale(0.6)}
+}
+
+.speed-seconds-pill{min-width:40px;text-align:right;font-size:16px;font-weight:800;color:#28543b;margin-left:4px}
+.speed-timer-wrap.is-danger .speed-seconds-pill{color:#dc2626;animation:combo-pop 0.5s ease-in-out infinite}
+.time-delta{position:absolute;right:6px;top:-14px;font-size:13px;font-weight:800;pointer-events:none;animation:delta-float .75s cubic-bezier(.2,0,.2,1) forwards;z-index:5}
 .time-delta.plus{color:#158047}
 .time-delta.minus{color:#cc3e3e}
 @keyframes delta-float{0%{opacity:0;transform:translateY(6px) scale(.8)}20%{opacity:1;transform:translateY(0) scale(1.15)}80%{opacity:1;transform:translateY(-8px) scale(1)}100%{opacity:0;transform:translateY(-16px) scale(.9)}}

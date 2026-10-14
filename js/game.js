@@ -157,6 +157,29 @@ class SoundEffects {
     } catch (_) {}
   }
 
+  playChomp() {
+    if (this.muted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      // Hai nhịp ngoàm liên tiếp khi hoa ăn thịt rồng
+      [0, 0.22].forEach((offset, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = idx === 0 ? 'sawtooth' : 'square';
+        osc.frequency.setValueAtTime(idx === 0 ? 310 : 250, now + offset);
+        osc.frequency.exponentialRampToValueAtTime(65, now + offset + 0.18);
+        gain.gain.setValueAtTime(0.24, now + offset);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.19);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + offset);
+        osc.stop(now + offset + 0.19);
+      });
+    } catch (_) {}
+  }
+
   playWrong() {
     if (this.muted) return;
     try {
@@ -1082,10 +1105,25 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     arena.innerHTML = `
       <div class="speed-game-panel">
         <div class="speed-hud">
-          <div class="speed-timer-wrap">
-            <span class="timer-icon">⏳</span>
-            <div class="speed-timer-bar"><i id="speedProgress"></i></div>
-            <strong id="speedSeconds">60s</strong>
+          <div class="speed-timer-wrap" id="speedTimerWrap">
+            <div class="speed-flower-actor" id="speedFlowerActor" title="Hoa ăn thịt sẽ nuốt chửng rồng nếu hết giờ!">
+              <img src="picture/flower.jpg" alt="Hoa ăn thịt" class="speed-flower-img" id="speedFlowerImg" />
+              <span class="flower-chomp-fx" id="flowerChompFx">NGOÀM! 💥</span>
+            </div>
+            <div class="speed-timer-track">
+              <div class="speed-timer-bar">
+                <i id="speedProgress"></i>
+              </div>
+              <div class="speed-dragon-actor" id="speedDragonActor" style="left: 100%;">
+                <div class="dragon-fly-rig">
+                  <span class="dragon-wind-lines"><i></i><i></i><i></i></span>
+                  <img src="picture/lulu_fly.jpg" alt="Chú rồng bay" class="speed-dragon-img" id="speedDragonImg" />
+                  <span class="dragon-panic-sweat">💦</span>
+                </div>
+                <span class="dragon-ground-shadow"></span>
+              </div>
+            </div>
+            <strong class="speed-seconds-pill" id="speedSeconds">60s</strong>
           </div>
           <div class="speed-score-box">
             <span>Điểm số</span>
@@ -1108,6 +1146,9 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       </div>
     `;
 
+    const timerWrapEl = arena.querySelector('#speedTimerWrap');
+    const flowerActorEl = arena.querySelector('#speedFlowerActor');
+    const dragonActorEl = arena.querySelector('#speedDragonActor');
     const progressEl = arena.querySelector('#speedProgress');
     const secondsEl = arena.querySelector('#speedSeconds');
     const scoreEl = arena.querySelector('#speedScore');
@@ -1117,12 +1158,142 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
     const speakBtn = arena.querySelector('#speedSpeakBtn');
     const optionsContainer = arena.querySelector('#speedOptions');
 
+    // Tự động tách nền caro của picture/lulu_fly.jpg và picture/flower.jpg bằng Flood-Fill từ viền ảnh
+    function makeCheckerboardTransparent(imgEl) {
+      if (!imgEl) return;
+      const srcKey = imgEl.getAttribute('src');
+      if (!window.__luluSpriteCache) window.__luluSpriteCache = new Map();
+      if (window.__luluSpriteCache.has(srcKey)) {
+        imgEl.src = window.__luluSpriteCache.get(srcKey);
+        return;
+      }
+      const process = () => {
+        try {
+          const nw = imgEl.naturalWidth;
+          const nh = imgEl.naturalHeight;
+          if (!nw || !nh) return;
+          const maxDim = 240;
+          const scale = Math.min(1, maxDim / Math.max(nw, nh));
+          const w = Math.max(1, Math.round(nw * scale));
+          const h = Math.max(1, Math.round(nh * scale));
+          const cvs = document.createElement('canvas');
+          cvs.width = w;
+          cvs.height = h;
+          const ctx = cvs.getContext('2d');
+          ctx.drawImage(imgEl, 0, 0, w, h);
+          const imgData = ctx.getImageData(0, 0, w, h);
+          const data = imgData.data;
+          const visited = new Uint8Array(w * h);
+          const queue = new Int32Array(w * h);
+          let head = 0;
+          let tail = 0;
+
+          const isCheckerBg = (idx) => {
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            // Ô caro xám/trắng có độ bão hòa màu rất thấp (R≈G≈B) và không phải viền đen đậm
+            return maxC - minC <= 22 && maxC >= 42;
+          };
+
+          const enqueue = (x, y) => {
+            if (x < 0 || x >= w || y < 0 || y >= h) return;
+            const pos = y * w + x;
+            if (visited[pos]) return;
+            const idx = pos * 4;
+            if (isCheckerBg(idx)) {
+              visited[pos] = 1;
+              queue[tail++] = pos;
+            }
+          };
+
+          for (let x = 0; x < w; x++) {
+            enqueue(x, 0);
+            enqueue(x, h - 1);
+          }
+          for (let y = 0; y < h; y++) {
+            enqueue(0, y);
+            enqueue(w - 1, y);
+          }
+
+          while (head < tail) {
+            const pos = queue[head++];
+            const idx = pos * 4;
+            data[idx + 3] = 0;
+            const x = pos % w;
+            const y = (pos - x) / w;
+            enqueue(x + 1, y);
+            enqueue(x - 1, y);
+            enqueue(x, y + 1);
+            enqueue(x, y - 1);
+          }
+
+          // Làm mượt viền 1px tiếp giáp nền và tự động cắt sát khung nhân vật
+          let minX = w, minY = h, maxX = 0, maxY = 0;
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              const pos = y * w + x;
+              const idx = pos * 4;
+              if (data[idx + 3] > 0) {
+                let adjBg = 0;
+                if (x > 0 && visited[pos - 1]) adjBg++;
+                if (x < w - 1 && visited[pos + 1]) adjBg++;
+                if (y > 0 && visited[pos - w]) adjBg++;
+                if (y < h - 1 && visited[pos + w]) adjBg++;
+                if (adjBg >= 2 && isCheckerBg(idx)) {
+                  data[idx + 3] = 0;
+                  continue;
+                }
+                if (x < minX) minX = x;
+                if (x > maxX) maxX = x;
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+              }
+            }
+          }
+
+          ctx.putImageData(imgData, 0, 0);
+          if (maxX > minX && maxY > minY) {
+            const cw = maxX - minX + 1;
+            const ch = maxY - minY + 1;
+            const cropCvs = document.createElement('canvas');
+            cropCvs.width = cw;
+            cropCvs.height = ch;
+            cropCvs.getContext('2d').drawImage(cvs, minX, minY, cw, ch, 0, 0, cw, ch);
+            const cleanUrl = cropCvs.toDataURL('image/png');
+            window.__luluSpriteCache.set(srcKey, cleanUrl);
+            imgEl.src = cleanUrl;
+          } else {
+            const cleanUrl = cvs.toDataURL('image/png');
+            window.__luluSpriteCache.set(srcKey, cleanUrl);
+            imgEl.src = cleanUrl;
+          }
+        } catch (_) {}
+      };
+      if (imgEl.complete && imgEl.naturalWidth > 0) process();
+      else imgEl.addEventListener('load', process, { once: true });
+    }
+
+    makeCheckerboardTransparent(arena.querySelector('#speedFlowerImg'));
+    makeCheckerboardTransparent(arena.querySelector('#speedDragonImg'));
+
     function updateTimerUI() {
-      if (secondsEl) secondsEl.textContent = `${timeLeft}s`;
+      if (secondsEl) secondsEl.textContent = `${Math.max(0, timeLeft)}s`;
+      const pct = Math.min(100, Math.max(0, (timeLeft / 60) * 100));
       if (progressEl) {
-        const pct = Math.min(100, Math.max(0, (timeLeft / 60) * 100));
         progressEl.style.width = `${pct}%`;
-        progressEl.style.background = timeLeft <= 10 ? '#e88468' : '#4f9d72';
+        progressEl.style.background =
+          timeLeft <= 12
+            ? 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)'
+            : 'linear-gradient(90deg, #3b8256 0%, #4f9d72 60%, #34d399 100%)';
+      }
+      if (dragonActorEl) {
+        dragonActorEl.style.left = `${pct}%`;
+      }
+      if (timerWrapEl) {
+        timerWrapEl.classList.toggle('is-danger', timeLeft > 0 && timeLeft <= 12);
       }
     }
 
@@ -1131,10 +1302,14 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       const deltaEl = document.createElement('span');
       deltaEl.className = `time-delta ${isPositive ? 'plus' : 'minus'}`;
       deltaEl.textContent = isPositive ? `+${delta}s` : `${delta}s`;
-      const timerWrap = arena.querySelector('.speed-timer-wrap');
-      if (timerWrap) {
-        timerWrap.appendChild(deltaEl);
+      if (timerWrapEl) {
+        timerWrapEl.appendChild(deltaEl);
         setTimeout(() => deltaEl.remove(), 750);
+      }
+      if (dragonActorEl) {
+        dragonActorEl.classList.remove('is-boosting', 'is-stumbling');
+        void dragonActorEl.offsetWidth;
+        dragonActorEl.classList.add(isPositive ? 'is-boosting' : 'is-stumbling');
       }
     }
 
@@ -1142,7 +1317,29 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
       if (isGameOver) return;
       clearActiveInterval();
       isGameOver = true;
-      sounds.playVictory();
+      timeLeft = 0;
+      updateTimerUI();
+
+      optionsContainer?.querySelectorAll('button').forEach((b) => (b.disabled = true));
+
+      // Kích hoạt hiệu ứng Hoa ăn thịt nuốt chửng chú rồng khi hết giờ
+      if (timerWrapEl) {
+        timerWrapEl.classList.remove('is-danger');
+        timerWrapEl.classList.add('is-eating');
+      }
+      if (flowerActorEl) {
+        for (let i = 0; i < 8; i++) {
+          const crumb = document.createElement('span');
+          crumb.className = 'flower-bite-particle';
+          crumb.textContent = ['🍃', '✨', '💥', '🍊'][i % 4];
+          const angle = (Math.PI * 2 * i) / 8;
+          crumb.style.setProperty('--tx', `${Math.round(Math.cos(angle) * 34)}px`);
+          crumb.style.setProperty('--ty', `${Math.round(Math.sin(angle) * 28)}px`);
+          flowerActorEl.appendChild(crumb);
+          setTimeout(() => crumb.remove(), 900);
+        }
+      }
+      sounds.playChomp();
 
       const earnedPoints = Math.min(100, Math.max(15, Math.round(score * 0.1)));
       recordScore({ category: 'game', points: earnedPoints, description: `Đua tốc độ 60s (${score}đ)` });
@@ -1152,20 +1349,24 @@ export async function initGame({ selector = '[data-game]', toast } = {}) {
         localStorage.setItem('mandarinly_game_best_speed', String(score));
       }
 
-      showVictoryModal(arena, {
-        title: 'Hết giờ! Tốc độ đỉnh cao ⚡',
-        score: score,
-        stats: [
-          { label: 'Số câu làm được', value: answeredCount },
-          { label: 'Trả lời đúng', value: `${correctCount} câu` },
-          { label: 'Combo dài nhất', value: `${maxStreak}x 🔥` },
-          {
-            label: 'Độ chính xác',
-            value: answeredCount ? `${Math.round((correctCount / answeredCount) * 100)}%` : '0%'
-          }
-        ],
-        onReplay: () => startSpeedGame(arena)
-      });
+      setTimeout(() => {
+        if (!document.body.contains(arena)) return;
+        sounds.playVictory();
+        showVictoryModal(arena, {
+          title: 'Hết giờ! Hoa ăn thịt đã đớp gọn chú rồng 🦖🌿',
+          score: score,
+          stats: [
+            { label: 'Số câu làm được', value: answeredCount },
+            { label: 'Trả lời đúng', value: `${correctCount} câu` },
+            { label: 'Combo dài nhất', value: `${maxStreak}x 🔥` },
+            {
+              label: 'Độ chính xác',
+              value: answeredCount ? `${Math.round((correctCount / answeredCount) * 100)}%` : '0%'
+            }
+          ],
+          onReplay: () => startSpeedGame(arena)
+        });
+      }, 1150);
     }
 
     function nextQuestion() {

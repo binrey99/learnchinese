@@ -1747,6 +1747,22 @@ body.dark-mode .mistake-source-chip {
 }
 
 /* Game 2: Speed Blitz */
+[data-theme="dark"] .speed-hud {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .speed-timer-bar {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .speed-seconds-pill {
+  color: #34d399 !important;
+}
+[data-theme="dark"] .speed-timer-wrap.is-danger .speed-seconds-pill {
+  color: #f87171 !important;
+}
+[data-theme="dark"] .dragon-ground-shadow {
+  background: rgba(0, 0, 0, 0.45) !important;
+}
 [data-theme="dark"] .speed-card {
   background: #1e293b !important;
   border-color: #334155 !important;
